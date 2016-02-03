@@ -1,0 +1,1 @@
+jdbc:mysql://192.168.1.4:3306/stock?user=root&password=dataservice2015&useUnicode=true&characterEncoding=utf8
