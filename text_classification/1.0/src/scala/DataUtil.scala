@@ -19,6 +19,7 @@ import scala.util.parsing.json.JSONObject
 
 /**
   * Created by QQ on 2016/1/16.
+  * @author qiuqiu
   */
 object DataUtil {
 
