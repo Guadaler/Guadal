@@ -4,6 +4,7 @@ package com.kunyandata.nlpsuit.classification
   * Created by QQ on 2016/2/18.
   */
 
+import java.io.{ObjectInputStream, FileInputStream, FileOutputStream, ObjectOutputStream}
 import java.util.Date
 
 import org.apache.spark.ml.Pipeline
@@ -70,9 +71,11 @@ object TrainingProcess extends App{
     .setOutputCol("rawFeatures")
 
   // 计算idf值，并根据向量空间模型中的tf值获得tfidf
-  val idfModel = new IDF()
-    .setInputCol(cvModel.getOutputCol)
-    .setOutputCol("features")
+//  val idfModel = new IDF()
+//    .setInputCol(cvModel.getOutputCol)
+//    .setOutputCol("features")
+  val inppput = new ObjectInputStream(new FileInputStream("D:/idfModel"))
+  val idfModel = inppput.readObject().asInstanceOf[IDF]
 
   val featureSelector = new ChiSqSelector()
     .setNumTopFeatures(500)
@@ -138,6 +141,9 @@ object TrainingProcess extends App{
   labels.foreach { l =>
     println(s"F1-Score($l) = " + metrics.fMeasure(l))
   }
+
+
+
 
   sc.stop()
 }

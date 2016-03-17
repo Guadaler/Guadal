@@ -110,15 +110,25 @@ object WordSeg {
     }
   }
 
-  def getWords(json: String): String = {
+  def getWords(json: String): Array[String] = {
     val jsonResult = JSON.parseFull(json).get.asInstanceOf[Map[String, Any]]
     val resultTemp = jsonResult("result")
       .asInstanceOf[Map[String, Any]]("segment")
       .asInstanceOf[List[Map[String, String]]]
     val result = resultTemp.map(line => {
       line("word")
+    }).toArray
+    result
+  }
+
+  def removeStopWords(content: Array[String], stopWords: Array[String]): Array[String] = {
+    var result = content.toBuffer
+    stopWords.foreach(stopWord => {
+      if (result.contains(stopWord)){
+        result = result.filterNot(_ == stopWord)
+      }
     })
-    result.mkString(" ")
+    result.toArray
   }
 
 }
