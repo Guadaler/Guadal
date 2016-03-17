@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0" xmlns:e="http://ant.apache.org/ivy/extra">
+	<info organisation="default"
+		module="spark_nlp_suit$sources_2.10"
+		revision="0.2"
+		status="integration"
+		publication="20160317090147"
+	/>
+	<configurations>
+		<conf name="default" visibility="public" description=""/>
+	</configurations>
+	<publications>
+	</publications>
+	<dependencies>
+		<dependency org="org.scala-sbt" name="sbt" rev="0.13.8" transitive="false" conf="default->default(compile)">
+			<artifact name="sbt" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.scala-lang" name="scala-library" rev="2.10.4" transitive="false" conf="default->default(compile)" info.apiURL="http://www.scala-lang.org/api/2.10.4/">
+			<artifact name="scala-library" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.scala-sbt" name="main" rev="0.13.8" transitive="false" conf="default->default(compile)">
+			<artifact name="main" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.scala-sbt" name="actions" rev="0.13.8" transitive="false" conf="default->default(compile)">
+			<artifact name="actions" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.scala-sbt" name="classpath" rev="0.13.8" transitive="false" conf="default->default(compile)">
+			<artifact name="classpath" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.scala-lang" name="scala-compiler" rev="2.10.4" transitive="false" conf="default->default(compile)">
+			<artifact name="scala-compiler" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.scala-lang" name="scala-reflect" rev="2.10.4" transitive="false" conf="default->default(compile)" info.apiURL="http://www.scala-lang.org/api/2.10.4/">
+			<artifact name="scala-reflect" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="jline" name="jline" rev="2.11" transitive="false" conf="default->default(compile)">
+			<artifact name="jline" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="com.jcraft" name="jsch" rev="0.1.46" transitive="false" conf="default->default(compile)">
+			<artifact name="jsch" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.scala-lang.modules" name="scala-pickling_2.10" rev="0.10.0" transitive="false" conf="default->default(compile)">
+			<artifact name="scala-pickling_2.10" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.scalamacros" name="quasiquotes_2.10" rev="2.0.1" transitive="false" conf="default->default(compile)">
+			<artifact name="quasiquotes_2.10" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.json4s" name="json4s-core_2.10" rev="3.2.10" transitive="false" conf="default->default(compile)">
+			<artifact name="json4s-core_2.10" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.json4s" name="json4s-ast_2.10" rev="3.2.10" transitive="false" conf="default->default(compile)">
+			<artifact name="json4s-ast_2.10" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="com.thoughtworks.paranamer" name="paranamer" rev="2.6" transitive="false" conf="default->default(compile)">
+			<artifact name="paranamer" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.spire-math" name="jawn-parser_2.10" rev="0.6.0" transitive="false" conf="default->default(compile)">
+			<artifact name="jawn-parser_2.10" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.spire-math" name="json4s-support_2.10" rev="0.6.0" transitive="false" conf="default->default(compile)">
+			<artifact name="json4s-support_2.10" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.scala-sbt" name="test-interface" rev="1.0" transitive="false" conf="default->default(compile)">
+			<artifact name="test-interface" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="com.eed3si9n" name="sbt-assembly" rev="0.14.1" transitive="false" conf="default->default(compile)" sbtVersion="0.13" scalaVersion="2.10">
+			<artifact name="sbt-assembly" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.scalactic" name="scalactic_2.10" rev="2.2.1" transitive="false" conf="default->default(compile)">
+			<artifact name="scalactic_2.10" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.pantsbuild" name="jarjar" rev="1.6.0" transitive="false" conf="default->default(compile)">
+			<artifact name="jarjar" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.apache.ant" name="ant" rev="1.9.6" transitive="false" conf="default->default(compile)">
+			<artifact name="ant" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.apache.ant" name="ant-launcher" rev="1.9.6" transitive="false" conf="default->default(compile)">
+			<artifact name="ant-launcher" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.ow2.asm" name="asm" rev="5.0.4" transitive="false" conf="default->default(compile)">
+			<artifact name="asm" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.ow2.asm" name="asm-commons" rev="5.0.4" transitive="false" conf="default->default(compile)">
+			<artifact name="asm-commons" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.ow2.asm" name="asm-tree" rev="5.0.4" transitive="false" conf="default->default(compile)">
+			<artifact name="asm-tree" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.apache.maven" name="maven-plugin-api" rev="3.3.3" transitive="false" conf="default->default(compile)">
+			<artifact name="maven-plugin-api" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.apache.maven" name="maven-model" rev="3.3.3" transitive="false" conf="default->default(compile)">
+			<artifact name="maven-model" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.codehaus.plexus" name="plexus-utils" rev="3.0.20" transitive="false" conf="default->default(compile)">
+			<artifact name="plexus-utils" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.apache.maven" name="maven-artifact" rev="3.3.3" transitive="false" conf="default->default(compile)">
+			<artifact name="maven-artifact" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.eclipse.sisu" name="org.eclipse.sisu.plexus" rev="0.3.0" transitive="false" conf="default->default(compile)">
+			<artifact name="org.eclipse.sisu.plexus" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="javax.enterprise" name="cdi-api" rev="1.0" transitive="false" conf="default->default(compile)">
+			<artifact name="cdi-api" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.jboss.interceptor" name="jboss-interceptor-api" rev="1.1" transitive="false" conf="default->default(compile)">
+			<artifact name="jboss-interceptor-api" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="javax.annotation" name="jsr250-api" rev="1.0" transitive="false" conf="default->default(compile)">
+			<artifact name="jsr250-api" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="javax.inject" name="javax.inject" rev="1" transitive="false" conf="default->default(compile)">
+			<artifact name="javax.inject" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.eclipse.sisu" name="org.eclipse.sisu.inject" rev="0.3.0" transitive="false" conf="default->default(compile)">
+			<artifact name="org.eclipse.sisu.inject" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.codehaus.plexus" name="plexus-component-annotations" rev="1.5.5" transitive="false" conf="default->default(compile)">
+			<artifact name="plexus-component-annotations" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+		<dependency org="org.codehaus.plexus" name="plexus-classworlds" rev="2.5.2" transitive="false" conf="default->default(compile)">
+			<artifact name="plexus-classworlds" type="src" ext="jar" conf="sources" e:classifier="sources"/>
+		</dependency>
+	</dependencies>
+</ivy-module>
