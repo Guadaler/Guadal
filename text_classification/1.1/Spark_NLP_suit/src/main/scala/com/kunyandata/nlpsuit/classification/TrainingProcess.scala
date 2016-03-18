@@ -24,11 +24,14 @@ private object TrainingProcess extends App{
   val sc = new SparkContext(conf)
 
   // 获取训练数据集
-  val data = Source.fromFile("D:\\wordseg_881155").getLines().toArray
+  val data = Source.fromFile("D:\\WorkSpace\\Spark_WorkSpace\\ein" +
+    "\\text_classification\\1.1\\Spark_NLP_suit\\src\\main" +
+    "\\resources\\train\\wordseg_881155").getLines().toArray
 
   // 获取停用词
-  val stopWords = Source.fromFile("D:\\WorkSpace\\Python_WorkSpace" +
-      "\\Python_classification\\dicts\\stop_words_CN").getLines().toArray
+  val stopWords = Source.fromFile("D:\\WorkSpace\\Spark_WorkSpace" +
+    "\\ein\\text_classification\\1.1\\Spark_NLP_suit\\src\\main" +
+    "\\resources\\dicts\\stop_words_CN").getLines().toArray
   // 基于RDD的模型训练流程
   val dataRDD = sc.parallelize(data.map(line => {
     val temp = line.split("\t")
@@ -66,14 +69,14 @@ private object TrainingProcess extends App{
   chiSqSelectorModelOutput.writeObject(chiSqSelectorModel)
   println("+++++++++++++++++++++++++++++++++++++++++++++特征选择结束++++++++++++++++++++++++++++++++++++++++++++++++++")
   // 创建贝叶斯分类器
-  val nbModel = NaiveBayes.train(labeedTrainTfIdf, 1.0, "multinomial")
+  val nbModel = NaiveBayes.train(selectedTrain, 1.0, "multinomial")
 
   // 根据训练集同步测试集特征
   val test = testDataRDD.map(line => {
     val temp = line(2).asInstanceOf[Seq[String]]
     val tempTf = hashingTFModel.transform(temp)
     val tempTfidf = idfModel.transform(tempTf)
-//    val tempSelected = chiSqSelectorModel.transform(tempTfidf)
+    val tempSelected = chiSqSelectorModel.transform(tempTfidf)
     LabeledPoint(if(line(1).asInstanceOf[String] == "881155") 1.0 else 0.0, tempTfidf)
   })
 
