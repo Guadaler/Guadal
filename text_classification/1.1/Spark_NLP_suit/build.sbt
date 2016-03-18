@@ -6,10 +6,6 @@ version := "0.2"
 
 scalaVersion := "2.10.4"
 
-resolvers += "Kunyan Repo" at "http://222.73.34.92:8081/nexus/content/groups/public/"
-
-libraryDependencies += "com.kunyan" % "textsegment" % "0.1"
-
 libraryDependencies += "org.scalactic" %% "scalactic" % "2.2.5" % "test"
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.5" % "test"
@@ -21,7 +17,6 @@ libraryDependencies += "redis.clients" % "jedis" % "2.8.0"
 libraryDependencies += "org.json" % "json" % "20160212"
 
 libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.5.1"
-
 
 
 assemblyMergeStrategy in assembly := {
