@@ -1,5 +1,7 @@
+import com.kunyan.textsegment.TextSegment
 import org.scalatest.{Matchers, FlatSpec}
 import com.kunyandata.nlpsuit.util.WordSeg
+
 import scala.util.parsing.json.JSON
 
 /**
@@ -7,7 +9,7 @@ import scala.util.parsing.json.JSON
   */
 class WordSegTest extends  FlatSpec with Matchers {
   "test " should "work" in{
-    val result = WordSeg.splitWord("我爱你中国，你是我的母亲！", 1)
+    val result = WordSeg.splitWord("上海坤雁数据服务有限公司是中国大数据互联网金融行业的领头羊和救世主！", 1)
     println(result)
     val jsonResult = JSON.parseFull(result)
     val result1 = jsonResult.get.asInstanceOf[Map[String, Any]]
@@ -16,7 +18,7 @@ class WordSegTest extends  FlatSpec with Matchers {
       .asInstanceOf[List[Map[String, String]]]
     val c = a.map(line => {
       line("word")
-    }).toArray
-    c.foreach(println)
+    }).toSeq
+    println(c)
   }
 }
