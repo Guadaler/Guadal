@@ -69,11 +69,14 @@ object TrainingProcess extends App{
     .setOutputCol("rawFeatures")
 
   // 计算idf值，并根据向量空间模型中的tf值获得tfidf
-//  val idfModel = new IDF()
-//    .setInputCol(cvModel.getOutputCol)
-//    .setOutputCol("features")
-  val inppput = new ObjectInputStream(new FileInputStream("D:/idfModel"))
-  val idfModel = inppput.readObject().asInstanceOf[IDF]
+  val idfModel = new IDF()
+    .setInputCol(cvModel.getOutputCol)
+    .setOutputCol("features")
+  val output = new ObjectOutputStream(new FileOutputStream("D:/idfModel"))
+  output.writeObject(idfModel)
+
+//  val inppput = new ObjectInputStream(new FileInputStream("D:/idfModel"))
+//  val idfModel = inppput.readObject().asInstanceOf[IDF]
 
   val featureSelector = new ChiSqSelector()
     .setNumTopFeatures(500)
@@ -100,7 +103,7 @@ object TrainingProcess extends App{
 
   // 朴素贝叶斯
   val nBModel = NaiveBayes.train(train, lambda = 1.0, modelType = "multinomial")
-  nBModel
+  nBModel.save(sc, "D:/nBModel")
 
   val predictionAndLabels = test.map {case LabeledPoint(label, features) =>
     val prediction = nBModel.predict(features)
