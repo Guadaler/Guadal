@@ -1,4 +1,3 @@
-import com.kunyan.textsegment.TextSegment
 import org.scalatest.{Matchers, FlatSpec}
 import com.kunyandata.nlpsuit.util.WordSeg
 
