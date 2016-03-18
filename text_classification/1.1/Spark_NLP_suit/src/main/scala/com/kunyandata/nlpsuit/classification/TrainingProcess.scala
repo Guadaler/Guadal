@@ -43,8 +43,6 @@ object TrainingProcess extends App{
   println(time2-time1)
   println(time3-time1)
 
-
-
   wordDataFrame.show()
 
   // 拆分训练集和测试集

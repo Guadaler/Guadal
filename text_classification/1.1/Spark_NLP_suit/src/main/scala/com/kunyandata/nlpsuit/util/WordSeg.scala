@@ -74,7 +74,7 @@ object WordSeg {
     */
   private def sendPost(content: String): String = {
 
-    val url = "http://112.124.49.59/cgi-bin/miyo/nlp/v1/segment_word.fcgi"
+    val url = "http://112.124.49.59/cgi-bin/nlp/segment/v1/segment_word.fcgi"
     val httpclient = HttpClients.createDefault()
     val httpPost = new HttpPost(url)
 
