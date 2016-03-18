@@ -74,7 +74,7 @@ object WordSeg {
     */
   private def sendPost(content: String): String = {
 
-    val url = "http://112.124.49.59/cgi-bin/miyo/nlp/v1/segment_word.fcgi"
+    val url = "http://112.124.49.59/cgi-bin/nlp/segment/v1/segment_word.fcgi"
     val httpclient = HttpClients.createDefault()
     val httpPost = new HttpPost(url)
 
@@ -82,9 +82,11 @@ object WordSeg {
     val params = new util.ArrayList[NameValuePair]()
 
     params.add(new BasicNameValuePair("uid", "100001"))
-    params.add(new BasicNameValuePair("token", "123d1eqwe"))
+    params.add(new BasicNameValuePair("token", "qR3E1122SDD8B31EFBBD"))
     params.add(new BasicNameValuePair("content", content))
     httpPost.setEntity(new UrlEncodedFormEntity(params, "UTF-8"))
+    httpPost.setHeader("Content-Type", "application/x-www-form-urlencoded")
+
 
     var result = ""
     //Execute and get the response.
@@ -110,15 +112,25 @@ object WordSeg {
     }
   }
 
-  def getWords(json: String): String = {
+  def getWords(json: String): Array[String] = {
     val jsonResult = JSON.parseFull(json).get.asInstanceOf[Map[String, Any]]
     val resultTemp = jsonResult("result")
       .asInstanceOf[Map[String, Any]]("segment")
       .asInstanceOf[List[Map[String, String]]]
     val result = resultTemp.map(line => {
       line("word")
+    }).toArray
+    result
+  }
+
+  def removeStopWords(content: Array[String], stopWords: Array[String]): Array[String] = {
+    var result = content.toBuffer
+    stopWords.foreach(stopWord => {
+      if (result.contains(stopWord)){
+        result = result.filterNot(_ == stopWord)
+      }
     })
-    result.mkString(" ")
+    result.toArray
   }
 
 }

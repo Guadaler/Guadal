@@ -4,6 +4,7 @@ package com.kunyandata.nlpsuit.classification
   * Created by QQ on 2016/2/18.
   */
 
+import java.io.{ObjectInputStream, FileInputStream, FileOutputStream, ObjectOutputStream}
 import java.util.Date
 
 import org.apache.spark.ml.Pipeline
@@ -42,8 +43,6 @@ object TrainingProcess extends App{
   println(time2-time1)
   println(time3-time1)
 
-
-
   wordDataFrame.show()
 
   // 拆分训练集和测试集
@@ -73,6 +72,11 @@ object TrainingProcess extends App{
   val idfModel = new IDF()
     .setInputCol(cvModel.getOutputCol)
     .setOutputCol("features")
+  val output = new ObjectOutputStream(new FileOutputStream("D:/idfModel"))
+  output.writeObject(idfModel)
+
+//  val inppput = new ObjectInputStream(new FileInputStream("D:/idfModel"))
+//  val idfModel = inppput.readObject().asInstanceOf[IDF]
 
   val featureSelector = new ChiSqSelector()
     .setNumTopFeatures(500)
@@ -99,7 +103,7 @@ object TrainingProcess extends App{
 
   // 朴素贝叶斯
   val nBModel = NaiveBayes.train(train, lambda = 1.0, modelType = "multinomial")
-  nBModel
+  nBModel.save(sc, "D:/nBModel")
 
   val predictionAndLabels = test.map {case LabeledPoint(label, features) =>
     val prediction = nBModel.predict(features)
@@ -138,6 +142,9 @@ object TrainingProcess extends App{
   labels.foreach { l =>
     println(s"F1-Score($l) = " + metrics.fMeasure(l))
   }
+
+
+
 
   sc.stop()
 }
