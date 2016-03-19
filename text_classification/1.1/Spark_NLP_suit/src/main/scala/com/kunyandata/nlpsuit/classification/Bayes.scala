@@ -42,7 +42,7 @@ object Bayes {
     val wordSegNoStop = WordSeg.removeStopWords(wordSeg, stopWords)
 
     // tf
-    val tfModel = new HashingTF(1000000)
+    val tfModel = new HashingTF()
     val tf = tfModel.transform(wordSegNoStop)
 
     // idf
