@@ -96,7 +96,7 @@ private object TrainingProcess extends App{
     }
   }
 
-  def trainingProcessWithDF(sc: SparkContext, train:RDD[Seq[Object]], test: RDD[Seq[Object]]) = {
+  def trainingProcessWithDF(sc: SparkContext, train:RDD[Seq[Object]], test: RDD[Seq[Object]], parasDoc: Int, parasFeatrues: Int) = {
     val sqlContext = new SQLContext(sc)
     val schema =
       StructType(
@@ -123,48 +123,38 @@ private object TrainingProcess extends App{
       .setOutputCol("filtered")
     //  val worddf = stopWordsRemover.transform(wordDataFrame)
 
-    // 构建向量空间模型
-//    val hashingTFModel = new HashingTF()
-//      .setInputCol(stopWordsRemover.getOutputCol)
-//      .setOutputCol("rawFeatures")
-//      .setNumFeatures(50000)
-
-    val cvModel = new CountVectorizer()
+//     构建向量空间模型
+    val hashingTFModel = new HashingTF()
       .setInputCol(stopWordsRemover.getOutputCol)
       .setOutputCol("rawFeatures")
+      .setNumFeatures(50000)
+
+//    val cvModel = new CountVectorizer()
+//      .setInputCol(stopWordsRemover.getOutputCol)
+//      .setOutputCol("rawFeatures")
 
     // 计算idf值，并根据向量空间模型中的tf值获得tfidf
     val idfModel = new IDF()
-      .setInputCol(cvModel.getOutputCol)
+      .setInputCol(hashingTFModel.getOutputCol)
       .setOutputCol("features")
-      .setMinDocFreq(0)
-
-    val idfModel2 = new IDF()
-      .setInputCol(cvModel.getOutputCol)
-      .setOutputCol("features")
-      .setMinDocFreq(2)
+      .setMinDocFreq(parasDoc)
 
     //  val inppput = new ObjectInputStream(new FileInputStream("D:/idfModel"))
     //  val idfModel = inppput.readObject().asInstanceOf[IDF]
 
     val featureSelector = new ChiSqSelector()
-      .setNumTopFeatures(500)
+      .setNumTopFeatures(parasFeatrues)
       .setFeaturesCol(idfModel.getOutputCol)
       .setLabelCol("label")
       .setOutputCol("selectedFeatures")
 
     val vectorSpacePipline = new Pipeline()
-      .setStages(Array(stopWordsRemover, cvModel, idfModel, featureSelector))
+      .setStages(Array(stopWordsRemover, hashingTFModel, idfModel, featureSelector))
     val vectorSpacePiplineM = vectorSpacePipline.fit(dataDF)
     val trainCM = vectorSpacePiplineM.transform(dataDF)
     val testCM = vectorSpacePiplineM.transform(testDF)
-
-    val vectorSpacePipline2 = new Pipeline()
-      .setStages(Array(stopWordsRemover, cvModel, idfModel2, featureSelector))
-    val vectorSpacePiplineM2 = vectorSpacePipline2.fit(dataDF)
-    val trainCM2 = vectorSpacePiplineM2.transform(dataDF)
     trainCM.show
-    trainCM2.show
+
 
     // 转换数据类型
     val trainData = trainCM.select("label", "selectedFeatures").map(line => {
@@ -206,6 +196,11 @@ private object TrainingProcess extends App{
     labels.foreach { l =>
       println(s"F1-Score($l) = " + metrics.fMeasure(l))
     }
+    (metrics.precision(1.0), metrics.recall(1.0))
+  }
+
+  def crossValidator() ={
+
   }
 
 
@@ -233,7 +228,7 @@ private object TrainingProcess extends App{
   val Array(trainDataRDD, testDataRDD) = dataRDD.randomSplit(Array(0.7, 0.3))
 
 //  trainingProcessWithRDD(trainDataRDD, testDataRDD)
-  trainingProcessWithDF(sc, trainDataRDD, testDataRDD)
+  trainingProcessWithDF(sc, trainDataRDD, testDataRDD, )
 
 
 
