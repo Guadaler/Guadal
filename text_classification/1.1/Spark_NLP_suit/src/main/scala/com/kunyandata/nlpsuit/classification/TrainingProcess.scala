@@ -7,6 +7,7 @@ package com.kunyandata.nlpsuit.classification
 import java.io.{ObjectInputStream, FileInputStream, FileOutputStream, ObjectOutputStream}
 import org.apache.spark.ml.tuning.CrossValidator
 import org.apache.spark.mllib.feature
+import org.apache.spark.rdd.RDD
 import scala.io.Source
 import org.apache.spark.mllib.classification.{NaiveBayes, NaiveBayesModel}
 import org.apache.spark.mllib.evaluation.MulticlassMetrics
@@ -19,6 +20,77 @@ import com.kunyandata.nlpsuit.util.WordSeg
 
 
 private object TrainingProcess extends App{
+
+  def trainingProcessWithRDD(train: RDD[Seq[Object]], test :RDD[Seq[Object]]) = {
+    // 构建hashingTF模型，同时将数据转化为LabeledPoint类型
+    val hashingTFModel = new feature.HashingTF()
+    val trainTFRDD = train.map(line => {
+      val temp = hashingTFModel.transform(line(2).asInstanceOf[Seq[String]])
+      (if(line(1).asInstanceOf[String] == "881155") 1.0 else 0.0, temp)
+    })
+
+    // 计算idf
+    val idfModel = new feature.IDF(2).fit(trainTFRDD.map(line => {line._2}))
+    val labeedTrainTfIdf = trainTFRDD.map( line => {
+      val temp = idfModel.transform(line._2)
+      LabeledPoint(line._1, temp)
+    })
+
+    val idfModelOutput = new ObjectOutputStream(new FileOutputStream("D:/idfModel"))
+    idfModelOutput.writeObject(idfModel)
+
+    // 卡方降维特征选择器
+    val chiSqSelectorModel = new feature.ChiSqSelector(50).fit(labeedTrainTfIdf)
+    val selectedTrain = labeedTrainTfIdf.map(line => {
+      val temp = chiSqSelectorModel.transform(line.features)
+      LabeledPoint(line.label, temp)
+    })
+
+    val chiSqSelectorModelOutput = new ObjectOutputStream(new FileOutputStream("D:/chiSqSelectorModel"))
+    chiSqSelectorModelOutput.writeObject(chiSqSelectorModel)
+    println("+++++++++++++++++++++++++++++++++++++++++++++特征选择结束++++++++++++++++++++++++++++++++++++++++++++++++++")
+    // 创建贝叶斯分类器
+    val nbModel = NaiveBayes.train(labeedTrainTfIdf, 1.0, "multinomial")
+
+    // 根据训练集同步测试集特征
+    val testRDD = test.map(line => {
+      val temp = line(2).asInstanceOf[Seq[String]]
+      val tempTf = hashingTFModel.transform(temp)
+      val tempTfidf = idfModel.transform(tempTf)
+      //    val tempSelected = chiSqSelectorModel.transform(tempTfidf)
+      LabeledPoint(if(line(1).asInstanceOf[String] == "881155") 1.0 else 0.0, tempTfidf)
+    })
+
+    val predictionAndLabels = testRDD.map {line =>
+      val prediction = nbModel.predict(line.features)
+      (prediction, line.label)
+    }
+
+    val metrics = new MulticlassMetrics(predictionAndLabels)
+    println("Confusion matrix:")
+    println(metrics.confusionMatrix)
+
+    // Precision by label
+    val labels = metrics.labels
+    labels.foreach { l =>
+      println(s"Precision($l) = " + metrics.precision(l))
+    }
+
+    // Recall by label
+    labels.foreach { l =>
+      println(s"Recall($l) = " + metrics.recall(l))
+    }
+
+    // False positive rate by label
+    labels.foreach { l =>
+      println(s"FPR($l) = " + metrics.falsePositiveRate(l))
+    }
+
+    // F-measure by label
+    labels.foreach { l =>
+      println(s"F1-Score($l) = " + metrics.fMeasure(l))
+    }
+  }
 
   val conf = new SparkConf().setAppName("mltest").setMaster("local")
   val sc = new SparkContext(conf)
@@ -37,75 +109,8 @@ private object TrainingProcess extends App{
   }))
 
   val Array(trainDataRDD, testDataRDD) = dataRDD.randomSplit(Array(0.7, 0.3))
+  trainingProcessWithRDD(trainDataRDD, testDataRDD)
 
-  // 构建hashingTF模型，同时将数据转化为LabeledPoint类型
-  val hashingTFModel = new feature.HashingTF()
-  val trainTFRDD = trainDataRDD.map(line => {
-    val temp = hashingTFModel.transform(line(2).asInstanceOf[Seq[String]])
-    (if(line(1).asInstanceOf[String] == "881155") 1.0 else 0.0, temp)
-  })
-
-  // 计算idf
-  val idfModel = new feature.IDF(2).fit(trainTFRDD.map(line => {line._2}))
-  val labeedTrainTfIdf = trainTFRDD.map( line => {
-    val temp = idfModel.transform(line._2)
-    LabeledPoint(line._1, temp)
-  })
-
-  val idfModelOutput = new ObjectOutputStream(new FileOutputStream("D:/idfModel"))
-  idfModelOutput.writeObject(idfModel)
-
-  // 卡方降维特征选择器
-  val chiSqSelectorModel = new feature.ChiSqSelector(50).fit(labeedTrainTfIdf)
-  val selectedTrain = labeedTrainTfIdf.map(line => {
-    val temp = chiSqSelectorModel.transform(line.features)
-    LabeledPoint(line.label, temp)
-  })
-
-  val chiSqSelectorModelOutput = new ObjectOutputStream(new FileOutputStream("D:/chiSqSelectorModel"))
-  chiSqSelectorModelOutput.writeObject(chiSqSelectorModel)
-  println("+++++++++++++++++++++++++++++++++++++++++++++特征选择结束++++++++++++++++++++++++++++++++++++++++++++++++++")
-  // 创建贝叶斯分类器
-  val nbModel = NaiveBayes.train(labeedTrainTfIdf, 1.0, "multinomial")
-
-  // 根据训练集同步测试集特征
-  val test = testDataRDD.map(line => {
-    val temp = line(2).asInstanceOf[Seq[String]]
-    val tempTf = hashingTFModel.transform(temp)
-    val tempTfidf = idfModel.transform(tempTf)
-//    val tempSelected = chiSqSelectorModel.transform(tempTfidf)
-    LabeledPoint(if(line(1).asInstanceOf[String] == "881155") 1.0 else 0.0, tempTfidf)
-  })
-
-  val predictionAndLabels = test.map {line =>
-    val prediction = nbModel.predict(line.features)
-    (prediction, line.label)
-  }
-
-  val metrics = new MulticlassMetrics(predictionAndLabels)
-  println("Confusion matrix:")
-  println(metrics.confusionMatrix)
-
-    // Precision by label
-  val labels = metrics.labels
-  labels.foreach { l =>
-    println(s"Precision($l) = " + metrics.precision(l))
-  }
-
-    // Recall by label
-  labels.foreach { l =>
-    println(s"Recall($l) = " + metrics.recall(l))
-  }
-
-    // False positive rate by label
-  labels.foreach { l =>
-    println(s"FPR($l) = " + metrics.falsePositiveRate(l))
-  }
-
-    // F-measure by label
-  labels.foreach { l =>
-    println(s"F1-Score($l) = " + metrics.fMeasure(l))
-  }
 
   // 数据转化为RDD[LabeledPoint]格式
 //  val labeldTrainTfidf = trainTfIdfRDD.map(line =>{
