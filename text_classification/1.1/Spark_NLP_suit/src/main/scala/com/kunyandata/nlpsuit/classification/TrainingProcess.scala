@@ -157,11 +157,11 @@ private object TrainingProcess extends App{
 
 
     // 转换数据类型
-    val trainData = trainCM.select("label", "features").map(line => {
+    val trainData = trainCM.select("label", "selectedFeatures").map(line => {
       LabeledPoint(line.getDouble(0), line.getAs[SparseVector](1))
     })
 
-    val testData = testCM.select("label", "features").map(line => {
+    val testData = testCM.select("label", "selectedFeatures").map(line => {
       LabeledPoint(line.getDouble(0), line.getAs[SparseVector](1))
     })
 
@@ -200,7 +200,7 @@ private object TrainingProcess extends App{
   }
 
   def tuneParas(df: Seq[Map[String, RDD[Seq[Object]]]], parasDoc:Array[Int], parasFeatrues:Array[Int]) = {
-    val writer = new PrintWriter(new File("D:/training_result"))
+    val writer = new PrintWriter(new File("D:/training_result1"))
     var result:Map[String,Tuple2[Double, Double]] = Map()
     parasDoc.foreach(paraDoc => {
       parasFeatrues.foreach(paraFeatrues => {
@@ -246,11 +246,8 @@ private object TrainingProcess extends App{
     Map("train" -> dataSets(0).++(dataSets(2)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(1)),
     Map("train" -> dataSets(1).++(dataSets(2)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(0))
   )
-  tuneParas(dataSet, Array(0,1,2),
-    Array(50, 100, 150, 200, 250,
-      300, 350, 400, 450, 500,
-      550, 600, 650, 700, 750,
-      800, 850, 900, 950, 1000))
+  tuneParas(dataSet, Array(1,2),
+    Array(500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000))
 
 //  trainingProcessWithDF(sc, dataSet(0)("train"), dataSet(0)("test"), 2, 500)
 //  trainingProcessWithRDD(trainDataRDD, testDataRDD)
