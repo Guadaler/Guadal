@@ -199,9 +199,17 @@ private object TrainingProcess extends App{
     (metrics.precision(1.0), metrics.recall(1.0))
   }
 
-  def crossValidator() ={
-
+  def tuneParas(parasDoc:Array[Int], parasFeatrues:Array[Int]) = {
+    var result:Map[String,Tuple2[Double, Double]] = Map()
+    parasDoc.foreach(paraDoc => {
+      parasFeatrues.foreach(paraFeatrues => {
+        result += (paraDoc.toString + "_" + paraFeatrues.toString ->
+          trainingProcessWithDF(sc, trainDataRDD, testDataRDD, paraDoc, paraFeatrues))
+      })
+    })
+    result.foreach(println)
   }
+
 
 
 
@@ -226,9 +234,9 @@ private object TrainingProcess extends App{
   }))
 
   val Array(trainDataRDD, testDataRDD) = dataRDD.randomSplit(Array(0.7, 0.3))
-
+  tuneParas(Array(0,1,2), Array(50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900))
 //  trainingProcessWithRDD(trainDataRDD, testDataRDD)
-  trainingProcessWithDF(sc, trainDataRDD, testDataRDD, )
+
 
 
 
