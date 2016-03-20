@@ -4,7 +4,7 @@ package com.kunyandata.nlpsuit.classification
   * Created by QQ on 2016/2/18.
   */
 
-import java.io.{ObjectInputStream, FileInputStream, FileOutputStream, ObjectOutputStream}
+import java.io._
 import org.apache.spark.ml.Pipeline
 import org.apache.spark.ml.feature._
 import org.apache.spark.ml.tuning.CrossValidator
@@ -127,7 +127,7 @@ private object TrainingProcess extends App{
     val hashingTFModel = new HashingTF()
       .setInputCol(stopWordsRemover.getOutputCol)
       .setOutputCol("rawFeatures")
-      .setNumFeatures(50000)
+      .setNumFeatures(55000)
 
 //    val cvModel = new CountVectorizer()
 //      .setInputCol(stopWordsRemover.getOutputCol)
@@ -157,11 +157,11 @@ private object TrainingProcess extends App{
 
 
     // 转换数据类型
-    val trainData = trainCM.select("label", "selectedFeatures").map(line => {
+    val trainData = trainCM.select("label", "features").map(line => {
       LabeledPoint(line.getDouble(0), line.getAs[SparseVector](1))
     })
 
-    val testData = testCM.select("label", "selectedFeatures").map(line => {
+    val testData = testCM.select("label", "features").map(line => {
       LabeledPoint(line.getDouble(0), line.getAs[SparseVector](1))
     })
 
@@ -199,23 +199,28 @@ private object TrainingProcess extends App{
     (metrics.precision(1.0), metrics.recall(1.0))
   }
 
-  def tuneParas(parasDoc:Array[Int], parasFeatrues:Array[Int]) = {
+  def tuneParas(df: Seq[Map[String, RDD[Seq[Object]]]], parasDoc:Array[Int], parasFeatrues:Array[Int]) = {
+    val writer = new PrintWriter(new File("D:/training_result"))
     var result:Map[String,Tuple2[Double, Double]] = Map()
     parasDoc.foreach(paraDoc => {
       parasFeatrues.foreach(paraFeatrues => {
-        result += (paraDoc.toString + "_" + paraFeatrues.toString ->
-          trainingProcessWithDF(sc, trainDataRDD, testDataRDD, paraDoc, paraFeatrues))
+        df.foreach(data => {
+          val paraSets = paraDoc.toString + "_" + paraFeatrues.toString
+          val results = trainingProcessWithDF(sc, data("train"), data("test"), paraDoc, paraFeatrues)
+          result += (paraSets -> results)
+          val writeOut = paraSets + "\t\tPrecision:" + results._1 + "\tRecall:" + results._2 + "\n"
+          writer.write(writeOut)
+        })
+        writer.write("\n")
       })
+      writer.write("\n\n")
     })
     result.foreach(println)
+    writer.close()
   }
-
-
-
 
   val conf = new SparkConf().setAppName("mltest").setMaster("local")
   val sc = new SparkContext(conf)
-
 
   val data = Source.fromFile("D:\\WorkSpace\\Spark_WorkSpace\\ein" +
     "\\text_classification\\1.1\\Spark_NLP_suit\\src\\main" +
@@ -233,8 +238,21 @@ private object TrainingProcess extends App{
     Seq(temp(0), temp(1), removedStopWords.toSeq)
   }))
 
-  val Array(trainDataRDD, testDataRDD) = dataRDD.randomSplit(Array(0.7, 0.3))
-  tuneParas(Array(0,1,2), Array(50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900))
+  val dataSets = dataRDD.randomSplit(Array(0.2, 0.2, 0.2, 0.2, 0.2))
+  val dataSet = Seq(
+    Map("train" -> dataSets(0).++(dataSets(1)).++(dataSets(2)).++(dataSets(3)), "test" -> dataSets(4)),
+    Map("train" -> dataSets(0).++(dataSets(1)).++(dataSets(2)).++(dataSets(4)), "test" -> dataSets(3)),
+    Map("train" -> dataSets(0).++(dataSets(1)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(2)),
+    Map("train" -> dataSets(0).++(dataSets(2)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(1)),
+    Map("train" -> dataSets(1).++(dataSets(2)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(0))
+  )
+  tuneParas(dataSet, Array(0,1,2),
+    Array(50, 100, 150, 200, 250,
+      300, 350, 400, 450, 500,
+      550, 600, 650, 700, 750,
+      800, 850, 900, 950, 1000))
+
+//  trainingProcessWithDF(sc, dataSet(0)("train"), dataSet(0)("test"), 2, 500)
 //  trainingProcessWithRDD(trainDataRDD, testDataRDD)
 
 
