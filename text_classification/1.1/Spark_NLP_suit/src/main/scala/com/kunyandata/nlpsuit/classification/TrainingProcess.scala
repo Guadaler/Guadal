@@ -41,8 +41,8 @@ private object TrainingProcess extends App{
       (if(line(1).asInstanceOf[String] == "881155") 1.0 else 0.0, temp)
     })
 
-//    val tfModelOutput = new ObjectOutputStream(new FileOutputStream("D:/tfModel"))
-//    tfModelOutput.writeObject(hashingTFModel)
+    val tfModelOutput = new ObjectOutputStream(new FileOutputStream("D:/tfModel"))
+    tfModelOutput.writeObject(hashingTFModel)
 
     // 计算idf
     val idfModel = new feature.IDF(parasDoc).fit(trainTFRDD.map(line => {line._2}))
@@ -50,9 +50,9 @@ private object TrainingProcess extends App{
       val temp = idfModel.transform(line._2)
       LabeledPoint(line._1, temp)
     })
-//
-//    val idfModelOutput = new ObjectOutputStream(new FileOutputStream("D:/idfModel"))
-//    idfModelOutput.writeObject(idfModel)
+
+    val idfModelOutput = new ObjectOutputStream(new FileOutputStream("D:/idfModel"))
+    idfModelOutput.writeObject(idfModel)
 
     // 卡方降维特征选择器
     val chiSqSelectorModel = new feature.ChiSqSelector(parasFeatrues).fit(labeedTrainTfIdf)
@@ -61,11 +61,16 @@ private object TrainingProcess extends App{
       LabeledPoint(line.label, temp)
     })
 
-//    val chiSqSelectorModelOutput = new ObjectOutputStream(new FileOutputStream("D:/chiSqSelectorModel"))
-//    chiSqSelectorModelOutput.writeObject(chiSqSelectorModel)
+    val chiSqSelectorModelOutput = new ObjectOutputStream(new FileOutputStream("D:/chiSqSelectorModel"))
+    chiSqSelectorModelOutput.writeObject(chiSqSelectorModel)
+
     println("+++++++++++++++++++++++++++++++++++++++++++++特征选择结束++++++++++++++++++++++++++++++++++++++++++++++++++")
+
     // 创建贝叶斯分类器
     val nbModel = NaiveBayes.train(selectedTrain, 1.0, "multinomial")
+
+    val nbModelOutput = new ObjectOutputStream(new FileOutputStream("D:/nbModel"))
+    nbModelOutput.writeObject(nbModel)
 
     // 根据训练集同步测试集特征
     val testRDD = test.map(line => {
@@ -274,12 +279,12 @@ private object TrainingProcess extends App{
     Map("train" -> dataSets(0).++(dataSets(2)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(1)),
     Map("train" -> dataSets(1).++(dataSets(2)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(0))
   )
-  tuneParas(dataSet, Array(1,2),
-    Array(500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000,
-      5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000))
+//  tuneParas(dataSet, Array(1,2),
+//    Array(500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000,
+//      5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000))
 
 //  val result1 = trainingProcessWithDF(sc, dataSet(0)("train"), dataSet(0)("test"), 0, 500)
-//  val result2 = trainingProcessWithRDD(dataSet(0)("train"), dataSet(0)("test"), 0, 500)
+  val result2 = trainingProcessWithRDD(dataSet(0)("train"), dataSet(0)("test"), 0, 500)
 //  println(result1)
 //  println(result2)
 //  trainingProcessWithDF(sc, dataSet(0)("train"), dataSet(0)("test"), 2, 500)

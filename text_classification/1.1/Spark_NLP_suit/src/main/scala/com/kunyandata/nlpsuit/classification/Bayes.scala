@@ -4,25 +4,41 @@ package com.kunyandata.nlpsuit.classification
   * Created by QQ on 2016/2/18.
   */
 
-import java.io.{FileOutputStream, ObjectOutputStream}
+import java.io._
 
 import com.kunyandata.nlpsuit.util.WordSeg
 import org.apache.spark.SparkContext
 import org.apache.spark.mllib.feature._
 import org.apache.spark.mllib.classification.NaiveBayesModel
-
 import scala.io.Source
 
 
-object Bayes {
+object Bayes extends App{
 
-  def initModel(sc: SparkContext): Map[String, Map[String, Any]] = {
+  def initModel(path: String): Map[String, Map[String, Any]] = {
     // 读取本地保存的模型
-    val modelPath = ""
-    NaiveBayesModel.load(sc, modelPath)
-
-    null
+    val modelKey = Array("tfModel", "idfModel", "chiSqSelectorModel", "nbModel")
+    val fileList = new File(path)
+    val cateList = fileList.listFiles()
+    var resultMap:Map[String, Map[String, Any]] = Map()
+    var tempMap:Map[String, Any] = Map()
+    cateList.foreach(cate => {
+      val tempCatePath = path + "/" + cate.getName
+      modelKey.foreach(modelName => {
+        val tempModelPath = tempCatePath + "/" + modelName
+        val tempModelInput = new ObjectInputStream(new FileInputStream(tempModelPath))
+        tempMap += (modelName -> tempModelInput.readObject())
+      })
+      resultMap += (cate.getName -> tempMap)
+    })
+    resultMap
   }
+
+  val kk = initModel("D:/test")
+  println(kk.keys)
+  println(kk("银行").keys)
+  println(kk)
+
 
   def predict(content: String, models: Map[String, Map[String, Any]]):String = {
     val wordSegJson = WordSeg.splitWord(content, 1)
