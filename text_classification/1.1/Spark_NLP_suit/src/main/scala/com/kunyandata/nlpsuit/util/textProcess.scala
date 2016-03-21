@@ -1,6 +1,7 @@
 package com.kunyandata.nlpsuit.util
 
-import org.apache.spark.{SparkContext, SparkConf}
+import org.apache.spark.sql.SQLContext
+import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.io.Source
 
@@ -10,26 +11,27 @@ import scala.io.Source
 
 object textProcess extends App{
 
-  case class RawDataRecord(ID: String, category: String ,labels: Double ,text: String)
+  //  var resultMap: Map[String, Any] = Map()
 
   val conf = new SparkConf().setMaster("local").setAppName("textProcess")
   val sc = new SparkContext(conf)
+  val sqlContext = new SQLContext(sc)
 
   //导入预处理String数据
-  val srcRDD = sc.textFile("/users/li/Intellij/Native-Byes/nativebyes/2.txt").map {
-    line =>
-      val data = line.split(",")
-      RawDataRecord(data(0),data(1),labels = if(data(1) == "881155" ) 1.0 else 0.0, data(2))
-  }.toString()
+  val src = "9日上午，“交银国信·周浦花海土地承包经营权流转单一信托”成立签约仪式在上海举行。"
 
   //导入本地停用词
   var stopWord = Source.fromFile("/users/li/Intellij/Native-Byes/nativebyes/stop_words_CN" )
   var stopWords = stopWord.getLines().toArray
 
-  // 调入分词系统
-  val context = WordSeg.splitWord(srcRDD,0).toCharArray
+  //调用分词系统
+    val context = WordSeg.splitWord(src ,1)
+    val contest = WordSeg.getWords(context)
+    val fited = WordSeg.removeStopWords(contest,stopWords)
 
-  val result = WordSeg.removeStopWords(context,stopWords)
+  fited.foreach(println)
+
+
   sc.stop()
 
 
