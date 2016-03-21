@@ -25,48 +25,60 @@ import org.apache.spark.sql.types._
 
 private object TrainingProcess extends App{
 
-  def trainingProcessWithRDD(train: RDD[Seq[Object]], test: RDD[Seq[Object]]) = {
+  /**
+    * 基于RDD的训练过程，其中包括了序列化tf，idf，chisqselector，nbmodel 4个模型。
+    * @param train 训练集
+    * @param test 测试集
+    * @param parasDoc idf最小文档频数参数
+    * @param parasFeatrues 特征选择数量参数
+    * @return 返回（精度，召回率）
+    */
+  def trainingProcessWithRDD(train: RDD[Seq[Object]], test: RDD[Seq[Object]], parasDoc: Int, parasFeatrues: Int) = {
     // 构建hashingTF模型，同时将数据转化为LabeledPoint类型
-    val hashingTFModel = new feature.HashingTF()
+    val hashingTFModel = new feature.HashingTF(55000)
     val trainTFRDD = train.map(line => {
       val temp = hashingTFModel.transform(line(2).asInstanceOf[Seq[String]])
       (if(line(1).asInstanceOf[String] == "881155") 1.0 else 0.0, temp)
     })
 
+//    val tfModelOutput = new ObjectOutputStream(new FileOutputStream("D:/tfModel"))
+//    tfModelOutput.writeObject(hashingTFModel)
+
     // 计算idf
-    val idfModel = new feature.IDF(2).fit(trainTFRDD.map(line => {line._2}))
+    val idfModel = new feature.IDF(parasDoc).fit(trainTFRDD.map(line => {line._2}))
     val labeedTrainTfIdf = trainTFRDD.map( line => {
       val temp = idfModel.transform(line._2)
       LabeledPoint(line._1, temp)
     })
-
-    val idfModelOutput = new ObjectOutputStream(new FileOutputStream("D:/idfModel"))
-    idfModelOutput.writeObject(idfModel)
+//
+//    val idfModelOutput = new ObjectOutputStream(new FileOutputStream("D:/idfModel"))
+//    idfModelOutput.writeObject(idfModel)
 
     // 卡方降维特征选择器
-    val chiSqSelectorModel = new feature.ChiSqSelector(50).fit(labeedTrainTfIdf)
+    val chiSqSelectorModel = new feature.ChiSqSelector(parasFeatrues).fit(labeedTrainTfIdf)
     val selectedTrain = labeedTrainTfIdf.map(line => {
       val temp = chiSqSelectorModel.transform(line.features)
       LabeledPoint(line.label, temp)
     })
 
-    val chiSqSelectorModelOutput = new ObjectOutputStream(new FileOutputStream("D:/chiSqSelectorModel"))
-    chiSqSelectorModelOutput.writeObject(chiSqSelectorModel)
+//    val chiSqSelectorModelOutput = new ObjectOutputStream(new FileOutputStream("D:/chiSqSelectorModel"))
+//    chiSqSelectorModelOutput.writeObject(chiSqSelectorModel)
     println("+++++++++++++++++++++++++++++++++++++++++++++特征选择结束++++++++++++++++++++++++++++++++++++++++++++++++++")
     // 创建贝叶斯分类器
-    val nbModel = NaiveBayes.train(labeedTrainTfIdf, 1.0, "multinomial")
+    val nbModel = NaiveBayes.train(selectedTrain, 1.0, "multinomial")
 
     // 根据训练集同步测试集特征
     val testRDD = test.map(line => {
       val temp = line(2).asInstanceOf[Seq[String]]
       val tempTf = hashingTFModel.transform(temp)
       val tempTfidf = idfModel.transform(tempTf)
-      //    val tempSelected = chiSqSelectorModel.transform(tempTfidf)
-      LabeledPoint(if(line(1).asInstanceOf[String] == "881155") 1.0 else 0.0, tempTfidf)
+      val tempSelected = chiSqSelectorModel.transform(tempTfidf)
+      LabeledPoint(if(line(1).asInstanceOf[String] == "881155") 1.0 else 0.0, tempSelected)
     })
 
     val predictionAndLabels = testRDD.map {line =>
       val prediction = nbModel.predict(line.features)
+//      println((prediction, line.label))
       (prediction, line.label)
     }
 
@@ -94,8 +106,18 @@ private object TrainingProcess extends App{
     labels.foreach { l =>
       println(s"F1-Score($l) = " + metrics.fMeasure(l))
     }
+    (metrics.precision(1.0), metrics.recall(1.0))
   }
 
+  /**
+    * 基于dataframe的训练，主要用于网格参数寻优。
+    * @param sc sparkcontext
+    * @param train 训练集
+    * @param test 测试集
+    * @param parasDoc idf最小文档频数参数
+    * @param parasFeatrues 特征选择数量参数
+    * @return 返回（精度，召回率）
+    */
   def trainingProcessWithDF(sc: SparkContext, train:RDD[Seq[Object]], test: RDD[Seq[Object]], parasDoc: Int, parasFeatrues: Int) = {
     val sqlContext = new SQLContext(sc)
     val schema =
@@ -199,6 +221,12 @@ private object TrainingProcess extends App{
     (metrics.precision(1.0), metrics.recall(1.0))
   }
 
+  /**
+    * 网格参数寻优，并输出成文本
+    * @param df 输入的训练集，为交叉验证准备的5份训练测试数据
+    * @param parasDoc idf最小文档频数参数的序列
+    * @param parasFeatrues 特征选择数量参数的序列
+    */
   def tuneParas(df: Seq[Map[String, RDD[Seq[Object]]]], parasDoc:Array[Int], parasFeatrues:Array[Int]) = {
     val writer = new PrintWriter(new File("D:/training_result1"))
     var result:Map[String,Tuple2[Double, Double]] = Map()
@@ -238,7 +266,7 @@ private object TrainingProcess extends App{
     Seq(temp(0), temp(1), removedStopWords.toSeq)
   }))
 
-  val dataSets = dataRDD.randomSplit(Array(0.2, 0.2, 0.2, 0.2, 0.2))
+  val dataSets = dataRDD.randomSplit(Array(0.2, 0.2, 0.2, 0.2, 0.2), seed = 2016L)
   val dataSet = Seq(
     Map("train" -> dataSets(0).++(dataSets(1)).++(dataSets(2)).++(dataSets(3)), "test" -> dataSets(4)),
     Map("train" -> dataSets(0).++(dataSets(1)).++(dataSets(2)).++(dataSets(4)), "test" -> dataSets(3)),
@@ -247,112 +275,15 @@ private object TrainingProcess extends App{
     Map("train" -> dataSets(1).++(dataSets(2)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(0))
   )
   tuneParas(dataSet, Array(1,2),
-    Array(500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000))
+    Array(500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000,
+      5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000))
 
+//  val result1 = trainingProcessWithDF(sc, dataSet(0)("train"), dataSet(0)("test"), 0, 500)
+//  val result2 = trainingProcessWithRDD(dataSet(0)("train"), dataSet(0)("test"), 0, 500)
+//  println(result1)
+//  println(result2)
 //  trainingProcessWithDF(sc, dataSet(0)("train"), dataSet(0)("test"), 2, 500)
 //  trainingProcessWithRDD(trainDataRDD, testDataRDD)
-
-
-
-
-  // 数据转化为RDD[LabeledPoint]格式
-//  val labeldTrainTfidf = trainTfIdfRDD.map(line =>{
-
-//  })
-//  val chiSqSelectorModel = new ChiSqSelector(50).fit()
-
-//  基于dataframe的模型训练流程
-//  val time1 = new Date().getTime
-//  val sqlContext = new SQLContext(sc)
-//  val time2 = new Date().getTime
-//  val b = sqlContext.createDataFrame(a.map(line => {
-//    dataForamt("1", "1", line, 0.0)
-//  })).toDF()
-//  val time3 = new Date().getTime
-//  val wordDataFrame = sqlContext.createDataFrame(dataSet.map(line =>{
-//    val temp = line.split("\t")
-//    var lab = 0.0
-//    dataForamt(temp(0), temp(1), temp(2), label = if(temp(1) == "881155") 1.0 else 0.0)
-//  })).toDF
-//
-//  println(time2-time1)
-//  println(time3-time1)
-//
-//  wordDataFrame.show()
-//
-//  // 拆分训练集和测试集
-//  val Array(trainData, testData) = wordDataFrame.randomSplit(Array(0.7, 0.3), seed = 11L)
-//
-//  val stopWords = Source.fromFile("D:\\WorkSpace\\Python_WorkSpace" +
-//    "\\Python_classification\\dicts\\stop_words_CN").getLines().toArray
-//
-//  // token
-//  var tokenizer = new Tokenizer()
-//    .setInputCol("content")
-//    .setOutputCol("words")
-//
-//  // 去除停用词
-//  val stopWordsRemover = new StopWordsRemover()
-//    .setStopWords(stopWords)
-//    .setInputCol("words")
-//    .setOutputCol("filtered")
-//  //  val worddf = stopWordsRemover.transform(wordDataFrame)
-//
-//  // 构建向量空间模型
-//  val cvModel = new CountVectorizer()
-//    .setInputCol(stopWordsRemover.getOutputCol)
-//    .setOutputCol("rawFeatures")
-//
-//  // 计算idf值，并根据向量空间模型中的tf值获得tfidf
-//  val idfModel = new IDF()
-//    .setInputCol(cvModel.getOutputCol)
-//    .setOutputCol("features")
-//  val output = new ObjectOutputStream(new FileOutputStream("D:/idfModel"))
-//  output.writeObject(idfModel)
-//
-////  val inppput = new ObjectInputStream(new FileInputStream("D:/idfModel"))
-////  val idfModel = inppput.readObject().asInstanceOf[IDF]
-//
-//  val featureSelector = new ChiSqSelector()
-//    .setNumTopFeatures(500)
-//    .setFeaturesCol(idfModel.getOutputCol)
-//    .setLabelCol("label")
-//    .setOutputCol("selectedFeatures")
-//
-//  val vectorSpacePipline = new Pipeline()
-//    .setStages(Array(tokenizer, stopWordsRemover, cvModel, idfModel))
-//  val vectorSpacePiplineM = vectorSpacePipline.fit(trainData)
-//  val trainCM = vectorSpacePiplineM.transform(trainData)
-//  val testCM = vectorSpacePiplineM.transform(testData)
-//  trainCM.show()
-//  testCM.show()
-
-  // 转换数据类型
-//  val train = trainCM.select("label", "features").map(row => {
-//    LabeledPoint(row.getDouble(0), row.getAs[SparseVector](1))
-//  })
-//
-//  val test = testCM.select("label", "features").map(row => {
-//    LabeledPoint(row.getDouble(0), row.getAs[SparseVector](1))
-//  })
-//
-//  // 朴素贝叶斯
-//  val nBModel = NaiveBayes.train(train, lambda = 1.0, modelType = "multinomial")
-//  nBModel.save(sc, "D:/nBModel")
-//
-//  val predictionAndLabels = test.map {case LabeledPoint(label, features) =>
-//    val prediction = nBModel.predict(features)
-//    (prediction, label)
-//  }
-//
-//  //  训练模型SVM
-////  val num = 200
-////  val svmModel = SVMWithSGD.train(train, num)
-////  val predictionAndLabels = test.map {case LabeledPoint(label, features) =>
-////    val prediction = svmModel.predict(features)
-////    (prediction, label)
-////  }
-//
 
   sc.stop()
 }
