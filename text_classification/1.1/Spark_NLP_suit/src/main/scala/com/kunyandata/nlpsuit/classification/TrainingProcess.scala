@@ -142,20 +142,16 @@ object TrainingProcess{
       Row(line(0), line(1), line(2).asInstanceOf[Seq[String]].toArray, if(line(1) == "881155") 1.0 else 0.0)
     }), schema).toDF()
 
-    // token
-    val tokenizer = new Tokenizer()
-      .setInputCol("content")
-      .setOutputCol("words")
     // 去除停用词
-    val stopWordsRemover = new StopWordsRemover()
-      .setStopWords(stopWords)
-      .setInputCol("content")
-      .setOutputCol("filtered")
+//    val stopWordsRemover = new StopWordsRemover()
+//      .setStopWords(stopWords)
+//      .setInputCol("content")
+//      .setOutputCol("filtered")
     //  val worddf = stopWordsRemover.transform(wordDataFrame)
 
 //     构建向量空间模型
     val hashingTFModel = new HashingTF()
-      .setInputCol(stopWordsRemover.getOutputCol)
+      .setInputCol("content")
       .setOutputCol("rawFeatures")
       .setNumFeatures(55000)
 
@@ -179,7 +175,7 @@ object TrainingProcess{
       .setOutputCol("selectedFeatures")
 
     val vectorSpacePipline = new Pipeline()
-      .setStages(Array(stopWordsRemover, hashingTFModel, idfModel, featureSelector))
+      .setStages(Array(hashingTFModel, idfModel, featureSelector))
     val vectorSpacePiplineM = vectorSpacePipline.fit(dataDF)
     val trainCM = vectorSpacePiplineM.transform(dataDF)
     val testCM = vectorSpacePiplineM.transform(testDF)
