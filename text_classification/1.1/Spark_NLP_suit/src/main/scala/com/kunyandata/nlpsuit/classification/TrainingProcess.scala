@@ -5,28 +5,30 @@ package com.kunyandata.nlpsuit.classification
   */
 
 import java.io._
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
+import org.apache.hadoop.fs.FileSystem
 import org.apache.spark.ml.Pipeline
 import org.apache.spark.ml.feature._
-import org.apache.spark.ml.tuning.CrossValidator
 import org.apache.spark.mllib.feature
 import org.apache.spark.rdd.RDD
 import scala.io.Source
-import org.apache.spark.mllib.classification.{NaiveBayes, NaiveBayesModel}
+import org.apache.spark.mllib.classification.NaiveBayes
 import org.apache.spark.mllib.evaluation.MulticlassMetrics
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.mllib.classification.SVMWithSGD
-import org.apache.spark.mllib.linalg.{Vectors, SparseVector}
+import org.apache.spark.mllib.linalg.SparseVector
 import com.kunyandata.nlpsuit.util.WordSeg
 import org.apache.spark.sql._
 import org.apache.spark.sql.types._
 
-
-private object TrainingProcess extends App{
+object TrainingProcess{
 
   /**
     * 基于RDD的训练过程，其中包括了序列化tf，idf，chisqselector，nbmodel 4个模型。
+ *
     * @param train 训练集
     * @param test 测试集
     * @param parasDoc idf最小文档频数参数
@@ -116,6 +118,7 @@ private object TrainingProcess extends App{
 
   /**
     * 基于dataframe的训练，主要用于网格参数寻优。
+ *
     * @param sc sparkcontext
     * @param train 训练集
     * @param test 测试集
@@ -228,12 +231,17 @@ private object TrainingProcess extends App{
 
   /**
     * 网格参数寻优，并输出成文本
+ *
     * @param df 输入的训练集，为交叉验证准备的5份训练测试数据
     * @param parasDoc idf最小文档频数参数的序列
     * @param parasFeatrues 特征选择数量参数的序列
     */
-  def tuneParas(df: Seq[Map[String, RDD[Seq[Object]]]], parasDoc:Array[Int], parasFeatrues:Array[Int]) = {
-    val writer = new PrintWriter(new File("D:/training_result1"))
+  def tuneParas(sc: SparkContext, df: Seq[Map[String, RDD[Seq[Object]]]], parasDoc:Array[Int], parasFeatrues:Array[Int]) = {
+    val hdfsConf = new Configuration()
+    hdfsConf.set("fs.defaultFS", "hdfs://222.73.34.92:9000")
+    val fs = FileSystem.get(hdfsConf)
+    val output = fs.create(new Path("/mlearning/trainingResult"))
+    val writer = new PrintWriter(output)
     var result:Map[String,Tuple2[Double, Double]] = Map()
     parasDoc.foreach(paraDoc => {
       parasFeatrues.foreach(paraFeatrues => {
