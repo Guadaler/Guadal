@@ -10,11 +10,9 @@ libraryDependencies += "org.scalactic" %% "scalactic" % "2.2.5" % "test"
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.5" % "test"
 
-libraryDependencies += "org.apache.spark" % "spark-mllib_2.10" % "1.6.0"
+libraryDependencies += "org.apache.spark" % "spark-mllib_2.10" % "1.6.0" % "provided"
 
 libraryDependencies += "redis.clients" % "jedis" % "2.8.0"
-
-libraryDependencies += "org.json" % "json" % "20160212"
 
 libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.5.1"
 
@@ -23,6 +21,7 @@ assemblyMergeStrategy in assembly := {
   case PathList("javax", "servlet", xs @ _*) => MergeStrategy.last
   case PathList("javax", "activation", xs @ _*) => MergeStrategy.last
   case PathList("javax", "el", xs @ _*) => MergeStrategy.last
+  case PathList("javax", "xml", xs @ _*) => MergeStrategy.first
   case PathList("org", "apache", xs @ _*) => MergeStrategy.last
   case PathList("com", "google", xs @ _*) => MergeStrategy.last
   case PathList("com", "esotericsoftware", xs @ _*) => MergeStrategy.last
