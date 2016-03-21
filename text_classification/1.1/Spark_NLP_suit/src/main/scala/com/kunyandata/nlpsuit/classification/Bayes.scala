@@ -21,18 +21,10 @@ object Bayes {
     val modelPath = ""
     NaiveBayesModel.load(sc, modelPath)
 
-
-
-    // 读取训练集，并运行训练集
     null
   }
 
-  def trainDataLoad() = {
-    val trainDataPath = ""
-
-  }
-
-  def predict(content: String, textFormatModels: Map[String, Any], classModel: Map[String, NaiveBayesModel]) = {
+  def predict(content: String, models: Map[String, Map[String, Any]]):String = {
     val wordSegJson = WordSeg.splitWord(content, 1)
     val wordSeg = WordSeg.getWords(wordSegJson)
     val stopWords = Source.fromFile("D:\\WorkSpace\\Python_WorkSpace" +
@@ -40,19 +32,23 @@ object Bayes {
 
     // 去除停用词
     val wordSegNoStop = WordSeg.removeStopWords(wordSeg, stopWords)
+    val classificationResult = models.keys.map(key => {
+      val tfModel = models(key)("tfModel").asInstanceOf[HashingTF]
+      val tf = tfModel.transform(wordSegNoStop)
 
-    // tf
-    val tfModel = new HashingTF(1000000)
-    val tf = tfModel.transform(wordSegNoStop)
+      // idf
+      val idfModel = models(key)("idfModel").asInstanceOf[IDFModel]
+      val tfidf = idfModel.transform(tf)
 
-    // idf
-    val idfModel = textFormatModels("idfModel").asInstanceOf[IDFModel]
-    val tfidf = idfModel.transform(tf)
+      // chisqselector
+      val chisqSelector = models(key)("chisqSelector").asInstanceOf[ChiSqSelectorModel]
+      val selectedFeatures = chisqSelector.transform(tfidf)
 
-    // chisqselector
-    val chisqSelector = textFormatModels("chisqSelector").asInstanceOf[ChiSqSelectorModel]
-    val selectedFeatures = chisqSelector.transform(tfidf)
-
-    //
+      //
+      val nbModel = models(key)("nbModel").asInstanceOf[NaiveBayesModel]
+      val prediction = nbModel.predict(selectedFeatures)
+      if (prediction == 1.0) key else null
+    })
+    classificationResult.mkString(",")
   }
 }
