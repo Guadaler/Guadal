@@ -1,38 +1,32 @@
 package com.kunyandata.nlpsuit.util
 
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.{SparkConf, SparkContext}
-
 import scala.io.Source
 
 /**
   * Created by QQ on 2016/3/18.
+  *
   */
 
 object textProcess extends App{
 
-  //  var resultMap: Map[String, Any] = Map()
-
-  val conf = new SparkConf().setMaster("local").setAppName("textProcess")
-  val sc = new SparkContext(conf)
-  val sqlContext = new SQLContext(sc)
-
-  //导入预处理String数据
-  val src = "9日上午，“交银国信·周浦花海土地承包经营权流转单一信托”成立签约仪式在上海举行。"
-
-  //导入本地停用词
+  val context = "9日上午，“交银国信·周浦花海土地承包经营权流转单一信托”成立签约仪式在上海举行。"
   var stopWord = Source.fromFile("/users/li/Intellij/Native-Byes/nativebyes/stop_words_CN" )
   var stopWords = stopWord.getLines().toArray
 
-  //调用分词系统
-    val context = WordSeg.splitWord(src ,1)
-    val contest = WordSeg.getWords(context)
-    val fited = WordSeg.removeStopWords(contest,stopWords)
-
-  fited.foreach(println)
-
-
-  sc.stop()
-
+  /**
+    * 调用WordSeq里面的函数实现字符串的分词和去停,并分装成方法
+    * @param context 需要处理的字符串
+    * @param stopWords 停用词
+    * @return 返回分词去停后的结果
+    */
+  def textProcess(context: String, stopWords:Array[String]): Array[String] = {
+    //实现分词
+    val splitWords = WordSeg.splitWord(context, 1)
+    //读取分词内容并转化成Array格式
+    val stopWord = WordSeg.getWords(splitWords)
+    //实现去停用词
+    val result = WordSeg.removeStopWords(stopWord, stopWords)
+    result
+  }
 
 }
