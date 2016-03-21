@@ -284,7 +284,7 @@ private object TrainingProcess extends App{
 //      5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000))
 
 //  val result1 = trainingProcessWithDF(sc, dataSet(0)("train"), dataSet(0)("test"), 0, 500)
-  val result2 = trainingProcessWithRDD(dataSet(0)("train"), dataSet(0)("test"), 0, 500)
+//  val result2 = trainingProcessWithRDD(dataSet(0)("train"), dataSet(0)("test"), 0, 500)
 //  println(result1)
 //  println(result2)
 //  trainingProcessWithDF(sc, dataSet(0)("train"), dataSet(0)("test"), 2, 500)
