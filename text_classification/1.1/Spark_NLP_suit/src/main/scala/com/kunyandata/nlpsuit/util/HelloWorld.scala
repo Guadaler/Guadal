@@ -22,7 +22,7 @@ object HelloWorld {
   // hello world
   def main(args: Array[String]): Unit = {
 
-    val conf = new SparkConf().setAppName("mltest").setMaster("local")
+    val conf = new SparkConf().setAppName("mltest")
     val sc = new SparkContext(conf)
     val data = sc.textFile("/mlearning/training/wordseg_881155").collect()
     val stopWords = sc.textFile("/mlearning/stop_words_CN").collect()

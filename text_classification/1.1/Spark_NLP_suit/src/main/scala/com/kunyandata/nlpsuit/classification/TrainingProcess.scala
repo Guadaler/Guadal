@@ -260,33 +260,33 @@ object TrainingProcess{
     writer.close()
   }
 
-  val conf = new SparkConf().setAppName("mltest").setMaster("local")
-  val sc = new SparkContext(conf)
-
-  val data = Source.fromFile("D:\\WorkSpace\\Spark_WorkSpace\\ein" +
-    "\\text_classification\\1.1\\Spark_NLP_suit\\src\\main" +
-    "\\resources\\train\\wordseg_881155").getLines().toArray
-
-  // 获取停用词
-  val stopWords = Source.fromFile("D:\\WorkSpace\\Spark_WorkSpace" +
-    "\\ein\\text_classification\\1.1\\Spark_NLP_suit\\src\\main" +
-    "\\resources\\dicts\\stop_words_CN").getLines().toArray
-
-  // 基于RDD的模型训练流程
-  val dataRDD = sc.parallelize(data.map(line => {
-    val temp = line.split("\t")
-    val removedStopWords = WordSeg.removeStopWords(temp(2).split(" "), stopWords)
-    Seq(temp(0), temp(1), removedStopWords.toSeq)
-  }))
-
-  val dataSets = dataRDD.randomSplit(Array(0.2, 0.2, 0.2, 0.2, 0.2), seed = 2016L)
-  val dataSet = Seq(
-    Map("train" -> dataSets(0).++(dataSets(1)).++(dataSets(2)).++(dataSets(3)), "test" -> dataSets(4)),
-    Map("train" -> dataSets(0).++(dataSets(1)).++(dataSets(2)).++(dataSets(4)), "test" -> dataSets(3)),
-    Map("train" -> dataSets(0).++(dataSets(1)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(2)),
-    Map("train" -> dataSets(0).++(dataSets(2)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(1)),
-    Map("train" -> dataSets(1).++(dataSets(2)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(0))
-  )
+//  val conf = new SparkConf().setAppName("mltest").setMaster("local")
+//  val sc = new SparkContext(conf)
+//
+//  val data = Source.fromFile("D:\\WorkSpace\\Spark_WorkSpace\\ein" +
+//    "\\text_classification\\1.1\\Spark_NLP_suit\\src\\main" +
+//    "\\resources\\train\\wordseg_881155").getLines().toArray
+//
+//  // 获取停用词
+//  val stopWords = Source.fromFile("D:\\WorkSpace\\Spark_WorkSpace" +
+//    "\\ein\\text_classification\\1.1\\Spark_NLP_suit\\src\\main" +
+//    "\\resources\\dicts\\stop_words_CN").getLines().toArray
+//
+//  // 基于RDD的模型训练流程
+//  val dataRDD = sc.parallelize(data.map(line => {
+//    val temp = line.split("\t")
+//    val removedStopWords = WordSeg.removeStopWords(temp(2).split(" "), stopWords)
+//    Seq(temp(0), temp(1), removedStopWords.toSeq)
+//  }))
+//
+//  val dataSets = dataRDD.randomSplit(Array(0.2, 0.2, 0.2, 0.2, 0.2), seed = 2016L)
+//  val dataSet = Seq(
+//    Map("train" -> dataSets(0).++(dataSets(1)).++(dataSets(2)).++(dataSets(3)), "test" -> dataSets(4)),
+//    Map("train" -> dataSets(0).++(dataSets(1)).++(dataSets(2)).++(dataSets(4)), "test" -> dataSets(3)),
+//    Map("train" -> dataSets(0).++(dataSets(1)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(2)),
+//    Map("train" -> dataSets(0).++(dataSets(2)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(1)),
+//    Map("train" -> dataSets(1).++(dataSets(2)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(0))
+//  )
 //  tuneParas(dataSet, Array(1,2),
 //    Array(500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000,
 //      5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000))
@@ -298,5 +298,5 @@ object TrainingProcess{
 //  trainingProcessWithDF(sc, dataSet(0)("train"), dataSet(0)("test"), 2, 500)
 //  trainingProcessWithRDD(trainDataRDD, testDataRDD)
 
-  sc.stop()
+//  sc.stop()
 }
