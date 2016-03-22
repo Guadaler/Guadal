@@ -1,18 +1,13 @@
 package com.kunyandata.nlpsuit.util
 
 import scala.io.Source
-import
 
 /**
   * Created by QQ on 2016/3/18.
   *
   */
 
-object TextProcess extends App{
-
-  val context = "9日上午，“交银国信·周浦花海土地承包经营权流转单一信托”成立签约仪式在上海举行。"
-  var stopWord = Source.fromFile("/users/li/Intellij/Native-Byes/nativebyes/stop_words_CN" )
-  var stopWords = stopWord.getLines().toArray
+object TextProcess {
 
   /**
     * 调用WordSeq里面的函数实现字符串的分词和去停,并分装成方法
@@ -31,10 +26,6 @@ object TextProcess extends App{
     //实现去停用词
     val result = WordSeg.removeStopWords(stopWord, stopWords)
     result
-  }
-
-  def getDataFromMySql() = {
-
   }
 
 }
