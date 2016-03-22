@@ -6,14 +6,12 @@ package com.kunyandata.nlpsuit.classification
 
 import java.io._
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.Path
-import org.apache.hadoop.fs.FileSystem
+import org.apache.hadoop.fs.{Path, FileSystem}
 import org.apache.spark.mllib.feature
 import org.apache.spark.rdd.RDD
-import org.apache.spark.mllib.classification.NaiveBayes
+import org.apache.spark.mllib.classification.{NaiveBayes, SVMWithSGD}
 import org.apache.spark.mllib.evaluation.MulticlassMetrics
 import org.apache.spark.mllib.regression.LabeledPoint
-import org.apache.spark.mllib.classification.SVMWithSGD
 
 object TrainingProcess{
 

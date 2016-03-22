@@ -43,7 +43,7 @@ object HelloWorld {
       Map("train" -> dataSets(1).++(dataSets(2)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(0))
     )
 
-    TrainingProcess.tuneParas(sc, dataSet, Array(1,2),
+    TrainingProcess.tuneParas(dataSet, Array(1,2),
         Array(500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000,
           5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000))
   }
