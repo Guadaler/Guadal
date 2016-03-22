@@ -5,17 +5,38 @@ package com.kunyandata.nlpsuit.classification
   */
 
 import java.io._
+import com.kunyandata.nlpsuit.util.WordSeg
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.Path
-import org.apache.hadoop.fs.FileSystem
+import org.apache.hadoop.fs.{Path, FileSystem}
+import org.apache.spark.{SparkContext, SparkConf}
 import org.apache.spark.mllib.feature
 import org.apache.spark.rdd.RDD
-import org.apache.spark.mllib.classification.NaiveBayes
+import org.apache.spark.mllib.classification.{NaiveBayes, SVMWithSGD}
 import org.apache.spark.mllib.evaluation.MulticlassMetrics
 import org.apache.spark.mllib.regression.LabeledPoint
-import org.apache.spark.mllib.classification.SVMWithSGD
 
-object TrainingProcess{
+object TrainingProcess extends App{
+
+  val conf = new SparkConf().setAppName("mltest").setMaster("local")
+  val sc = new SparkContext(conf)
+  val data = sc.textFile("D:/mlearning/training/wordseg_881155").collect()
+  val stopWords = sc.textFile("D:/mlearning/stop_words_CN").collect()
+  val dataRDD = sc.parallelize(data.map(line => {
+    val temp = line.split("\t")
+    val removedStopWords = WordSeg.removeStopWords(temp(2).split(" "), stopWords)
+    Seq(temp(0), temp(1), removedStopWords.toSeq)
+  }))
+  val dataSets = dataRDD.randomSplit(Array(0.2, 0.2, 0.2, 0.2, 0.2), seed = 2016L)
+  val dataSet = Seq(
+    Map("train" -> dataSets(0).++(dataSets(1)).++(dataSets(2)).++(dataSets(3)), "test" -> dataSets(4)),
+    Map("train" -> dataSets(0).++(dataSets(1)).++(dataSets(2)).++(dataSets(4)), "test" -> dataSets(3)),
+    Map("train" -> dataSets(0).++(dataSets(1)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(2)),
+    Map("train" -> dataSets(0).++(dataSets(2)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(1)),
+    Map("train" -> dataSets(1).++(dataSets(2)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(0))
+  )
+  val result = trainingProcessWithRDD(dataSet(0)("train"), dataSet(0)("test"), 2, 200, writeModel = true)
+  println(result)
+
 
   /**
     * 基于RDD的训练过程，其中包括了序列化tf，idf，chisqselector，nbmodel 4个模型。
@@ -28,7 +49,7 @@ object TrainingProcess{
     */
   def trainingProcessWithRDD(train: RDD[Seq[Object]], test: RDD[Seq[Object]], parasDoc: Int, parasFeatrues: Int, writeModel:Boolean) = {
     // 构建hashingTF模型，同时将数据转化为LabeledPoint类型
-    val hashingTFModel = new feature.HashingTF(55000)
+    val hashingTFModel = new feature.HashingTF(500)
     val trainTFRDD = train.map(line => {
       val temp = hashingTFModel.transform(line(2).asInstanceOf[Seq[String]])
       (if(line(1).asInstanceOf[String] == "881155") 1.0 else 0.0, temp)
