@@ -10,22 +10,15 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{Path, FileSystem}
 import org.apache.spark.{SparkContext, SparkConf}
 
-import scala.io.Source
-
 object HelloWorld {
 
-  def readFromHDFS(path: String)={
-    val conf = new Configuration()
-    conf.set("fs.defaultFS", "hdfs://222.73.34.92:9000")
-    val br = new BufferedReader(new FileReader(path))
-  }
   // hello world
   def main(args: Array[String]): Unit = {
 
     val conf = new SparkConf().setAppName("mltest")
     val sc = new SparkContext(conf)
-    val data = sc.textFile("/mlearning/training/wordseg_881155").collect()
-    val stopWords = sc.textFile("/mlearning/stop_words_CN").collect()
+    val data = sc.textFile("hdfs://222.73.34.92:9000/mlearning/training/wordseg_881155").collect()
+    val stopWords = sc.textFile("hdfs://222.73.34.92:9000/mlearning/dicts/stop_words_CN").collect()
 
     // 基于RDD的模型训练流程
     val dataRDD = sc.parallelize(data.map(line => {
