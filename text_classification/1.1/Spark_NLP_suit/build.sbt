@@ -1,4 +1,4 @@
-mainClass in (Compile, packageBin) := Some("com.kunyandata.nlpsuit.util.WordSeg")
+mainClass in (Compile, packageBin) := Some("com.kunyandata.nlpsuit.util.HelloWorld")
 
 name := "Spark_NLP_suit"
 
@@ -10,7 +10,7 @@ libraryDependencies += "org.scalactic" %% "scalactic" % "2.2.5" % "test"
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.5" % "test"
 
-libraryDependencies += "org.apache.spark" % "spark-mllib_2.10" % "1.6.0" % "provided"
+libraryDependencies += "org.apache.spark" % "spark-mllib_2.10" % "1.5.2"
 
 libraryDependencies += "redis.clients" % "jedis" % "2.8.0"
 
