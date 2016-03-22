@@ -17,8 +17,8 @@ object HelloWorld {
 
     val conf = new SparkConf().setAppName("mltest")
     val sc = new SparkContext(conf)
-    val data = sc.textFile("hdfs://222.73.34.92:9000/mlearning/training/wordseg_881155")
-    val stopWords = sc.textFile("hdfs://222.73.34.92:9000/mlearning/dicts/stop_words_CN").collect()
+    val data = sc.textFile("D:/mlearning/training/wordseg_881155")
+    val stopWords = sc.textFile("D:/mlearning/dicts/stop_words_CN").collect()
     val stopWordsBr = sc.broadcast(stopWords)
 
     // 基于RDD的模型训练流程
