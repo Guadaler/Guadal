@@ -7,7 +7,7 @@ import scala.io.Source
   *
   */
 
-object TextProcess {
+object TextProgram {
 
   /**
     * 调用WordSeq里面的函数实现字符串的分词和去停,并分装成方法
