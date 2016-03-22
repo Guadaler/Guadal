@@ -106,6 +106,37 @@ object TrainingProcess{
     (metrics.precision(1.0), metrics.recall(1.0))
   }
 
+  /**
+    * 网格参数寻优，并输出成文本
+    *
+    * @param df 输入的训练集，为交叉验证准备的5份训练测试数据
+    * @param parasDoc idf最小文档频数参数的序列
+    * @param parasFeatrues 特征选择数量参数的序列
+    */
+  def tuneParas(df: Seq[Map[String, RDD[Seq[Object]]]], parasDoc:Array[Int], parasFeatrues:Array[Int]) = {
+    val hdfsConf = new Configuration()
+    hdfsConf.set("fs.defaultFS", "hdfs://222.73.34.92:9000")
+    val fs = FileSystem.get(hdfsConf)
+    val output = fs.create(new Path("/mlearning/trainingResult"))
+    val writer = new PrintWriter(output)
+    var result:Map[String,Tuple2[Double, Double]] = Map()
+    parasDoc.foreach(paraDoc => {
+      parasFeatrues.foreach(paraFeatrues => {
+        df.foreach(data => {
+          val paraSets = paraDoc.toString + "_" + paraFeatrues.toString
+          val results = trainingProcessWithRDD(data("train"), data("test"), paraDoc, paraFeatrues, writeModel = false)
+          result += (paraSets -> results)
+          val writeOut = paraSets + "\t\tPrecision:" + results._1 + "\tRecall:" + results._2 + "\n"
+          writer.write(writeOut)
+        })
+        writer.write("\n")
+      })
+      writer.write("\n\n")
+    })
+    result.foreach(println)
+    writer.close()
+  }
+
   //1.5.2的机器学习库中没有实现chisqselector的pipline，所以参数寻优在RDD上完成
 //  /**
 //    * 基于dataframe的训练，主要用于网格参数寻优。
@@ -215,37 +246,6 @@ object TrainingProcess{
 //    }
 //    (metrics.precision(1.0), metrics.recall(1.0))
 //  }
-
-  /**
-    * 网格参数寻优，并输出成文本
- *
-    * @param df 输入的训练集，为交叉验证准备的5份训练测试数据
-    * @param parasDoc idf最小文档频数参数的序列
-    * @param parasFeatrues 特征选择数量参数的序列
-    */
-  def tuneParas(df: Seq[Map[String, RDD[Seq[Object]]]], parasDoc:Array[Int], parasFeatrues:Array[Int]) = {
-    val hdfsConf = new Configuration()
-    hdfsConf.set("fs.defaultFS", "hdfs://222.73.34.92:9000")
-    val fs = FileSystem.get(hdfsConf)
-    val output = fs.create(new Path("/mlearning/trainingResult"))
-    val writer = new PrintWriter(output)
-    var result:Map[String,Tuple2[Double, Double]] = Map()
-    parasDoc.foreach(paraDoc => {
-      parasFeatrues.foreach(paraFeatrues => {
-        df.foreach(data => {
-          val paraSets = paraDoc.toString + "_" + paraFeatrues.toString
-          val results = trainingProcessWithRDD(data("train"), data("test"), paraDoc, paraFeatrues, writeModel = false)
-          result += (paraSets -> results)
-          val writeOut = paraSets + "\t\tPrecision:" + results._1 + "\tRecall:" + results._2 + "\n"
-          writer.write(writeOut)
-        })
-        writer.write("\n")
-      })
-      writer.write("\n\n")
-    })
-    result.foreach(println)
-    writer.close()
-  }
 
 //  val conf = new SparkConf().setAppName("mltest").setMaster("local")
 //  val sc = new SparkContext(conf)
