@@ -48,7 +48,7 @@ class MySQLUtil {
   }
 
   /**
-    * 取新闻 3000条
+    * 取新闻
     * @param conn
     * @return   新闻map[title,content]
     */
