@@ -16,6 +16,8 @@ libraryDependencies += "redis.clients" % "jedis" % "2.8.0"
 
 libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.5.1"
 
+libraryDependencies += "mysql" % "mysql-connector-java" % "3.1.14"
+
 
 assemblyMergeStrategy in assembly := {
   case PathList("javax", "servlet", xs @ _*) => MergeStrategy.last
