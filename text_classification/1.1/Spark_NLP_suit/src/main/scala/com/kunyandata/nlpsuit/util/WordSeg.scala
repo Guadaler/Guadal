@@ -116,10 +116,11 @@ object WordSeg {
     val resultTemp = jsonResult("result")
       .asInstanceOf[Map[String, Any]]("segment")
       .asInstanceOf[List[Map[String, String]]]
-    val result = resultTemp.map(line => {
+    val resultTmp = resultTemp.map(line => {
       line("word")
     }).toArray
-    result
+    // val result = resultTmp.filterNot(_ == " ")
+    resultTmp
   }
 
   def removeStopWords(content: Array[String], stopWords:Array[String]): Array[String] = {
