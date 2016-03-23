@@ -4,11 +4,8 @@ package com.kunyandata.nlpsuit.util
   * Created by QQ on 2016/3/18.
   */
 
-import java.io.{FileReader, BufferedReader, PrintWriter, InputStreamReader}
 import com.kunyandata.nlpsuit.classification.TrainingProcess
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{Path, FileSystem}
-import org.apache.spark.{SparkContext, SparkConf}
+import org.apache.spark.{SparkConf, SparkContext}
 
 object HelloWorld {
 
@@ -24,7 +21,7 @@ object HelloWorld {
     // 基于RDD的模型训练流程
     val dataRDD = data.map(line => {
       val temp = line.split("\t")
-      val removedStopWords = WordSeg.removeStopWords(temp(2).split(" "), stopWordsBr)
+      val removedStopWords = WordSeg.removeStopWords(temp(2).split(" "), stopWords)
       Seq(temp(0), temp(1), removedStopWords.toSeq)
     })
 
