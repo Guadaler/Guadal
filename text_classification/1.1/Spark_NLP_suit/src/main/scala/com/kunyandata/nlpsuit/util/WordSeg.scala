@@ -9,8 +9,6 @@ import org.apache.http.client.entity.UrlEncodedFormEntity
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.impl.client.HttpClients
 import org.apache.http.message.BasicNameValuePair
-import org.apache.spark.broadcast.Broadcast
-
 import scala.util.parsing.json.JSON
 
 /**
@@ -124,9 +122,9 @@ object WordSeg {
     result
   }
 
-  def removeStopWords(content: Array[String], stopWordsBr: Broadcast[Array[String]]): Array[String] = {
+  def removeStopWords(content: Array[String], stopWords:Array[String]): Array[String] = {
     var result = content.toBuffer
-    stopWordsBr.value.foreach(stopWord => {
+    stopWords.foreach(stopWord => {
       if (result.contains(stopWord)){
         result = result.filterNot(_ == stopWord)
       }
