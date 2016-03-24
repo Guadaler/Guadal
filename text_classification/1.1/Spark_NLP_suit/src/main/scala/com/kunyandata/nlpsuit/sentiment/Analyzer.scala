@@ -2,6 +2,9 @@ package com.kunyandata.nlpsuit.sentiment
 
 import java.util
 
+import org.ansj.domain.Term
+import org.ansj.library.UserDefineLibrary
+import org.ansj.splitWord.analysis.{NlpAnalysis, ToAnalysis}
 import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.collection.JavaConversions._
@@ -59,6 +62,7 @@ object Analyzer extends App{
   }
   /**
     * 添加用户词典到分词器
+    *
     * @param path
     * @param sc
     * @return
@@ -89,6 +93,7 @@ object Analyzer extends App{
 
   /**
     * 自然语言分词,结果不稳定但是很全面 (带词性标注)
+    *
     * @param sentence  待分词句子
     * @return  分词结果
     */
@@ -107,6 +112,7 @@ object Analyzer extends App{
 
   /**
     * 根据词性剔除无用词
+    *
     * @param words
     */
   def removeUsenelss(words:Array[Term]):util.HashMap[String,Int]={
@@ -128,6 +134,7 @@ object Analyzer extends App{
 
   /**
     * 词频统计
+    *
     * @param map  存放结果
     * @param item  关键词
     */
@@ -141,6 +148,7 @@ object Analyzer extends App{
 
   /**
     * 将词加入到“词典”[wordsDict]
+    *
     * @param wordsDict  词典 编号:词
     * @param words_fre_map  一篇文章  词：tf-idf值
     */
