@@ -56,10 +56,10 @@ object TextProcess {
     val splitWords = WordSeg.splitWord(formatedContent, 0)
 
     // 读取分词内容并转化成Array格式
-    val stopWord = WordSeg.getWords(splitWords)
+    val resultWords = WordSeg.getWords(splitWords)
 
     // 实现去停用词
-    val result = removeStopWords(stopWord, stopWordsBr.value)
+    val result = removeStopWords(resultWords, stopWordsBr.value)
     result
   }
 
@@ -114,7 +114,7 @@ object TextProcess {
     // 分词
     trainingSet.foreach(line => {
       val temp = line.split("\t")
-      val segResult = TextProcess.process(temp(1), stopWordsBr)
+      val segResult = process(temp(1), stopWordsBr)
       splitResults.append((temp(0), segResult))
     })
 
@@ -124,9 +124,10 @@ object TextProcess {
     val DataFile = new File("/home/mlearning/segTrainingSets")
     val bufferWriter = new BufferedWriter(new FileWriter(DataFile))
     splitResults.toArray.foreach(x => {
-      bufferWriter.write(x._1 + "\t" + x._2.mkString(",") + "\n")
+      bufferWriter.write(x._1 + "\t" + x._2 + "\n")
     })
     bufferWriter.flush()
     bufferWriter.close()
+    sc.stop()
   }
 }
