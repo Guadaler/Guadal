@@ -48,14 +48,15 @@ object IO {
 
     /**
       * 读取文件获得文章
-      *
       * @param path  文件父目录的路径
       * @return  所有文章map[File,String] ： File 文章对象  String 文章内容
       */
     def readfile(path:String): Map[File,String]={
       var file_map = Map[File,String]()
       var files=new File(path).listFiles()   //获取父目录文件列表
+
       for(file <-files){
+          println(file.getAbsoluteFile)
           var str:String=""
           for(line <-Source.fromFile(file).getLines()){
               str +=line
@@ -72,7 +73,8 @@ object IO {
       var catDir=new File(path).listFiles()   //获取父目录文件列表
       for(dir <-catDir){
           var files=dir.listFiles()
-          for(file <-files){
+        println(dir+"  "+catDir.length+"  "+files.length)
+        for(file <-files){
               var str=""
               for(line <-Source.fromFile(file).getLines()){
                 str +=line
@@ -95,5 +97,18 @@ object IO {
         writer.close()
 //        println("Write Over!")
     }
+
+  /**
+    * 写入文件
+    * @param outpath  写入文件路径
+    * @param content  写入文件内容
+    */
+  def writefile_append(outpath:String,content:String): Unit ={
+    var writer=new PrintWriter(new File(outpath),"UTF-8")
+    writer.append(content)
+    writer.flush()
+    writer.close()
+    println("Write Over!")
+  }
 
 }
