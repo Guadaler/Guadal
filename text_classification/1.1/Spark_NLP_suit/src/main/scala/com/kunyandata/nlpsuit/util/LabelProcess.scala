@@ -1,5 +1,7 @@
 package com.kunyandata.nlpsuit.util
 
+import java.io.{FileWriter, BufferedWriter, File}
+
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
@@ -35,26 +37,32 @@ object LabelProcess extends App{
     val temp = line._2.map(indusCode => {
       thsIndusNameMap(indusCode)
     }).toSeq
-    println((line._1, temp))
     (line._1, temp)
   }).toMap
 //  oldIndusName.foreach(println)
 
-//  val newIndusNameToOld = Source.fromFile("D:/dzhToths").getLines().toArray
-//  val newIndusNameArray = newIndusNameToOld.map(line => {
-//    val temp = line.split("\t")
-//    val tmp = temp(1).split(",")
-//    (temp(0), tmp)
-//  })
-//
-//  val newCate = new ArrayBuffer[String]
-//  val result = oldIndusName.map(tuple => {
-//    newIndusNameArray.foreach(line => {
-//      line._2.foreach(oldName => {
-//        if(tuple._2.contains(oldName)) newCate.append(line._1)
-//      })
-//    })
-//    println((tuple._1, newCate))
-//    (tuple._1, newCate)
-//  })
+  val newIndusNameToOld = Source.fromFile("D:/mlearning/dzhToths").getLines().toArray
+  val newIndusNameArray = newIndusNameToOld.map(line => {
+    val temp = line.split("\t")
+    val tmp = temp(1).split(",")
+    (temp(0), tmp)
+  })
+
+  val newCate = new ArrayBuffer[String]
+  val result = oldIndusName.map(tuple => {
+    newIndusNameArray.foreach(line => {
+      line._2.foreach(oldName => {
+        if(tuple._2.contains(oldName)) newCate.append(line._1)
+      })
+    })
+    (tuple._1, newCate)
+  })
+
+  val DataFile = new File("D:/mlearning/TraningLabel")
+  val bufferWriter = new BufferedWriter(new FileWriter(DataFile))
+  result.toArray.foreach(x => {
+    bufferWriter.write(x._1 + "\t" + x._2.toSet.mkString(",") + "\n")
+  })
+  bufferWriter.flush()
+  bufferWriter.close()
 }

@@ -59,10 +59,11 @@ object WordSeg {
       json += String.format("{\"word\":\"%s\",\"type\":\"%s\",\"idf\":\"%s\"},", arr(i * 3), arr(i * 3 + 1), arr(i * 3 + 2))
     }
 
-    if (arr.nonEmpty)
+    if (arr.nonEmpty) {
       json = json.substring(0, json.length - 1)
+    }
 
-    json + String.format("],\"idf\":\"%s\"}}", arr.last)
+    json + String.format("],\"idf\":\"%s\"}}", arr.last.replaceAll("\n", ""))
   }
 
   /**
