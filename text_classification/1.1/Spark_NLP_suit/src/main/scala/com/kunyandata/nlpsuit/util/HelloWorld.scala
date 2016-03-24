@@ -21,7 +21,7 @@ object HelloWorld {
     // 基于RDD的模型训练流程
     val dataRDD = data.map(line => {
       val temp = line.split("\t")
-      val removedStopWords = WordSeg.removeStopWords(temp(2).split(" "), stopWords)
+      val removedStopWords = TextProcess.removeStopWords(temp(2).split(" "), stopWords)
       Seq(temp(0), temp(1), removedStopWords.toSeq)
     })
 
