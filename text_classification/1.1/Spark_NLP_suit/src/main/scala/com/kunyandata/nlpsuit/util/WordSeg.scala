@@ -122,15 +122,4 @@ object WordSeg {
     // val result = resultTmp.filterNot(_ == " ")
     resultTmp
   }
-
-  def removeStopWords(content: Array[String], stopWords:Array[String]): Array[String] = {
-    var result = content.toBuffer
-    stopWords.foreach(stopWord => {
-      if (result.contains(stopWord)){
-        result = result.filterNot(_ == stopWord)
-      }
-    })
-    result.toArray
-  }
-
 }
