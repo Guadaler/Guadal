@@ -47,7 +47,7 @@ object TextProcess {
     * @param stopWordsBr 停用词
     * @return 返回分词去停后的结果
     */
-  def process(content: String, stopWordsBr: Broadcast[Array[String]]): String = {
+  def process(content: String, stopWordsBr: Broadcast[Array[String]]): Array[String] = {
 
     // 格式化文本
     val formatedContent = formatText(content)
@@ -55,12 +55,12 @@ object TextProcess {
     // 实现分词
     val splitWords = WordSeg.splitWord(formatedContent, 0)
 
-//    // 读取分词内容并转化成Array格式
-//    val stopWord = WordSeg.getWords(splitWords)
-//
-//    // 实现去停用词
-//    val result = removeStopWords(stopWord, stopWordsBr.value)
-    splitWords
+    // 读取分词内容并转化成Array格式
+    val resultWords = WordSeg.getWords(splitWords)
+
+    // 实现去停用词
+    val result = removeStopWords(resultWords, stopWordsBr.value)
+    result
   }
 
 
@@ -102,7 +102,7 @@ object TextProcess {
     //    }
 
     // 定义splitResults 保存分词结果
-    val splitResults = new ArrayBuffer[(String, String)]
+    val splitResults = new ArrayBuffer[(String, Array[String])]
 //    while (result.next()) {
 //      val url = result.getString("url").trim
 //      val content = result.getString("content").trim.replaceAll("[ 　\f\n\r\b\t]", "，")
@@ -114,8 +114,7 @@ object TextProcess {
     // 分词
     trainingSet.foreach(line => {
       val temp = line.split("\t")
-      val segResult = WordSeg.splitWord(temp(1), 0)
-      println(segResult)
+      val segResult = process(temp(1), stopWordsBr)
       splitResults.append((temp(0), segResult))
     })
 
