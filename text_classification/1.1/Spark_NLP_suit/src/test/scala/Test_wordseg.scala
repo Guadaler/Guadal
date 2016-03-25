@@ -13,9 +13,10 @@ import scala.util.parsing.json.JSON
   */
 class Test_wordseg extends  FlatSpec with Matchers {
   "test " should "work" in {
-    var file="E:\\data_test\\data2\\pos\\乐森悦：9月18美联储推迟加息 现货原油后市走势分析.txt"
+    var file="E:\\data_test\\data2\\neg\\煤价坠落 大型煤企探路套保.txt"
+    var file2="E:\\data_test\\data2\\pos\\乐森悦：9月18美联储推迟加息 现货原油后市走势分析.txt"
     var file1="E:\\data_test\\data2\\pos\\“互联网+”的下一个风口：农业.txt"
-    var str:String=""
+    var str:String="　　- 互联网用户：6.68亿，同比增幅6%\n　　- 社交媒体用户：6.59亿 ， 超过美国和欧洲的总和\n　　- 手机单独用户：6.75亿，手机开户入网用户数量有13亿\n　　- 手机互联网用户：5.94亿， 占中国所有网民的89%\n　　- 手机社交媒体用户： 5.74亿，同比增幅1.5%"
     for(line <-Source.fromFile(file).getLines()){
       str +=line.trim()
 

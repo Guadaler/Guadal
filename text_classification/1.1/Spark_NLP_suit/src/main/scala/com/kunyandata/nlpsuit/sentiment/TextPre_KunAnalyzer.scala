@@ -7,9 +7,9 @@ import org.apache.spark.{SparkContext, SparkConf}
 import org.mortbay.util.ajax.JSON
 
 /**
-  * Created by zx on 2016/3/25.
+  * Created by zx on 2016/3/25. 用坤雁分词器对文本进行预处理
   */
-object TextPre {
+object TextPre_KunAnalyzer {
 
   /**
     * 用于对本地文本数据进行预处理（只限短文本，文本长度不可超过6Kb）

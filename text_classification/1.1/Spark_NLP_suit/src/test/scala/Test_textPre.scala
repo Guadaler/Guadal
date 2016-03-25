@@ -2,7 +2,7 @@ import java.io.{File, PrintWriter}
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import com.kunyandata.nlpsuit.sentiment.{TextPre, IO}
+import com.kunyandata.nlpsuit.sentiment.{TextPre_ansj, TextPre_KunAnalyzer, IO}
 import org.apache.spark.{SparkContext, SparkConf}
 import org.scalatest.{Matchers, FlatSpec}
 
@@ -28,7 +28,8 @@ class Test_textPre extends  FlatSpec with Matchers {
      var dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
      println("【开始时间】 "+dateFormat.format(begin))
 
-     TextPre.textPre(sc,dataPath,outPath,stopWordsPath)
+//     TextPre_KunAnalyzer.textPre(sc,dataPath,outPath,stopWordsPath)
+     TextPre_ansj.textPre(sc,dataPath,outPath,stopWordsPath)
 
      var end=new Date()
      println("【结束时间】 "+dateFormat.format(end))
