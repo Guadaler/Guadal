@@ -72,8 +72,8 @@ object IO {
       var file_map =new util.HashMap[File,String]()
       var catDir=new File(path).listFiles()   //获取父目录文件列表
       for(dir <-catDir){
-          var files=dir.listFiles()
-        println(dir+"  "+catDir.length+"  "+files.length)
+        var files=dir.listFiles()
+        println(dir+"   共 "+files.length+" 篇")
         for(file <-files){
               var str=""
               for(line <-Source.fromFile(file).getLines()){
@@ -98,17 +98,5 @@ object IO {
 //        println("Write Over!")
     }
 
-  /**
-    * 写入文件
-    * @param outpath  写入文件路径
-    * @param content  写入文件内容
-    */
-  def writefile_append(outpath:String,content:String): Unit ={
-    var writer=new PrintWriter(new File(outpath),"UTF-8")
-    writer.append(content)
-    writer.flush()
-    writer.close()
-    println("Write Over!")
-  }
 
 }
