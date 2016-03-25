@@ -15,12 +15,13 @@ class Test_textPre extends  FlatSpec with Matchers {
      val sc = new SparkContext(conf)
 
      //方法测试
-     val dataPath="E:\\data_test\\data"
+     val dataPath="E:\\data_test\\data2"
      val outPath="E:\\data_test\\textSeg.txt"
 
      //本地数据集
 //     val dataPath="E:\\data\\data"
 //     val outPath="E:\\data\\textSeg.txt"
+
      val stopWordsPath="E:\\data\\stop_words_CN"
 
      val begin = new Date()

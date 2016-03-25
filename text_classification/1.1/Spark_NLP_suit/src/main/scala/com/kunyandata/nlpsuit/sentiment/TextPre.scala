@@ -101,13 +101,18 @@ object TextPre {
     //计数
     var count=0
     while(it.hasNext){
-
       //取出单篇文章
       val file=it.next()
 
       //获取单篇文章title和content
       val title=file.getName.substring(0,file.getName.indexOf(".txt"))
-      val content=files.get(file).toString
+      var content=files.get(file).toString
+
+      //非法字符替换，所有title已处理过，因此无需替换
+      content =Util.replaceIllegal(content)
+
+      //计数，便于查问题
+      println("还剩下："+(files.size()-count)+"  ["+file.getParentFile.getName+"]  "+title)
 
       //处理title
       //分词，返回分词结果为Json格式
@@ -151,9 +156,9 @@ object TextPre {
       writer.append(labelNum+" "+titlestr+" "+contentstr+"\n")
       writer.flush()
 
-      //计数
+//      //计数
       count +=1
-      println("还剩下："+(files.size()-count))
+//      println("还剩下："+(files.size()-count)+"  ["+label+"]  "+title)
     }
     writer.close()
   }
