@@ -1,8 +1,11 @@
 package com.kunyandata.nlpsuit.util
 
+/**
+  * Created by QQ on 2016/2/18.
+  */
+
 import java.io.StringWriter
 import java.util
-
 import org.apache.commons.io.IOUtils
 import org.apache.http.NameValuePair
 import org.apache.http.client.entity.UrlEncodedFormEntity
@@ -11,9 +14,6 @@ import org.apache.http.impl.client.HttpClients
 import org.apache.http.message.BasicNameValuePair
 import scala.util.parsing.json.JSON
 
-/**
-  * Created by QQ on 2016/2/17.
-  */
 class WordSeg {
   @native def write2proc(sentence: String): String
 }
@@ -112,15 +112,20 @@ object WordSeg {
     }
   }
 
-  def getWords(json: String): Array[String] = {
-    val jsonResult = JSON.parseFull(json).get.asInstanceOf[Map[String, Any]]
-    val resultTemp = jsonResult("result")
-      .asInstanceOf[Map[String, Any]]("segment")
-      .asInstanceOf[List[Map[String, String]]]
-    val resultTmp = resultTemp.map(line => {
-      line("word")
-    }).toArray
-    // val result = resultTmp.filterNot(_ == " ")
-    resultTmp
+  def getWords(json: String): Seq[String] = {
+
+    try{
+      val jsonResult = JSON.parseFull(json).get.asInstanceOf[Map[String, Any]]
+      val resultTemp = jsonResult("result")
+        .asInstanceOf[Map[String, Any]]("segment")
+        .asInstanceOf[List[Map[String, String]]]
+      val resultTmp = resultTemp.map(line => {
+        line("word")
+      }).toSeq
+      resultTmp
+    }catch {
+      case e:Exception => e.printStackTrace()
+        null
+    }
   }
 }

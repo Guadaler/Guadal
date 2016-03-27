@@ -61,8 +61,8 @@ object Bayes {
     * @param path 停用词典存放路径
     * @return 返回一个Array[String]的停用词表
     */
-  def getStopWords(path: String): Array[String] = {
-    val stopWords = Source.fromFile(path).getLines().toArray
+  def getStopWords(path: String): Seq[String] = {
+    val stopWords = Source.fromFile(path).getLines().toSeq
     stopWords
   }
 
@@ -73,7 +73,7 @@ object Bayes {
     * @param models 模型Map，由intiModel方法提供
     * @return 返回一个字符串，包含了行业名称，例子：“银行,保险”
     */
-  def industryPredict(content: String, models: Map[String, Map[String, Any]], stopWordsBr: Broadcast[Array[String]]): String = {
+  def industryPredict(content: String, models: Map[String, Map[String, Any]], stopWordsBr: Broadcast[Seq[String]]): String = {
     val wordSegNoStop = TextProcess.process(content, stopWordsBr)
     val classificationResult = models.keys.map(key => {
       val time1 = new Date().getTime
