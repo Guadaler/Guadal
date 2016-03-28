@@ -112,7 +112,7 @@ object WordSeg {
     }
   }
 
-  def getWords(json: String): Seq[String] = {
+  def getWords(json: String): Array[String] = {
 
     try{
       val jsonResult = JSON.parseFull(json).get.asInstanceOf[Map[String, Any]]
@@ -121,7 +121,7 @@ object WordSeg {
         .asInstanceOf[List[Map[String, String]]]
       val resultTmp = resultTemp.map(line => {
         line("word")
-      }).toSeq
+      }).toArray
       resultTmp
     }catch {
       case e:Exception => e.printStackTrace()
