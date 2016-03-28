@@ -48,4 +48,24 @@ object Util {
     title2;
   }
 
+  /**
+    * 替换文章非法字符，否则分词器不能分词，导致程序中断
+    * 非法字符包括  \ / * ? : "<> |
+    * @param str_ill  替换前带非法字符文本
+    * @return  替换后文本
+    * @author zhangxin
+    */
+  def replaceIllegal(str_ill:String): String ={
+    var str_leg=str_ill.replace("\\","每");
+    str_leg=str_leg.replace("/","每");
+    str_leg=str_leg.replace("|","：");
+    str_leg=str_leg.replace("：","：");
+    str_leg=str_leg.replace("\"","“");
+    str_leg=str_leg.replace("?","？");
+    str_leg=str_leg.replace("<","《");
+    str_leg=str_leg.replace(">","》");
+    str_leg=str_leg.replace("*","》");
+    str_leg
+  }
+
 }
