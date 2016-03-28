@@ -57,8 +57,8 @@ object TextPre_ansj {
       var content_seg=Analyzer.cut(content)
 
       //去停，返回结果为Array
-      title_seg=TextProcess.removeStopWords(title_seg,stopWords)
-      content_seg=TextProcess.removeStopWords(content_seg,stopWords)
+//      title_seg=TextProcess.removeStopWords(title_seg,stopWords)
+//      content_seg=TextProcess.removeStopWords(content_seg,stopWords)
 
       //结果Array =>String
       var titlestr=""
