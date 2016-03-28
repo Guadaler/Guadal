@@ -1,13 +1,12 @@
 package com.kunyandata.nlpsuit.util
 
-import java.io.{PrintWriter, BufferedWriter, File, FileWriter}
+import java.io._
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{Path, FileSystem}
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.{SparkConf, SparkContext}
 import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
-
 
 /**
   * Created by QQ on 2016/3/18.
@@ -18,6 +17,24 @@ import org.apache.spark.broadcast.Broadcast
 import scala.collection.mutable.ArrayBuffer
 
 object TextProcess {
+
+  def copyFile(localPath: String, targetPath: String): Unit = {
+
+    val fis = new FileInputStream(localPath)
+    val bufis = new BufferedInputStream(fis)
+
+    val fos = new FileOutputStream(targetPath)
+    val bufos = new BufferedOutputStream(fos)
+
+    var len = bufis.read()
+    while (len != -1){
+      bufos.write(len)
+      len = bufis.read()
+    }
+
+    bufis.close()
+    bufos.close()
+  }
 
   /**
     * 格式化文本，转化空白字符为停用词表中的标点符号，同时统一英文字母为小写
@@ -75,11 +92,11 @@ object TextProcess {
     * @param stopWordsBr 停用词
     * @return 返回分词去停后的结果
     */
-  def process(content: String, stopWordsBr: Broadcast[Array[String]]): Array[String] = {
+  def process(content: String, segAppPath: String, stopWordsBr: Broadcast[Array[String]]): Array[String] = {
     // 格式化文本
     val formatedContent = formatText(content)
     // 实现分词
-    val splitWords = WordSeg.splitWord(formatedContent, 0)
+    val splitWords = WordSeg.splitWord(formatedContent, segAppPath, 0)
     // 读取分词内容并转化成Array格式
     val resultWords = WordSeg.getWords(splitWords)
     // 实现去停用词
@@ -91,6 +108,7 @@ object TextProcess {
 
     val conf = new SparkConf().setAppName("wordSegmentation")
     val sc = new SparkContext(conf)
+    val segAppPath = "/home/mlearning/bin/"
     val stopWords = sc.textFile("hdfs://222.73.34.92:9000/mlearning/dicts/stop_words_CN").collect()
 //    val stopWords = Source.fromFile("/home/mlearning/dicts/stop_words_CN").getLines().toArray
 //    val stopWords = Source.fromFile("D:/mlearning/dicts/stop_words_CN").getLines().toArray
@@ -151,12 +169,17 @@ object TextProcess {
     //    val writer = new PrintWriter(output)
 
 //    val DataFile = new File("/home/mlearning/result/segTrainingSet")
-//    val DataFile = new File("D:/mlearning/segTrainingSet")
+////    val DataFile = new File("D:/mlearning/segTrainingSet")
 //    val bufferWriter = new BufferedWriter(new FileWriter(DataFile))
+//    val fileoutput = new FileInputStream("D:/segApp/dict_20150526_web2.core")
+//    val fileinput = new FileOutputStream("D:/dict_20150526_web2.core")
+
+//    println("current 1: ===============" + System.getProperty("user.dir"))
     trainingSet.map(line => {
       val temp = line.split("\t")
+//      println("current 2: ===============" + System.getProperty("user.dir"))
       if (temp.length == 2){
-        val segResult = TextProcess.process(temp(1), stopWordsBr)
+        val segResult = TextProcess.process(temp(1), segAppPath, stopWordsBr)
         if (segResult != null) {
 //          println((temp(0), segResult))
 //          bufferWriter.write(temp(0) + "\t" + segResult.mkString(",") + "\n")
@@ -165,7 +188,10 @@ object TextProcess {
         }
       }
     }).saveAsTextFile("hdfs://222.73.34.92:9000/mlearning/segTrainSet")
+//    bufferWriter.flush()
 //    bufferWriter.close()
+//    copyFile("D:/segApp/dict_manager", "D:/dict_manager")
+//    println(WordSeg.splitWord("你是我的眼，带我领略四季的变换，你是我的眼，带我穿越拥挤的人潮。", "/home/mlearning/bin/", 0))
     sc.stop()
   }
 }

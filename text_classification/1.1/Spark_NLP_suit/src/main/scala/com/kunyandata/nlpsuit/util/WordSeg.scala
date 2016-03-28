@@ -15,7 +15,9 @@ import org.apache.http.message.BasicNameValuePair
 import scala.util.parsing.json.JSON
 
 class WordSeg {
-  @native def write2proc(sentence: String): String
+  @native def splitsentence(sentence: String): String
+  @native def start(segAppPath: String): Int
+  @native def stop(): Unit
 }
 
 object WordSeg {
@@ -26,7 +28,7 @@ object WordSeg {
     * @param source 0:使用本地的so文件, 1:通过http调用分词API
     * @return
     */
-  def splitWord(content: String, source: Int): String = {
+  def splitWord(content: String, segAppPath: String, source: Int): String = {
 
     source match {
       case 0 =>
@@ -34,7 +36,10 @@ object WordSeg {
 
         try {
           System.loadLibrary("WordSeg")
-          toJson(wordSeg.write2proc(content))
+          println(wordSeg.start(segAppPath))
+          val result = toJson(wordSeg.splitsentence(content + "\n"))
+          wordSeg.stop()
+          result
         } catch {
           case e: UnsatisfiedLinkError =>
             "Cannot load com.kunyandata.nlpsuit.util.WordSeg library:\n " + e.toString
