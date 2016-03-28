@@ -83,7 +83,7 @@ object Action_test {
           var border="-"*s.length+"--\n"
           println(border+"|"+s+"|\n"+border)
       }*/
-      var s="abc。123，456。999，haha";
+      /*var s="abc。123，456。999，haha";
       var ss=s.split("，|。")
       for(a <-Range(0,ss.length)){
         println(ss(a));
@@ -91,6 +91,19 @@ object Action_test {
 
         var str="2015年底中国煤制乙二醇产能预计达300万吨/年";
         str.replace("/","每")
-        println(str)
+        println(str)*/
 
+        /*var myVar = "theValue";
+        var myResult =
+          myVar match {
+            case "someValue"   => myVar + " A";
+            case "thisValue"   => myVar + " B";
+            case "theValue"    => myVar + " C";
+            case "doubleValue" => myVar + " D";
+          }
+        println(myResult);*/
+
+        /*var a=2000
+        var b=1815
+        println((b/a)+1)*/
 }}

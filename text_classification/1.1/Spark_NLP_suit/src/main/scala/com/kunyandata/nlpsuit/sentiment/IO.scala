@@ -48,14 +48,15 @@ object IO {
 
     /**
       * 读取文件获得文章
-      *
       * @param path  文件父目录的路径
       * @return  所有文章map[File,String] ： File 文章对象  String 文章内容
       */
     def readfile(path:String): Map[File,String]={
       var file_map = Map[File,String]()
       var files=new File(path).listFiles()   //获取父目录文件列表
+
       for(file <-files){
+          println(file.getAbsoluteFile)
           var str:String=""
           for(line <-Source.fromFile(file).getLines()){
               str +=line
@@ -71,8 +72,9 @@ object IO {
       var file_map =new util.HashMap[File,String]()
       var catDir=new File(path).listFiles()   //获取父目录文件列表
       for(dir <-catDir){
-          var files=dir.listFiles()
-          for(file <-files){
+        var files=dir.listFiles()
+        println(dir+"   共 "+files.length+" 篇")
+        for(file <-files){
               var str=""
               for(line <-Source.fromFile(file).getLines()){
                 str +=line
@@ -95,5 +97,6 @@ object IO {
         writer.close()
 //        println("Write Over!")
     }
+
 
 }

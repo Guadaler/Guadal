@@ -57,7 +57,19 @@ object Analyzer extends App{
     }
   }
 
-  def init(): Unit ={
+  /**
+    * ansj分词器初始化
+    * @param sc  spark程序入口
+    * @param user_dic  用户词典数组
+    * @return 无返回
+    * @author zhangxin
+    */
+  def init(sc:SparkContext,user_dic:Array[String]): Unit ={
+    //添加用户词典
+    for(dic <- user_dic){
+      add_dic(dic,sc)
+    }
+
 
   }
   /**
