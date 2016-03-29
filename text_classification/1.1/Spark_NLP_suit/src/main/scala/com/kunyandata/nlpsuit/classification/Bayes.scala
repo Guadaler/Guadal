@@ -74,7 +74,7 @@ object Bayes {
     * @return 返回一个字符串，包含了行业名称，例子：“银行,保险”
     */
   def industryPredict(content: String, models: Map[String, Map[String, Any]], stopWordsBr: Broadcast[Array[String]]): String = {
-    val wordSegNoStop = TextProcess.process(content, stopWordsBr)
+    val wordSegNoStop = TextProcess.process(content, stopWordsBr, 0)
     val classificationResult = models.keys.map(key => {
       val time1 = new Date().getTime
       val prediction = models(key)("nbModel").asInstanceOf[NaiveBayesModel]
