@@ -15,7 +15,9 @@ import org.apache.http.message.BasicNameValuePair
 import scala.util.parsing.json.JSON
 
 class WordSeg {
-  @native def write2proc(sentence: String): String
+  @native def splitsentence(sentence: String): String
+  @native def start(segAppPath: String): Int
+  @native def stop(): Unit
 }
 
 object WordSeg {
@@ -34,7 +36,10 @@ object WordSeg {
 
         try {
           System.loadLibrary("WordSeg")
-          toJson(wordSeg.write2proc(content))
+          wordSeg.start("/home/mlearning/bin/")
+          val result = toJson(wordSeg.splitsentence(content + "\n"))
+          wordSeg.stop()
+          result
         } catch {
           case e: UnsatisfiedLinkError =>
             "Cannot load com.kunyandata.nlpsuit.util.WordSeg library:\n " + e.toString
