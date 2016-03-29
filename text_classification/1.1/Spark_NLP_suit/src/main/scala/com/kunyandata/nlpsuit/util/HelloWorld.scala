@@ -21,8 +21,7 @@ object HelloWorld {
     // 基于RDD的模型训练流程
     val dataRDD = data.map(line => {
       val temp = line.split("\t")
-      val removedStopWords = TextProcess.removeStopWords(temp(2).split(" "), stopWords)
-      Seq(temp(0), temp(1), removedStopWords.toSeq)
+      (if(temp(0) == "881155") 1.0 else 0.0, temp(1).split(","))
     })
 
     val dataSets = dataRDD.randomSplit(Array(0.2, 0.2, 0.2, 0.2, 0.2), seed = 2016L)
