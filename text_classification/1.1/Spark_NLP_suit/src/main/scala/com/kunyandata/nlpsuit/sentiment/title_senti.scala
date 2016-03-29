@@ -12,15 +12,13 @@ package com.kunyandata.nlpsuit.sentiment
 //
 import java.io.{File, PrintWriter}
 import java.text.SimpleDateFormat
-import java.util.{Date, Properties}
+import java.util.Date
 
 import org.ansj.library.UserDefineLibrary
 import org.ansj.splitWord.analysis.ToAnalysis
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.types._
-import org.apache.spark.{SparkContext, SparkConf}
+import org.apache.spark.{SparkConf, SparkContext}
 import org.json.JSONObject
-import redis.clients.jedis.{Jedis, JedisPoolConfig, JedisPool}
+import redis.clients.jedis.{Jedis, JedisPool, JedisPoolConfig}
 
 import scala.collection.mutable
 import scala.collection.mutable.Map
