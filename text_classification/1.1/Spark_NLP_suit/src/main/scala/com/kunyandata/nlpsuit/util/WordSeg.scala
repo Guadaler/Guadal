@@ -28,7 +28,7 @@ object WordSeg {
     * @param source 0:使用本地的so文件, 1:通过http调用分词API
     * @return
     */
-  def splitWord(content: String, segAppPath: String, source: Int): String = {
+  def splitWord(content: String, source: Int): String = {
 
     source match {
       case 0 =>
@@ -36,7 +36,7 @@ object WordSeg {
 
         try {
           System.loadLibrary("WordSeg")
-          println(wordSeg.start(segAppPath))
+          wordSeg.start("/home/mlearning/bin/")
           val result = toJson(wordSeg.splitsentence(content + "\n"))
           wordSeg.stop()
           result

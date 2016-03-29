@@ -92,11 +92,13 @@ object TextProcess {
     * @param stopWordsBr 停用词
     * @return 返回分词去停后的结果
     */
-  def process(content: String, segAppPath: String, stopWordsBr: Broadcast[Array[String]]): Array[String] = {
+  def process(content: String, stopWordsBr: Broadcast[Array[String]]): Array[String] = {
+
     // 格式化文本
     val formatedContent = formatText(content)
+    // 实例化对象
     // 实现分词
-    val splitWords = WordSeg.splitWord(formatedContent, segAppPath, 0)
+    val splitWords = WordSeg.splitWord(formatedContent, 0)
     // 读取分词内容并转化成Array格式
     val resultWords = WordSeg.getWords(splitWords)
     // 实现去停用词
@@ -118,35 +120,6 @@ object TextProcess {
     //    println(WordSeg.splitWord(formatText(trainingSet), 0))
     //    println(process(trainingSet, stopWordsBr))
 
-    // 驱动名称
-    //    val driver = "com.mysql.jdbc.Driver"
-    //    //访问本地mysql服务器,通过3306端口
-    //    // val url = "jdbc:mysql://localhost/mysql"
-    //    // val url = "jdbc:mysql://localhost:3306/mysql"
-    //    // val url = "jdbc:mysql://127.0.0.1:3306/mysql"
-    //    // 访问其他服务器
-    //    val jdbcUrl = "jdbc:mysql://192.168.1.14:3306/mysql"
-    //    // 用户名
-    //    val username = "root"
-    //    // 密码
-    //    val password = "root"
-    //    // 读取sql里面的内容
-    //    // val sqlString="SELECT * FROM indus_text_with_label WHERE id>3000 and id<=15000"
-    //    val sqlString = "SELECT url, content FROM stock.indus_text_with_label group by url"
-    //    // 调用函数获取数据库中的数据
-    //    val connection = MySQLUtil.getConnect(driver, jdbcUrl, username, password)
-    //    val result = MySQLUtil.getResult(connection,sqlString)
-
-    //     解析数据库中的数据
-    //        var results = new ArrayBuffer[Tuple4[String,String,String,String]]
-    //        while ( result.next()) {
-    //          val id = result.getString("id").trim
-    //          val indus_code = result.getString("indus_code").trim
-    //          val title = result.getString("title").trim
-    //          val content = result.getString("content").trim
-    //          results.append((id, indus_code, title, content, url)
-    //        }
-
     //     定义splitResults 保存分词结果
     //    val splitResults = new ArrayBuffer[(String, Array[String])]
     //    while (result.next()) {
@@ -160,7 +133,9 @@ object TextProcess {
     //     分词
 //    val trainingSet = Source.fromFile("/home/mlearning/trainingData/TrainingSet").getLines().toArray
 //    val trainingSet = Source.fromFile("D:/mlearning/trainingSet").getLines().toArray
-    //    val trainingSet =sc.parallelize(Source.fromFile("D:/mlearning/trainingSet").getLines().toSeq)
+    // val trainingSet =sc.parallelize(Source.fromFile("D:/mlearning/trainingSet").getLines().toSeq)
+//    val trainingSet = sc.textFile("hdfs://222.73.34.92:9000/mlearning/trainingSet")
+    // test data
     val trainingSet = sc.textFile("hdfs://222.73.34.92:9000/mlearning/trainingSet")
     //    val hdfsConf = new Configuration()
     //    hdfsConf.set("fs.defaultFS", "hdfs://222.73.34.92:9000")
@@ -179,19 +154,11 @@ object TextProcess {
       val temp = line.split("\t")
 //      println("current 2: ===============" + System.getProperty("user.dir"))
       if (temp.length == 2){
-        val segResult = TextProcess.process(temp(1), segAppPath, stopWordsBr)
-        if (segResult != null) {
-//          println((temp(0), segResult))
-//          bufferWriter.write(temp(0) + "\t" + segResult.mkString(",") + "\n")
-//          bufferWriter.flush()
-          (temp(0), segResult)
-        }
+//        val segJson = WordSeg.splitWord(temp(1), segAppPath, 0)
+        val segResult = TextProcess.process(temp(1), stopWordsBr)
+        if (segResult != null) temp(0) + "\t" + segResult.mkString(",")
       }
-    }).saveAsTextFile("hdfs://222.73.34.92:9000/mlearning/segTrainSet")
-//    bufferWriter.flush()
-//    bufferWriter.close()
-//    copyFile("D:/segApp/dict_manager", "D:/dict_manager")
-//    println(WordSeg.splitWord("你是我的眼，带我领略四季的变换，你是我的眼，带我穿越拥挤的人潮。", "/home/mlearning/bin/", 0))
+    }).saveAsTextFile("hdfs://222.73.34.92:9000/mlearning/segResult")
     sc.stop()
   }
 }
