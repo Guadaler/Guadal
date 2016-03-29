@@ -24,7 +24,7 @@ object NB_train extends App{
     Map("train" -> dataSets(0), "test" -> dataSets(1))
   )
 
-  val result = TrainingProcess.trainingProcessWithRDD(dataSet(0)("train"), dataSet(0)("test"), 0, 500,false)
-  println(result)
+//  val result = TrainingProcess.trainingProcessWithRDD(dataSet(0)("train"), dataSet(0)("test"), 0, 500,false)
+//  println(result)
   sc.stop()
 }
