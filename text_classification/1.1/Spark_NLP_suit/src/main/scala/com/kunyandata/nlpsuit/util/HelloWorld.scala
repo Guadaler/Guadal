@@ -12,7 +12,7 @@ object HelloWorld {
   // hello world
   def main(args: Array[String]): Unit = {
 
-    val conf = new SparkConf().setAppName("mltest")
+    val conf = new SparkConf().setAppName("NBtraining")
     val sc = new SparkContext(conf)
     val data = sc.textFile("D:/mlearning/training/wordseg_881155")
     val stopWords = sc.textFile("D:/mlearning/dicts/stop_words_CN").collect()
