@@ -45,5 +45,25 @@ object MySQLUtil {
     resultSet
   }
 
+  /**
+    * 按照ID区间取新闻,并封装到Map[title,content]
+    * @param conn  数据库连接
+    * @param idBegin 起始ID
+    * @param idEnd 终止ID
+    * @return 新闻Map
+    * @author zhangxin
+    */
+  def getNews(conn:Connection,idBegin:Int,idEnd:Int):Map[String,String] ={
+    var result=Map[String,String]()
+    val sqlstr="SELECT title,content FROM indus_text_with_label WHERE id>"+idBegin+"and id<="+idEnd
+    val statement = conn.createStatement()
+    val resultSet = statement.executeQuery(sqlstr)
+    while ( resultSet.next() ) {
+      val title= resultSet.getString("title").trim()
+      val content= resultSet.getString("content").trim()
+      result +=(title -> content)
+    }
+    result
+  }
 
 }
