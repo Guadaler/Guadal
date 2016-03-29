@@ -26,12 +26,12 @@ object TrainingProcess {
     * @param parasFeatrues 特征选择数量参数
     * @return 返回（精度，召回率）
     */
-  def trainingProcessWithRDD(train: RDD[Seq[Object]], test: RDD[Seq[Object]], parasDoc: Int, parasFeatrues: Int, writeModel:Boolean) = {
+  def trainingProcessWithRDD(train: RDD[(Double, String)], test: RDD[(Double, String)], parasDoc: Int, parasFeatrues: Int, writeModel:Boolean) = {
     // 构建hashingTF模型，同时将数据转化为LabeledPoint类型
     val hashingTFModel = new feature.HashingTF(55000)
     val trainTFRDD = train.map(line => {
-      val temp = hashingTFModel.transform(line(2).asInstanceOf[Seq[String]])
-      (if(line(1).asInstanceOf[String] == "881155") 1.0 else 0.0, temp)
+      val temp = hashingTFModel.transform(line._2.split(","))
+      (line._1, temp)
     })
 
     // 计算idf
@@ -66,11 +66,11 @@ object TrainingProcess {
 
     // 根据训练集同步测试集特征
     val testRDD = test.map(line => {
-      val temp = line(2).asInstanceOf[Seq[String]]
+      val temp = line._2.split(",")
       val tempTf = hashingTFModel.transform(temp)
       val tempTfidf = idfModel.transform(tempTf)
       val tempSelected = chiSqSelectorModel.transform(tempTfidf)
-      LabeledPoint(if(line(1).asInstanceOf[String] == "881155") 1.0 else 0.0, tempSelected)
+      LabeledPoint(line._1, tempSelected)
     })
 
     val predictionAndLabels = testRDD.map {line =>
@@ -113,7 +113,7 @@ object TrainingProcess {
     * @param parasDoc idf最小文档频数参数的序列
     * @param parasFeatrues 特征选择数量参数的序列
     */
-  def tuneParas(df: Seq[Map[String, RDD[Seq[Object]]]], parasDoc:Array[Int], parasFeatrues:Array[Int]) = {
+  def tuneParas(df: Seq[Map[String, RDD[(Double, String)]]], parasDoc:Array[Int], parasFeatrues:Array[Int]) = {
     val hdfsConf = new Configuration()
     hdfsConf.set("fs.defaultFS", "hdfs://222.73.34.92:9000")
     val fs = FileSystem.get(hdfsConf)
