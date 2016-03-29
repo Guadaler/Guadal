@@ -18,23 +18,23 @@ import scala.collection.mutable.ArrayBuffer
 
 object TextProcess {
 
-  def copyFile(localPath: String, targetPath: String): Unit = {
-
-    val fis = new FileInputStream(localPath)
-    val bufis = new BufferedInputStream(fis)
-
-    val fos = new FileOutputStream(targetPath)
-    val bufos = new BufferedOutputStream(fos)
-
-    var len = bufis.read()
-    while (len != -1){
-      bufos.write(len)
-      len = bufis.read()
-    }
-
-    bufis.close()
-    bufos.close()
-  }
+//  def copyFile(localPath: String, targetPath: String): Unit = {
+//
+//    val fis = new FileInputStream(localPath)
+//    val bufis = new BufferedInputStream(fis)
+//
+//    val fos = new FileOutputStream(targetPath)
+//    val bufos = new BufferedOutputStream(fos)
+//
+//    var len = bufis.read()
+//    while (len != -1){
+//      bufos.write(len)
+//      len = bufis.read()
+//    }
+//
+//    bufis.close()
+//    bufos.close()
+//  }
 
   /**
     * 格式化文本，转化空白字符为停用词表中的标点符号，同时统一英文字母为小写
@@ -90,14 +90,15 @@ object TextProcess {
     *
     * @param content 需要处理的字符串
     * @param stopWordsBr 停用词
+    * @param typ 分词模式选择，0为调用本地分词工具（只支持linux下运行），1为远程调用，过长的文章可能报错。
     * @return 返回分词去停后的结果
     */
-  def process(content: String, stopWordsBr: Broadcast[Array[String]]): Array[String] = {
+  def process(content: String, stopWordsBr: Broadcast[Array[String]], typ: Int): Array[String] = {
 
     // 格式化文本
     val formatedContent = formatText(content)
     // 实现分词
-    val splitWords = WordSeg.splitWord(formatedContent, 0)
+    val splitWords = WordSeg.splitWord(formatedContent, typ)
     // 读取分词内容并转化成Array格式
     val resultWords = WordSeg.getWords(splitWords)
     // 实现去停用词
