@@ -16,9 +16,9 @@ import scala.io.Source
 object Util {
 
   /**
-    * 根据文件名提取文件类别
+    * 根据完整文件名提取文件类别
     *
-    * @param file  文件名
+    * @param file  文件名  E：\data\pos\****.txt
     * @return  类别
     */
   def getLabel(file:File): String ={
@@ -38,6 +38,21 @@ object Util {
     label_map.put("neu",2)
     label_map.put("pos",3)
     label_map
+  }
+
+  /**
+    * 标题中不合格字符替换
+    * @param title  替换前标题
+    * @return  替换后标题
+    */
+  def replace(title:String):String={
+    //    println("字符替换！！")
+    var title2=title.replace("/","每");
+    title2=title2.replace("|","：");
+    title2=title2.replace("：","：");
+    title2=title2.replace("\"","“");
+    title2=title2.replace("?","？");
+    title2;
   }
 
   /**
@@ -255,4 +270,6 @@ object Util {
     if (resultWords == null) null
     else TextProcess.removeStopWords(resultWords, stopWordsBr.value)
   }
+
+
 }
