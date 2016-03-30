@@ -163,6 +163,81 @@ object TextPre_KunAnalyzer {
     writer.close()
   }
 
+  def textPre_all(sc:SparkContext,dataPath:String,outPath_title:String,outPath_content:String,stopWordsPath:String): Unit ={
+    val stopWords = sc.textFile(stopWordsPath).collect()
+    var writer1=new PrintWriter(new File(outPath_title),"UTF-8")
+    var writer2=new PrintWriter(new File(outPath_content),"UTF-8")
+    //读取所有文章
+    val files = Util.readfile2HashMap(dataPath)
+    val it=files.keySet.iterator
+
+    //计数
+    var count=0
+    while(it.hasNext){
+      //取出单篇文章
+      val file=it.next()
+
+      //获取单篇文章title和content
+      val title=file.getName.substring(0,file.getName.indexOf(".txt"))
+      var content=files.get(file).toString
+
+      //非法字符替换，所有title已处理过，因此无需替换
+      content =Util.replaceIllegal(content)
+
+      //计数，便于查问题
+      println("还剩下："+(files.size()-count)+"  ["+file.getParentFile.getName+"]  "+title)
+
+      //处理title
+      //分词，返回分词结果为Json格式
+      val title_segJson=WordSeg.splitWord(TextProcess.formatText(title),1)
+
+      // Json格式 ->Array数组
+      var title_seg=WordSeg.getWords(title_segJson)
+
+      //去停，返回结果为Array
+      title_seg=TextProcess.removeStopWords(title_seg,stopWords)
+
+      //结果Array =>String
+      var titlestr=""
+      for(word <-title_seg){
+        titlestr +=" "+word.toString()
+      }
+
+      //处理content，注意对长文本要先分段再分词
+      var contentstr=""
+      if(content.size>1500){
+        contentstr=bigText(content,stopWords)
+      }else{
+        val content_segJson=WordSeg.splitWord(TextProcess.formatText(content),1)
+        var content_seg=WordSeg.getWords(content_segJson)
+        content_seg=TextProcess.removeStopWords(content_seg,stopWords)
+        for(word <-content_seg){
+          contentstr +=" "+word.toString()
+        }
+      }
+
+      //获取文章类别编号
+      val label=file.getParentFile.getName
+      val labelNum=
+        label match {
+          case "neg" =>1
+          case "neu" =>2
+          case "pos" =>3
+        }
+
+      //按格式写入到本地文本进行保存
+      writer1.append(labelNum+"#"+titlestr+"\n")
+      writer1.flush()
+      writer2.append(labelNum+"#"+contentstr+"\n")
+      writer2.flush()
+
+      //计数
+      count +=1
+    }
+    writer1.close()
+    writer2.close()
+  }
+
   def textPre(sc:SparkContext,content:String,stopWordsPath:String): String ={
     val stopWords = sc.textFile(stopWordsPath).collect()
     //非法字符替换，所有title已处理过，因此无需替换
@@ -175,8 +250,12 @@ object TextPre_KunAnalyzer {
       val content_segJson=WordSeg.splitWord(TextProcess.formatText(content2),1)
       var content_seg=WordSeg.getWords(content_segJson)
       content_seg=TextProcess.removeStopWords(content_seg,stopWords)
-      for(word <-content_seg){
-        contentstr +=" "+word.toString()
+      if(content_seg ==null){
+        return null
+      }else{
+        for(word <-content_seg){
+          contentstr +=" "+word.toString()
+        }
       }
     }
     contentstr
@@ -205,9 +284,14 @@ object TextPre_KunAnalyzer {
       var content_seg=WordSeg.getWords(content_segJson)
       //去停，返回结果为Array
       content_seg=TextProcess.removeStopWords(content_seg,stopWords)
-      //结果Array =>String
-      for(word <-content_seg){
-        contentstr +=" "+word.toString()
+
+      if(content_seg ==null){
+        return null
+      }else{
+        //结果Array =>String
+        for(word <-content_seg){
+          contentstr +=" "+word.toString()
+        }
       }
     }
 

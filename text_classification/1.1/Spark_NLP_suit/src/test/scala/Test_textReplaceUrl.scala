@@ -13,6 +13,8 @@ import scala.io.Source
   *
   * 1.title ->url    Map[title,label]  -> Map[url,label]
   * 2.正文分词寻找     Map[url,content_seg]
+  *
+  * 3.对2227条未能正确查找的数据集，进行重新分词处理
   */
 class Test_textReplaceUrl extends  FlatSpec with Matchers {
   "test " should "work" in {
@@ -115,7 +117,7 @@ class Test_textReplaceUrl extends  FlatSpec with Matchers {
     //正文分词寻找     Map[url,content_seg]
 //    val sourcedata="D:\\000_DATA\\seg_QQ\\segTrainingSet"
 //    val label_url_titl="D:\\000_DATA\\out\\label_url_title.txt"
-    val outpath1="D:\\000_DATA\\out\\url_title_6069.txt"
+    val outpath1="D:\\000_DATA\\out\\【6069】url_title.txt"
 //    val outpath2="D:\\000_DATA\\out\\url_label.txt"
 //    val outpath3="D:\\000_DATA\\out\\url_content.txt"
 //    val outpath4="D:\\000_DATA\\out\\label_content.txt"
@@ -181,35 +183,38 @@ class Test_textReplaceUrl extends  FlatSpec with Matchers {
 //    writer4.close()
 //    println("[总共有] "+label_url_map.size+"  [匹配成功] "+a+"  [失败] "+b)
 
+
     //读取unmatch
-    val url_unmatch="D:\\000_DATA\\out\\url_unmacth_2227.txt"
+   /* val url_unmatch="D:\\000_DATA\\out\\url_unmacth_2227.txt"
     var url_map=Map[String,String]()
     for(line <-Source.fromFile(new File(url_unmatch)).getLines()){
       url_map +=(line ->" ")
     }
 
     //读取unmatch的标题
-    var url_title_map=Map[String,String]()
+    var title_url_map=Map[String,String]()
     for(line <-Source.fromFile(new File(outpath1)).getLines()){
       val url3=line.substring(0,line.indexOf("#"))
       val title3=line.substring(line.indexOf("#")+1,line.length)
       if(url_map.keySet.contains(url3)){
-        url_title_map +=(title3->url3)
+        title_url_map +=(title3->url3)
       }
     }
 
-    println("url_map "+url_map.size+" url_title_map: "+url_title_map.size)
+    println("url_map "+url_map.size+" url_title_map: "+title_url_map.size)
 
     //读取数据集，找到对应的，，分词，，写入
 
-    val outpath5="D:\\000_DATA\\out\\url_content_2227.txt"
-    val outpath6="D:\\000_DATA\\out\\label_content_2227.txt"
+    val outpath5="D:\\000_DATA\\out\\【2227】url_content.txt"
+    val outpath6="D:\\000_DATA\\out\\【2227】label_content.txt"
+    val outpath7="D:\\000_DATA\\out\\【2227】error.txt"
     val writer5=new PrintWriter(new File(outpath5),"UTF-8")
     val writer6=new PrintWriter(new File(outpath6),"UTF-8")
+    val writer7=new PrintWriter(new File(outpath7),"UTF-8")
 
     //计数
     var count=0
-    println("总共有 "+url_title_map.size)
+    println("总共有 "+title_url_map.size)
 
     val files=Util.readfile2HashMap(filepath)
     var titleLabel_Map=Map[String,String]()
@@ -226,26 +231,38 @@ class Test_textReplaceUrl extends  FlatSpec with Matchers {
       val title4=file.getName.substring(0,file.getName.indexOf(".txt"))
       var content=files.get(file).trim
 
-      if(url_title_map.contains(title4)){
+      if(title_url_map.contains(title4)){
         count +=1
-        print("还剩下 "+(url_title_map.size-count)+"  已处理 "+count+"   ")
-        println(label+"  "+title4)
+        print("还剩下 "+(title_url_map.size-count)+"  已处理 "+count+"   ")
+        println("【正在处理】 "+label+"  "+title4)
 
         val contentstr =TextPre_KunAnalyzer.textPre(sc,content,stopWordsPath)
-
-        writer5.write(url_title_map(title4)+"#"+contentstr+"\n")
-        writer6.write(label+"#"+contentstr+"\n")
-        writer5.flush()
-        writer6.flush()
+        if(contentstr ==null){
+          writer7.write(title_url_map(title4)+"#"+title4+"\n")
+          writer7.flush()
+        }else{
+          writer5.write(title_url_map(title4)+"#"+contentstr+"\n")
+          writer6.write(label+"#"+contentstr+"\n")
+          writer5.flush()
+          writer6.flush()
+        }
 
       }
 
-//      if()
-    }
+    }*/
+
+    //统计【3842】label_content.txt数据是否平衡
+    val filePath="D:\\000_DATA\\out\\【3842】label_content.txt"
+    //将label 转成 labelNum
+    val fileOutPath="D:\\000_DATA\\out\\【3842】labelNum_content.txt"
+
+    countLabel(filePath,fileOutPath)
 
 
 
   }
+
+  //----------------------------------------------------------------
 
   def getFile(filePath:String): Map[String,String] ={
     val files=Util.readfile2HashMap(filePath)
@@ -279,7 +296,6 @@ class Test_textReplaceUrl extends  FlatSpec with Matchers {
 
   def getUrlLike(str:String,con:Connection): String={
     val sqlstr="select url FROM indus_text_with_label WHERE title like '%"+str+"%'"
-//    println(sqlstr)
     var url=""
     val statement = con.createStatement()
     val resultSet = statement.executeQuery(sqlstr)
@@ -288,4 +304,44 @@ class Test_textReplaceUrl extends  FlatSpec with Matchers {
     }
     url
   }
+
+  //统计【3842】label_content.txt数据是否平衡，并进行 【标签<->编号】 替换，写出到本地文件
+  def countLabel(filePath:String,fileOutPath:String): Unit ={
+    //计数
+    var count=0
+    var neg_count=0
+    var neu_count=0
+    var pos_count=0
+    //写入
+    val writer=new PrintWriter(new File(fileOutPath),"UTF-8")
+
+    for(line <-Source.fromFile(new File(filePath)).getLines()){
+      count +=1
+      val label=line.substring(0,line.indexOf("#"))
+      val content=line.substring(line.indexOf("#")+1,line.length)
+
+      label match {
+        case "neg"   => {
+          neg_count +=1
+          writer.write("1#"+content+"\n")
+          writer.flush()
+        }
+        case "neu"   => {
+          neu_count +=1
+          writer.write("2#"+content+"\n")
+          writer.flush()
+        }
+        case "pos"    => {
+          pos_count +=1
+          writer.write("3#"+content+"\n")
+          writer.flush()
+        }
+      }
+
+    }
+
+    println("总共 "+count)
+    println("消极： "+neg_count+"    中性: "+neu_count+"   积极 ："+pos_count)
+  }
+
 }

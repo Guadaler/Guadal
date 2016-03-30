@@ -20,7 +20,6 @@ class Test_textPre extends  FlatSpec with Matchers {
      //本地数据集
      val dataPath="E:\\data\\data"
 
-     val outPath="E:\\data\\textSeg.txt"
      val outPath_title="E:\\data\\textSeg_title.txt"
      val outPath_content="E:\\data\\textSeg_content.txt"
 
@@ -34,7 +33,8 @@ class Test_textPre extends  FlatSpec with Matchers {
      var dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
      println("【开始时间】 "+dateFormat.format(begin))
 
-     TextPre_KunAnalyzer.textPre(sc,dataPath,outPath,stopWordsPath)
+     TextPre_KunAnalyzer.textPre_all(sc,dataPath,outPath_title,outPath_content,stopWordsPath)
+//     TextPre_KunAnalyzer.textPre(sc,dataPath,outPath,stopWordsPath)
 //     TextPre_ansj.textPre(sc,dataPath,outPath,stopWordsPath)
 //     TextPre_ansj.textPre_title(sc,dataPath,outPath_title,stopWordsPath)
 //     TextPre_ansj.textPre_content(sc,dataPath,outPath_content,stopWordsPath)
