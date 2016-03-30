@@ -76,13 +76,17 @@ object TextProcess {
     * @return 返回一个元素为String的Array
     */
   def removeStopWords(content: Array[String], stopWords:Array[String]): Array[String] = {
-    var result = content.toBuffer
-    stopWords.foreach(stopWord => {
-      if (result.contains(stopWord)){
-        result = result.filterNot(_ == stopWord)
-      }
-    })
-    result.toArray
+    if(content !=null){
+      var result = content.toBuffer
+      stopWords.foreach(stopWord => {
+        if (result.contains(stopWord)){
+          result = result.filterNot(_ == stopWord)
+        }
+      })
+      result.toArray
+    }else{
+      null
+    }
   }
 
   /**

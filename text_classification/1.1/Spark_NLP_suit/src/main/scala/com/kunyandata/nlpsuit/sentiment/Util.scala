@@ -73,6 +73,9 @@ object Util {
     str_leg=str_leg.replace("<","《")
     str_leg=str_leg.replace(">","》")
     str_leg=str_leg.replace("*","》")
+    str_leg=str_leg.replace("\n"," ")
+    str_leg=str_leg.replace("\t"," ")
+    str_leg=str_leg.replace(",","，")
     str_leg
   }
 
