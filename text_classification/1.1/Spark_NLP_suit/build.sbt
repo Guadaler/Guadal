@@ -1,4 +1,4 @@
-mainClass in (Compile, packageBin) := Some("com.kunyandata.nlpsuit.util.TextProcess")
+mainClass in (Compile, packageBin) := Some("com.kunyandata.nlpsuit.classification.TrainingProcess")
 
 name := "Spark_NLP_suit"
 
@@ -10,7 +10,7 @@ libraryDependencies += "org.scalactic" %% "scalactic" % "2.2.5" % "test"
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.5" % "test"
 
-libraryDependencies += "org.apache.spark" % "spark-mllib_2.10" % "1.5.2" % "provided"
+libraryDependencies += "org.apache.spark" % "spark-mllib_2.10" % "1.5.2"
 
 libraryDependencies += "org.apache.spark" % "spark-core_2.10" % "1.5.2"
 

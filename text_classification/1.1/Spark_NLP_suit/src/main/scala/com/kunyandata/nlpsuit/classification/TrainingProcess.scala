@@ -120,7 +120,7 @@ object TrainingProcess {
     val hdfsConf = new Configuration()
     hdfsConf.set("fs.defaultFS", "hdfs://222.73.34.92:9000")
     val fs = FileSystem.get(hdfsConf)
-    val output = fs.create(new Path("/mlearning/ParasTuningResult"))
+    val output = fs.create(new Path("/mlearning/ParasTuning/" + indusName))
     val writer = new PrintWriter(output)
     var result:Map[String,(Double, Double)] = Map()
     parasDoc.foreach(paraDoc => {
@@ -131,10 +131,13 @@ object TrainingProcess {
           result += (paraSets -> results)
           val writeOut = indusName + "\t" +  paraSets + "\t\tPrecision:" + results._1 + "\tRecall:" + results._2 + "\n"
           writer.write(writeOut)
+          writer.flush()
         })
         writer.write("\n")
+        writer.flush()
       })
       writer.write("\n\n")
+      writer.flush()
     })
     result.foreach(println)
     writer.close()
@@ -204,7 +207,7 @@ object TrainingProcess {
 
   def main(args: Array[String]) {
 
-    val conf = new SparkConf().setAppName("MlTraining")
+    val conf = new SparkConf().setAppName("MlTrainingOne")
     val sc = new SparkContext(conf)
 
     //    val text = Source.fromFile("D:/mlearning/trainingLabel.new").getLines().toArray.map(line => {
@@ -219,43 +222,69 @@ object TrainingProcess {
     //    })
     //    writer.close()
 
+    // 获取每个行业的url集合
     val labeledContent = sc.textFile("hdfs://222.73.34.92:9000/mlearning/trainingData/labeledContent").collect().map(line => {
       val temp = line.split("\t")
       (temp(0), temp(1).split(","))
     }).toMap
 
-    val totalTrianRDD = sc.textFile("hdfs://222.73.34.92:9000/mlearning/trainingData/segTrainSet").repartition(4).map(line => {
+    val trainingData = sc.textFile("hdfs://222.73.34.92:9000/mlearning/trainingData/trainingWithIndus/" + args(0)).repartition(4)
+    val tempRDD = trainingData.map(line => {
       val temp = line.split("\t")
-      if (temp.length == 2) {
-        (temp(0), temp(1).split(","))
-      }
-    }).filter(_ != ()).map(_.asInstanceOf[(String, Array[String])])
+      (temp(0).toDouble, temp(1).split(","))
+    }).randomSplit(Array(0.2, 0.2, 0.2, 0.2, 0.2), seed = 2016L)
+    val dataSet = Array(
+      Map("train" -> tempRDD(0).++(tempRDD(1)).++(tempRDD(2)).++(tempRDD(3)), "test" -> tempRDD(4)),
+      Map("train" -> tempRDD(0).++(tempRDD(1)).++(tempRDD(2)).++(tempRDD(4)), "test" -> tempRDD(3)),
+      Map("train" -> tempRDD(0).++(tempRDD(1)).++(tempRDD(3)).++(tempRDD(4)), "test" -> tempRDD(2)),
+      Map("train" -> tempRDD(0).++(tempRDD(2)).++(tempRDD(3)).++(tempRDD(4)), "test" -> tempRDD(1)),
+      Map("train" -> tempRDD(1).++(tempRDD(2)).++(tempRDD(3)).++(tempRDD(4)), "test" -> tempRDD(0))
+    )
+    TrainingProcess.tuneParas(dataSet, Array(1, 2), Array(100, 300, 500), args(0))
 
-    //    val writer = new PrintWriter(new File("D:/trainingStatic"))
-    //    labeledContent.foreach(line => {
-    //      val temp = matchRDD(line._2, totalTrianRDD)
-    //      val posTemp = temp.filter(_._1 == 1.0).count()
-    //      writer.write("训练集\'" + line._1 + "\'的数量为" + ":" + temp.count() + "\t" + "其中正例的样本数量为" + posTemp + "\n")
-    //      writer.flush()
-    //    })
-    //    writer.close()
+    // 获取总训练集
+//    val totalTrianRDD = sc.textFile("hdfs://222.73.34.92:9000/mlearning/trainingData/segTrainSet").repartition(4).map(line => {
+//      val temp = line.split("\t")
+//      if (temp.length == 2) {
+//        (temp(0), temp(1).split(","))
+//      }
+//    }).filter(_ != ()).map(_.asInstanceOf[(String, Array[String])])
 
-    val trainingSets = labeledContent.map(target => {
-      val tempRDD = matchRDD(target._2, totalTrianRDD).repartition(4).randomSplit(Array(0.2, 0.2, 0.2, 0.2, 0.2), seed = 2016L)
-      val dataSet = Array(
-        Map("train" -> tempRDD(0).++(tempRDD(1)).++(tempRDD(2)).++(tempRDD(3)), "test" -> tempRDD(4)),
-        Map("train" -> tempRDD(0).++(tempRDD(1)).++(tempRDD(2)).++(tempRDD(4)), "test" -> tempRDD(3)),
-        Map("train" -> tempRDD(0).++(tempRDD(1)).++(tempRDD(3)).++(tempRDD(4)), "test" -> tempRDD(2)),
-        Map("train" -> tempRDD(0).++(tempRDD(2)).++(tempRDD(3)).++(tempRDD(4)), "test" -> tempRDD(1)),
-        Map("train" -> tempRDD(1).++(tempRDD(2)).++(tempRDD(3)).++(tempRDD(4)), "test" -> tempRDD(0))
-      )
-      (target._1, dataSet)
-    })
+//    // 根据行业分割数据集，并输出成本地文本
+//    val writer = new PrintWriter(new File("D:/mlearning/trainingSets/trainingStatic"))
+//    labeledContent.foreach(line => {
+//      val traingingWriter = new PrintWriter(new File("D:/mlearning/trainingSets/" + line._1))
+//      val temp = matchRDD(line._2, totalTrianRDD).collect()
+//      temp.foreach(content => {
+//        val outPutString = content._1 + "\t" + content._2.mkString(",") + "\n"
+//        traingingWriter.write(outPutString)
+//      })
+//      traingingWriter.close()
+//      val posTemp = temp.count(_._1 == 1.0)
+//      val negTemp = temp.count(_._1 == 0.0)
+//      writer.write("训练集\'" + line._1 + "\'的数量为" + ":" + temp.length + "\t"
+//        + "其中正例的样本数量为" + posTemp + "\t"
+//        + "其中负例的样本数量为" + negTemp + "\n")
+//      writer.flush()
+//    })
+//    writer.close()
 
-    trainingSets.foreach(trainRDD => {
-      TrainingProcess.tuneParas(trainRDD._2, Array(1, 2), Array(100, 300, 500), trainRDD._1)
-      println("行业\'" + trainRDD._1 + "\'参数调优已完成")
-    })
+//    val trainingSets = labeledContent.map(target => {
+//      val tempRDD = matchRDD(target._2, totalTrianRDD).repartition(4).randomSplit(Array(0.2, 0.2, 0.2, 0.2, 0.2), seed = 2016L)
+//      val dataSet = Array(
+//        Map("train" -> tempRDD(0).++(tempRDD(1)).++(tempRDD(2)).++(tempRDD(3)), "test" -> tempRDD(4)),
+//        Map("train" -> tempRDD(0).++(tempRDD(1)).++(tempRDD(2)).++(tempRDD(4)), "test" -> tempRDD(3)),
+//        Map("train" -> tempRDD(0).++(tempRDD(1)).++(tempRDD(3)).++(tempRDD(4)), "test" -> tempRDD(2)),
+//        Map("train" -> tempRDD(0).++(tempRDD(2)).++(tempRDD(3)).++(tempRDD(4)), "test" -> tempRDD(1)),
+//        Map("train" -> tempRDD(1).++(tempRDD(2)).++(tempRDD(3)).++(tempRDD(4)), "test" -> tempRDD(0))
+//      )
+//      (target._1, dataSet)
+//    })
+//
+//    trainingSets.foreach(trainRDD => {
+//      TrainingProcess.tuneParas(trainRDD._2, Array(1, 2), Array(100, 300, 500), trainRDD._1)
+//      println("行业\'" + trainRDD._1 + "\'参数调优已完成")
+//    })
     sc.stop()
   }
 
