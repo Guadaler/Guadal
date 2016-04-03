@@ -5,6 +5,7 @@ package com.kunyandata.nlpsuit.classification
   */
 
 import java.io._
+import com.kunyandata.nlpsuit.util.Statistic
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{Path, FileSystem}
 import org.apache.spark.{SparkConf, SparkContext}
@@ -122,7 +123,7 @@ object TrainingProcess {
     val fs = FileSystem.get(hdfsConf)
     val output = fs.create(new Path("/mlearning/ParasTuning/" + indusName))
     val writer = new PrintWriter(output)
-    //    var result:Map[String,(Double, Double)] = Map()
+    var result:Map[String,(Double, Double)] = Map()
     parasDoc.foreach(paraDoc => {
       parasFeatrues.foreach(paraFeatrues => {
         df.foreach(data => {
@@ -132,18 +133,19 @@ object TrainingProcess {
           writer.flush()
           val results = trainingProcessWithRDD(data("train"), data("test"),
             paraDoc, paraFeatrues,vocabNum, writeModel = false)
-          //          result += (paraSets -> results)
+          result += (paraSets -> results)
           val writeOut = indusName + "\t" +  paraSets + "\t\tPrecision:" + results._1 + "\tRecall:" + results._2 + "\n"
           writer.write(writeOut)
           writer.flush()
         })
-        writer.write("\n")
+        val avePrecision = Statistic.sum(result.values.map(_._1).toArray)/result.count(_ != null)
+        val aveRecall = Statistic.sum(result.values.map(_._2).toArray)/result.count(_ != null)
+        writer.write("avePre:" + avePrecision + "\taveRec:" + aveRecall + "\n")
         writer.flush()
       })
       writer.write("\n\n")
       writer.flush()
     })
-    //    result.foreach(println)
     writer.close()
   }
 
@@ -211,7 +213,7 @@ object TrainingProcess {
 
   def main(args: Array[String]) {
 
-    val conf = new SparkConf().setAppName("MlTrainingOne")
+    val conf = new SparkConf().setAppName("MlTraining_" + args(0))
     val sc = new SparkContext(conf)
 
     //    val text = Source.fromFile("D:/mlearning/trainingLabel.new").getLines().toArray.map(line => {
@@ -232,7 +234,7 @@ object TrainingProcess {
     //      (temp(0), temp(1).split(","))
     //    }).toMap
 
-    val trainingData = sc.textFile("hdfs://222.73.34.92:9000/mlearning/trainingData/trainingWithIndus/" + args(0)).repartition(8)
+    val trainingData = sc.textFile("hdfs://222.73.34.92:9000/mlearning/trainingData/trainingWithIndus/" + args(0)).repartition(4)
     val tempRDD = trainingData.map(line => {
       val temp = line.split("\t")
       (temp(0).toDouble, temp(1).split(","))
