@@ -140,7 +140,7 @@ object TrainingProcess {
         })
         val avePrecision = Statistic.sum(result.values.map(_._1).toArray)/result.count(_ != null)
         val aveRecall = Statistic.sum(result.values.map(_._2).toArray)/result.count(_ != null)
-        writer.write("avePre:" + avePrecision + "\taveRec:" + aveRecall + "\n")
+        writer.write("avePre:" + avePrecision + "\taveRec:" + aveRecall + "\n\n")
         writer.flush()
       })
       writer.write("\n\n")
