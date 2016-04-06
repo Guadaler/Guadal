@@ -31,7 +31,11 @@ object TrainingProcess {
     * @return 返回（精度，召回率）
     */
   def trainingProcessWithRDD(train: RDD[(Double, Array[String])], test: RDD[(Double, Array[String])],
-                             parasDoc: Int, parasFeatrues: Int, VSMlength: Int, writeModel:Boolean) = {
+                             parasDoc: Array[Int], parasFeatrues: Array[Int], writeModel:Boolean) = {
+
+    // 获得向量长度
+    val VSMlength = countWords(train)
+
     // 构建hashingTF模型，同时将数据转化为LabeledPoint类型
     val hashingTFModel = new feature.HashingTF(VSMlength)
     val trainTFRDD = train.map(line => {
@@ -40,16 +44,30 @@ object TrainingProcess {
     })
 
     // 计算idf
-    val idfModel = new feature.IDF(parasDoc).fit(trainTFRDD.map(line => {line._2}))
-    val labeledTrainTfIdf = trainTFRDD.map( line => {
-      val temp = idfModel.transform(line._2)
-      LabeledPoint(line._1, temp)
+    val idfSets = parasDoc.map(minDoc => {
+      val idfModel = new feature.IDF(minDoc).fit(trainTFRDD.map(line => {line._2}))
+      val labeledTrainTfIdf = trainTFRDD.map( line => {
+        val temp = idfModel.transform(line._2)
+        LabeledPoint(line._1, temp)
+      })
+      labeledTrainTfIdf
+    })
+
+    idfSets.foreach(labeledTfIdf => {
+      val chiSqTest = parasFeatrues.map(numFeatrue => {
+        val ChiSqTestArray = new BetterChiSqSelector(numFeatrue).fitPre(labeledTfIdf)
+        ChiSqTestArray
+      })
+      chiSqTest.foreach(testArray => {
+        val result = new BetterChiSqSelector(numFeatrue).fit()
+      })
+
+
     })
 
     // 优化过的卡方降维特征选择器
     val ChiSqTestArray = new BetterChiSqSelector(parasFeatrues).fitPre(labeledTrainTfIdf)
 
-    ChiSqTestArray
 
     // 卡方降维特征选择器
     val chiSqSelectorModel = new feature.ChiSqSelector(parasFeatrues).fit(labeledTrainTfIdf)
