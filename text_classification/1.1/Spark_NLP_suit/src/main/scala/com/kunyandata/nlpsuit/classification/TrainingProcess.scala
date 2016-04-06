@@ -10,6 +10,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{Path, FileSystem}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.mllib.feature
+import com.kunyandata.nlpsuit.util.BetterChiSqSelector
 import org.apache.spark.rdd.RDD
 import org.apache.spark.mllib.classification.{NaiveBayes, SVMWithSGD}
 import org.apache.spark.mllib.evaluation.MulticlassMetrics
@@ -40,14 +41,19 @@ object TrainingProcess {
 
     // 计算idf
     val idfModel = new feature.IDF(parasDoc).fit(trainTFRDD.map(line => {line._2}))
-    val labeedTrainTfIdf = trainTFRDD.map( line => {
+    val labeledTrainTfIdf = trainTFRDD.map( line => {
       val temp = idfModel.transform(line._2)
       LabeledPoint(line._1, temp)
     })
 
+    // 优化过的卡方降维特征选择器
+    val ChiSqTestArray = new BetterChiSqSelector(parasFeatrues).fitPre(labeledTrainTfIdf)
+
+    ChiSqTestArray
+
     // 卡方降维特征选择器
-    val chiSqSelectorModel = new feature.ChiSqSelector(parasFeatrues).fit(labeedTrainTfIdf)
-    val selectedTrain = labeedTrainTfIdf.map(line => {
+    val chiSqSelectorModel = new feature.ChiSqSelector(parasFeatrues).fit(labeledTrainTfIdf)
+    val selectedTrain = labeledTrainTfIdf.map(line => {
       val temp = chiSqSelectorModel.transform(line.features)
       LabeledPoint(line.label, temp)
     })
@@ -126,20 +132,22 @@ object TrainingProcess {
     var result:Map[String,(Double, Double)] = Map()
     parasDoc.foreach(paraDoc => {
       parasFeatrues.foreach(paraFeatrues => {
+        val paraSets = paraDoc.toString + "_" + paraFeatrues.toString
+        val tempPandR = new ArrayBuffer[(Double, Double)]()
         df.foreach(data => {
-          val paraSets = paraDoc.toString + "_" + paraFeatrues.toString
           val vocabNum = countWords(data("train"))
           writer.write("行业\'" + indusName + "\'的语料库特征长度为" + vocabNum + "\n")
           writer.flush()
           val results = trainingProcessWithRDD(data("train"), data("test"),
             paraDoc, paraFeatrues,vocabNum, writeModel = false)
           result += (paraSets -> results)
+          tempPandR.append(results)
           val writeOut = indusName + "\t" +  paraSets + "\t\tPrecision:" + results._1 + "\tRecall:" + results._2 + "\n"
           writer.write(writeOut)
           writer.flush()
         })
-        val avePrecision = Statistic.sum(result.values.map(_._1).toArray)/result.count(_ != null)
-        val aveRecall = Statistic.sum(result.values.map(_._2).toArray)/result.count(_ != null)
+        val avePrecision = Statistic.sum(tempPandR.map(_._1).toArray)/tempPandR.count(_ !=null)
+        val aveRecall = Statistic.sum(tempPandR.map(_._2).toArray)/tempPandR.count(_ != null)
         writer.write("avePre:" + avePrecision + "\taveRec:" + aveRecall + "\n\n")
         writer.flush()
       })
@@ -240,11 +248,11 @@ object TrainingProcess {
       (temp(0).toDouble, temp(1).split(","))
     }).randomSplit(Array(0.2, 0.2, 0.2, 0.2, 0.2), seed = 2016L)
     val dataSet = Array(
-      Map("train" -> tempRDD(0).++(tempRDD(1)).++(tempRDD(2)).++(tempRDD(3)), "test" -> tempRDD(4)),
-      Map("train" -> tempRDD(0).++(tempRDD(1)).++(tempRDD(2)).++(tempRDD(4)), "test" -> tempRDD(3)),
-      Map("train" -> tempRDD(0).++(tempRDD(1)).++(tempRDD(3)).++(tempRDD(4)), "test" -> tempRDD(2)),
-      Map("train" -> tempRDD(0).++(tempRDD(2)).++(tempRDD(3)).++(tempRDD(4)), "test" -> tempRDD(1)),
-      Map("train" -> tempRDD(1).++(tempRDD(2)).++(tempRDD(3)).++(tempRDD(4)), "test" -> tempRDD(0))
+      Map("id" -> 1, "train" -> tempRDD(0).++(tempRDD(1)).++(tempRDD(2)).++(tempRDD(3)), "test" -> tempRDD(4)),
+      Map("id" -> 2, "train" -> tempRDD(0).++(tempRDD(1)).++(tempRDD(2)).++(tempRDD(4)), "test" -> tempRDD(3)),
+      Map("id" -> 3, "train" -> tempRDD(0).++(tempRDD(1)).++(tempRDD(3)).++(tempRDD(4)), "test" -> tempRDD(2)),
+      Map("id" -> 4, "train" -> tempRDD(0).++(tempRDD(2)).++(tempRDD(3)).++(tempRDD(4)), "test" -> tempRDD(1)),
+      Map("id" -> 5, "train" -> tempRDD(1).++(tempRDD(2)).++(tempRDD(3)).++(tempRDD(4)), "test" -> tempRDD(0))
     )
     TrainingProcess.tuneParas(dataSet, args(1).split(",").map(_.toInt), args(2).split(",").map(_.toInt), args(0))
 

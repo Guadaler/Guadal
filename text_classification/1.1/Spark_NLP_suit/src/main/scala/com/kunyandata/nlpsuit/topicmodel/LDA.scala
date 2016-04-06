@@ -4,35 +4,17 @@
 //  * Created by QQ on 2016/3/28.
 //  */
 //
+//import org.apache.spark.{SparkConf, SparkContext}
+//
+//import scala.collection.mutable
 //import org.apache.spark.mllib.clustering.LDA
-//import org.apache.spark.mllib.linalg.Vectors
-//import org.apache.spark.SparkContext
-//import org.apache.spark.SparkConf
+//import org.apache.spark.mllib.linalg.{Vector, Vectors}
+//import org.apache.spark.rdd.RDD
 //
 //object LDA extends App{
 //
-//  // 输入的文件每行用词频向量表示一篇文档
-//  val conf = new SparkConf().setAppName("topicmodel").setMaster("local")
+//  val conf = new SparkConf().setAppName("TopicModel").setMaster("local")
 //  val sc = new SparkContext(conf)
-//  val data = sc.textFile("D:/sample_lda_data.txt")
-//  val parsedData = data.map(s => Vectors.dense(s.trim.split(' ').map(_.toDouble)))
-//  val corpus = parsedData.zipWithIndex.map(_.swap).cache()
-//  val ldaModel = new LDA().setK(3).run(corpus)
-//
-//  // 打印主题
-//  println("Learned topics (as distributions over vocab of " + ldaModel.vocabSize + " words):")
-//  val topics = ldaModel.topicsMatrix
-//  for (topic <- Range(0, 3)) {
-//    print("Topic " + topic + ":")
-//    for (word <- Range(0, ldaModel.vocabSize)) { print(" " + topics(word, topic)); }
-//    println()
-//  }
-//
-//  import scala.collection.mutable
-//  import org.apache.spark.mllib.clustering.LDA
-//  import org.apache.spark.mllib.linalg.{Vector, Vectors}
-//  import org.apache.spark.rdd.RDD
-//
 //  // Load documents from text files, 1 document per file
 //  val corpus: RDD[String] = sc.wholeTextFiles("docs/*.md").map(_._2)
 //
