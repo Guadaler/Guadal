@@ -20,7 +20,6 @@ import scala.collection.mutable.ArrayBuffer
 
 object TrainingProcess {
 
-
   /**
     * 基于RDD的训练过程，其中包括了序列化tf，idf，chisqselector，nbmodel 4个模型。
     *
@@ -31,10 +30,7 @@ object TrainingProcess {
     * @return 返回（精度，召回率）
     */
   def trainingProcessWithRDD(train: RDD[(Double, Array[String])], test: RDD[(Double, Array[String])],
-                             parasDoc: Array[Int], parasFeatrues: Array[Int], fasterModel: Boolean, writeModel: Boolean) = {
-
-    // 获得向量长度
-    val VSMlength = countWords(train)
+                             parasDoc: Array[Int], parasFeatrues: Array[Int], VSMlength: Int) = {
 
     // 构建hashingTF模型，同时将数据转化为LabeledPoint类型
     val hashingTFModel = new feature.HashingTF(VSMlength)
@@ -50,104 +46,46 @@ object TrainingProcess {
         val temp = idfModel.transform(line._2)
         LabeledPoint(line._1, temp)
       })
-      (minDoc, labeledTrainTfIdf)
+      (minDoc, labeledTrainTfIdf, idfModel)
     })
 
-    // 判断是否为快速模式
-    if (fasterModel) {
-      // 优化过的卡方检验选择器
-      idfTemp.foreach(labeledTfidfTuple => {
-        val betterChi = new BetterChiSqSelector()
-        val ChiSqTestArray = betterChi.preFit(labeledTfidfTuple._2)
-        val tempResult = parasFeatrues.map(numTopFeatrues => {
-          val chiSqResModel = betterChi.fit(ChiSqTestArray, numTopFeatrues)
-          val selectedTrain = labeledTfidfTuple._2.map(line => {
-            val temp = chiSqResModel.transform(line.features)
-            LabeledPoint(line.label, temp)
-          })
-          select
+    // 优化过的卡方检验选择器
+    idfTemp.map(labeledTfidfTuple => {
+      val betterChiSqTest = new BetterChiSqSelector()
+      val ChiSqTestArray = betterChiSqTest.preFit(labeledTfidfTuple._2)
+      val tempResult = parasFeatrues.map(numTopFeatrues => {
+        val chiSqTestModel = betterChiSqTest.fit(ChiSqTestArray, numTopFeatrues)
+        val selectedTrain = labeledTfidfTuple._2.map(line => {
+          val temp = chiSqTestModel.transform(line.features)
+          LabeledPoint(line.label, temp)
         })
+
+        // 创建NB模型
+        val nbModel = NaiveBayes.train(selectedTrain, 1.0, "multinomial")
+
+        // 测试集同步
+        val testRDD = test.map(line => {
+          val temp = line._2
+          val tempTf = hashingTFModel.transform(temp)
+          val tempTfidf = labeledTfidfTuple._3.transform(tempTf)
+          val tempSelected = chiSqTestModel.transform(tempTfidf)
+          LabeledPoint(line._1, tempSelected)
+        })
+
+        // 预测
+        val predictionAndLabels = testRDD.map {line =>
+          val prediction = nbModel.predict(line.features)
+          //      println((prediction, line.label))
+          (prediction, line.label)
+        }
+
+        // 计算精度和召回率
+        val metrics = new MulticlassMetrics(predictionAndLabels)
+        (numTopFeatrues, (metrics.precision(1.0), metrics.recall(1.0)))
       })
 
-    }else {
-      idfTemp.foreach(labeledTfidfTuple => {
-        parasFeatrues.foreach(numTopFeatures => {
-          // 卡方降维特征选择器
-          val chiSqSelectorModel = new feature.ChiSqSelector(numTopFeatures).fit(labeledTfidfTuple._2)
-          val selectedTrain = labeledTfidfTuple._2.map(line => {
-            val temp = chiSqSelectorModel.transform(line.features)
-            LabeledPoint(line.label, temp)
-          })
-        })
-      })
-    }
-
-
-
-
+      (labeledTfidfTuple._1, tempResult)
     })
-
-    // 优化过的卡方降维特征选择器
-    val ChiSqTestArray = new BetterChiSqSelector(parasFeatrues).fitPre(labeledTrainTfIdf)
-
-
-
-    println("+++++++++++++++++++++++++++++++++++++++++++++特征选择结束++++++++++++++++++++++++++++++++++++++++++++++++++")
-
-    // 创建贝叶斯分类器
-    val nbModel = NaiveBayes.train(selectedTrain, 1.0, "multinomial")
-
-    if(writeModel){
-      val tfModelOutput = new ObjectOutputStream(new FileOutputStream("D:/tfModel"))
-      tfModelOutput.writeObject(hashingTFModel)
-      val idfModelOutput = new ObjectOutputStream(new FileOutputStream("D:/idfModel"))
-      idfModelOutput.writeObject(idfModel)
-      val chiSqSelectorModelOutput = new ObjectOutputStream(new FileOutputStream("D:/chiSqSelectorModel"))
-      chiSqSelectorModelOutput.writeObject(chiSqSelectorModel)
-      val nbModelOutput = new ObjectOutputStream(new FileOutputStream("D:/nbModel"))
-      nbModelOutput.writeObject(nbModel)
-    }
-
-    // 根据训练集同步测试集特征
-    val testRDD = test.map(line => {
-      val temp = line._2
-      val tempTf = hashingTFModel.transform(temp)
-      val tempTfidf = idfModel.transform(tempTf)
-      val tempSelected = chiSqSelectorModel.transform(tempTfidf)
-      LabeledPoint(line._1, tempSelected)
-    })
-
-    val predictionAndLabels = testRDD.map {line =>
-      val prediction = nbModel.predict(line.features)
-      //      println((prediction, line.label))
-      (prediction, line.label)
-    }
-
-    val metrics = new MulticlassMetrics(predictionAndLabels)
-    println("Confusion matrix:")
-    println(metrics.confusionMatrix)
-
-    (metrics.precision(1.0), metrics.recall(1.0))
-//    // Precision by label
-//    val labels = metrics.labels
-//    labels.foreach { l =>
-//      println(s"Precision($l) = " + metrics.precision(l))
-//    }
-//
-//    // Recall by label
-//    labels.foreach { l =>
-//      println(s"Recall($l) = " + metrics.recall(l))
-//    }
-//
-//    // False positive rate by label
-//    labels.foreach { l =>
-//      println(s"FPR($l) = " + metrics.falsePositiveRate(l))
-//    }
-//
-//    // F-measure by label
-//    labels.foreach { l =>
-//      println(s"F1-Score($l) = " + metrics.fMeasure(l))
-//    }
   }
 
   /**
@@ -163,32 +101,17 @@ object TrainingProcess {
     val fs = FileSystem.get(hdfsConf)
     val output = fs.create(new Path("/mlearning/ParasTuning/" + indusName))
     val writer = new PrintWriter(output)
-    var result:Map[String,(Double, Double)] = Map()
-    parasDoc.foreach(paraDoc => {
-      parasFeatrues.foreach(paraFeatrues => {
-        val paraSets = paraDoc.toString + "_" + paraFeatrues.toString
-        val tempPandR = new ArrayBuffer[(Double, Double)]()
-        df.foreach(data => {
-          val vocabNum = countWords(data("train"))
-          writer.write("行业\'" + indusName + "\'的语料库特征长度为" + vocabNum + "\n")
-          writer.flush()
-          val results = trainingProcessWithRDD(data("train"), data("test"),
-            paraDoc, paraFeatrues,vocabNum, writeModel = false)
-          result += (paraSets -> results)
-          tempPandR.append(results)
-          val writeOut = indusName + "\t" +  paraSets + "\t\tPrecision:" + results._1 + "\tRecall:" + results._2 + "\n"
-          writer.write(writeOut)
-          writer.flush()
-        })
-        val avePrecision = Statistic.sum(tempPandR.map(_._1).toArray)/tempPandR.count(_ !=null)
-        val aveRecall = Statistic.sum(tempPandR.map(_._2).toArray)/tempPandR.count(_ != null)
-        writer.write("avePre:" + avePrecision + "\taveRec:" + aveRecall + "\n\n")
-        writer.flush()
-      })
-      writer.write("\n\n")
+    df.foreach(data => {
+      val vocabNum = countWords(data("train"))
+      writer.write("行业\'" + indusName + "\'的语料库特征长度为" + vocabNum + "\n")
       writer.flush()
+      val results = trainingProcessWithRDD(data("train"),
+        data("test"), parasDoc, parasFeatrues, vocabNum)
+      res
+      val avePrecision = Statistic.sum(tempPandR.map(_._1).toArray) / tempPandR.count(_ != null)
+      val aveRecall = Statistic.sum(tempPandR.map(_._2).toArray) / tempPandR.count(_ != null)
+
     })
-    writer.close()
   }
 
   /**
@@ -243,6 +166,7 @@ object TrainingProcess {
 
   /**
     * 计算语料库中的词汇数量
+    *
     * @param trainingSet 语料库RDD
     * @return 返回一个整形
     */
