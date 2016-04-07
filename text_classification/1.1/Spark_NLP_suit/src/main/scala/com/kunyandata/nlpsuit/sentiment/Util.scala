@@ -208,6 +208,13 @@ object Util {
     Tf_Idf
   }
 
+  def getTf_Idf2(item:String, article:util.HashMap[String, Int], word_map:util.HashMap[String, util.HashMap[String, Int]]): Double ={
+    val tf=getTf(item:String, article:util.HashMap[String, Int])
+    val idf=getIdf2(item:String,word_map:util.HashMap[String, util.HashMap[String, Int]])
+    val Tf_Idf=tf*idf
+    Tf_Idf
+  }
+
   /**
     * 计算tf
     *
@@ -255,6 +262,22 @@ object Util {
     idf
   }
 
+  def getIdf2(item:String,word_map:util.HashMap[String, util.HashMap[String, Int]]): Double ={
+    var idf:Double=0.000000;
+    var count=0;
+    var it=word_map.keySet().iterator()
+    while (it.hasNext){
+      var key=it.next();
+      var onefile=word_map.get(key)
+      if(onefile.keySet().contains(item)){
+        count +=1;
+      }
+    }
+    idf=Math.log(word_map.size().toDouble/count.toDouble)
+//    println("idf:"+idf+"="+count.toDouble+"  "+word_map.size().toDouble)
+    idf
+  }
+
   //---------------【文本处理】----------------------------------
   /**
     * 实现字符串的分词和去停,并分装成方法  ，与上面的process()方法相同，只是分词采用ansj
@@ -272,6 +295,43 @@ object Util {
     // 实现去停用词
     if (resultWords == null) null
     else TextProcess.removeStopWords(resultWords, stopWordsBr.value)
+  }
+
+  /**
+    * 对分词数据集中存在部分数据缺失进行剔除，  如剔除1#null
+    * @param file  输入文件
+    * @param out  重新写出文件
+    */
+  def textPro(file:String,out:String): Unit ={
+    val wr=new PrintWriter(out,"UTF-8")
+    var count=0
+    for(line <-Source.fromFile(new File(file)).getLines()){
+      val temp = line.split("#")
+      if(temp.length ==1){
+        count +=1
+        println("还真有")
+      }else{
+        var temp2=""
+        if(temp(1).startsWith(",")){
+          temp2 =temp(1).substring(1,temp(1).length)
+        }else if(temp(1).startsWith(", ")){
+          temp2 =temp(1).substring(2,temp(1).length)
+        }else if(temp(1).startsWith(" ,")){
+          temp2 =temp(1).substring(2,temp(1).length)
+        }else{
+          temp2 =temp(1)
+        }
+        if(temp2.contains(",,")){
+          temp2=temp2.replace(",,",",")
+        }
+        println(temp(0)+"#"+temp2+"\n")
+        wr.write(temp(0)+"#"+temp2+"\n")
+        wr.flush()
+      }
+
+    }
+    println("【无数据有】"+count)
+    wr.close()
   }
 
 

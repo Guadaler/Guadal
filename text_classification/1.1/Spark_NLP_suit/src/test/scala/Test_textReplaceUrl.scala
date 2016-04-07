@@ -251,12 +251,23 @@ class Test_textReplaceUrl extends  FlatSpec with Matchers {
 
     }*/
 
+
+
+
+
+
     //统计【3842】label_content.txt数据是否平衡
     val filePath="D:\\000_DATA\\out\\【3842】label_content.txt"
     //将label 转成 labelNum
     val fileOutPath="D:\\000_DATA\\out\\【3842】labelNum_content.txt"
+//    countLabel(filePath,fileOutPath)
 
-    countLabel(filePath,fileOutPath)
+    //去掉中性数据  并转成 labelNum  neg_pos
+    val fileOutPath2="D:\\000_DATA\\out\\【3842】labelNum_content_noNeu.txt"
+
+    //去掉消极，留下积极和中性
+    val fileOutPath3="D:\\000_DATA\\out\\【3842】【Neu+pos】labelNum_content.txt"
+    removedNeu(filePath,fileOutPath3)
 
 
 
@@ -344,4 +355,42 @@ class Test_textReplaceUrl extends  FlatSpec with Matchers {
     println("消极： "+neg_count+"    中性: "+neu_count+"   积极 ："+pos_count)
   }
 
+  //去掉中性数据  并转成 labelNum，即进行 【标签<->编号】 替换，写出到本地文件
+  def removedNeu(filePath:String,fileOutPath:String): Unit ={
+    //计数
+    var count=0
+    var neg_count=0
+    var neu_count=0
+    var pos_count=0
+    //写入
+    val writer=new PrintWriter(new File(fileOutPath),"UTF-8")
+
+    for(line <-Source.fromFile(new File(filePath)).getLines()){
+      count +=1
+      val label=line.substring(0,line.indexOf("#"))
+      val content=line.substring(line.indexOf("#")+1,line.length)
+
+      label match {
+        case "neg"   => {
+//          neg_count +=1
+//          writer.write("1#"+content+"\n")
+//          writer.flush()
+        }
+        case "neu"   => {
+          neu_count +=1
+          writer.write("2#"+content+"\n")
+          writer.flush()
+        }
+        case "pos"    => {
+          pos_count +=1
+          writer.write("3#"+content+"\n")
+          writer.flush()
+        }
+      }
+
+    }
+
+    println("总共 "+count)
+    println("消极： "+neg_count+"    中性: "+neu_count+"   积极 ："+pos_count)
+  }
 }

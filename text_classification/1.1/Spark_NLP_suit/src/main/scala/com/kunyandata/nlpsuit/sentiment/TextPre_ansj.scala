@@ -62,7 +62,7 @@ object TextPre_ansj {
       var titlestr=""
       var contentstr=""
       for(word <-title_seg){
-        titlestr +=" "+word.toString()
+        titlestr +=","+word.toString()
       }
       for(word <-content_seg){
         contentstr +=" "+word.toString()
@@ -134,7 +134,7 @@ object TextPre_ansj {
       //结果Array =>String
       var titlestr=""
       for(word <-title_seg){
-        titlestr +=" "+word.toString()
+        titlestr +=","+word.toString()
       }
 
       //获取类别编号
@@ -204,7 +204,7 @@ object TextPre_ansj {
       //结果Array =>String
       var contentstr=""
       for(word <-content_seg){
-        contentstr +=" "+word.toString()
+        contentstr +=","+word.toString()
       }
 
       //获取类别编号
@@ -224,5 +224,216 @@ object TextPre_ansj {
       count +=1
     }
     writer.close()
+  }
+
+
+  def textPre_content_F(sc:SparkContext,dataPath:String,outPath:String,stopWordsPath:String): Unit ={
+    val stopWords = sc.textFile(stopWordsPath).collect()
+    val writer=new PrintWriter(new File(outPath),"UTF-8")
+    //读取文件
+    val files=Util.readfile2HashMap(dataPath)
+    val it=files.keySet.iterator
+
+    //分词器初始化，加载用户词典
+    val user_dict=Array(
+      "text_classification\\1.1\\Spark_NLP_suit\\src\\test\\resources\\sentiment_data\\senti_dict\\user_dict.txt",
+      "text_classification\\1.1\\Spark_NLP_suit\\src\\test\\resources\\sentiment_data\\senti_dict\\neg_dic.txt",
+      "text_classification\\1.1\\Spark_NLP_suit\\src\\test\\resources\\sentiment_data\\senti_dict\\nega_dic.txt",
+      "text_classification\\1.1\\Spark_NLP_suit\\src\\test\\resources\\sentiment_data\\senti_dict\\posi_dic.txt",
+      "E:\\dict\\senti_dict\\user_dict.txt"
+    )
+    Analyzer.init(sc,user_dict)
+
+    //计数
+    var count=0
+    while(it.hasNext){
+
+      //取出单篇文章
+      val file=it.next()
+
+      //获取单篇文章title和content
+      val title=file.getName.substring(0,file.getName.indexOf(".txt"))
+      val content=files.get(file).toString
+
+      //计数，便于查问题，title便于知道是哪篇文章
+      println("还剩下："+(files.size()-count)+"  ["+file.getParentFile.getName+"]  "+title)
+
+      //分词，返回分词结果为Arry
+      var content_seg=Analyzer.cut(content)
+
+      //去停，返回结果为Array
+      content_seg=TextProcess.removeStopWords(content_seg,stopWords)
+
+      //结果Array =>String
+      var contentstr=""
+      for(word <-content_seg){
+        contentstr +=","+word.toString()
+      }
+
+      //获取类别编号
+      val label=file.getParentFile.getName
+      val labelNum=
+        label match {
+          case "neg" =>1
+          case "neu" =>4   //中性标注为 4
+          case "pos" =>4   //中性标注为 4
+        }
+
+      //按格式写入到本地文本进行保存
+      writer.append(labelNum+"#"+contentstr+"\n")
+      writer.flush()
+
+      //计数
+      count +=1
+    }
+    writer.close()
+  }
+
+  def textPre_content_S(sc:SparkContext,dataPath:String,outPath:String,stopWordsPath:String): Unit ={
+    val stopWords = sc.textFile(stopWordsPath).collect()
+    val writer=new PrintWriter(new File(outPath),"UTF-8")
+    //读取文件
+    val files=Util.readfile2HashMap(dataPath)
+    val it=files.keySet.iterator
+
+    //分词器初始化，加载用户词典
+    val user_dict=Array(
+      "text_classification\\1.1\\Spark_NLP_suit\\src\\test\\resources\\sentiment_data\\senti_dict\\user_dict.txt",
+      "text_classification\\1.1\\Spark_NLP_suit\\src\\test\\resources\\sentiment_data\\senti_dict\\neg_dic.txt",
+      "text_classification\\1.1\\Spark_NLP_suit\\src\\test\\resources\\sentiment_data\\senti_dict\\nega_dic.txt",
+      "text_classification\\1.1\\Spark_NLP_suit\\src\\test\\resources\\sentiment_data\\senti_dict\\posi_dic.txt",
+      "E:\\dict\\senti_dict\\user_dict.txt"
+    )
+    Analyzer.init(sc,user_dict)
+
+    //计数
+    var count=0
+    while(it.hasNext){
+
+      //取出单篇文章
+      val file=it.next()
+
+      //获取单篇文章title和content
+      val title=file.getName.substring(0,file.getName.indexOf(".txt"))
+      val content=files.get(file).toString
+
+      //计数，便于查问题，title便于知道是哪篇文章
+      println("还剩下："+(files.size()-count)+"  ["+file.getParentFile.getName+"]  "+title)
+
+      //分词，返回分词结果为Arry
+      var content_seg=Analyzer.cut(content)
+
+      //去停，返回结果为Array
+      content_seg=TextProcess.removeStopWords(content_seg,stopWords)
+
+      //结果Array =>String
+      var contentstr=""
+      for(word <-content_seg){
+        contentstr +=","+word.toString()
+      }
+
+      //获取类别编号
+      val label=file.getParentFile.getName
+      val labelNum=
+        label match {
+          case "neg" =>1
+          case "neu" =>2
+          case "pos" =>3
+        }
+
+      //按格式写入到本地文本进行保存
+      if(labelNum==2){
+        writer.append(labelNum+"#"+contentstr+"\n")
+        writer.flush()
+      }else if(labelNum==3){
+        writer.append(labelNum+"#"+contentstr+"\n")
+        writer.flush()
+      }
+
+      //计数
+      count +=1
+    }
+    writer.close()
+  }
+
+  def textPre_content_FS(sc:SparkContext,dataPath:String,outPath_F:String,outPath_S:String,stopWordsPath:String): Unit ={
+    val stopWords = sc.textFile(stopWordsPath).collect()
+    val writer1=new PrintWriter(new File(outPath_F),"UTF-8")
+    val writer2=new PrintWriter(new File(outPath_S),"UTF-8")
+
+    //读取文件
+    val files=Util.readfile2HashMap(dataPath)
+    val it=files.keySet.iterator
+
+    //分词器初始化，加载用户词典
+    val user_dict=Array(
+      "text_classification\\1.1\\Spark_NLP_suit\\src\\test\\resources\\sentiment_data\\senti_dict\\user_dict.txt",
+      "text_classification\\1.1\\Spark_NLP_suit\\src\\test\\resources\\sentiment_data\\senti_dict\\neg_dic.txt",
+      "text_classification\\1.1\\Spark_NLP_suit\\src\\test\\resources\\sentiment_data\\senti_dict\\nega_dic.txt",
+      "text_classification\\1.1\\Spark_NLP_suit\\src\\test\\resources\\sentiment_data\\senti_dict\\posi_dic.txt",
+      "E:\\dict\\senti_dict\\user_dict.txt"
+    )
+    Analyzer.init(sc,user_dict)
+
+    //计数
+    var count=0
+    while(it.hasNext){
+
+      //取出单篇文章
+      val file=it.next()
+
+      //获取单篇文章title和content
+      val title=file.getName.substring(0,file.getName.indexOf(".txt"))
+      val content=files.get(file).toString
+
+      //计数，便于查问题，title便于知道是哪篇文章
+      println("还剩下："+(files.size()-count)+"  ["+file.getParentFile.getName+"]  "+title)
+
+      //分词，返回分词结果为Arry
+      var content_seg=Analyzer.cut(content)
+
+      //去停，返回结果为Array
+      content_seg=TextProcess.removeStopWords(content_seg,stopWords)
+
+      //结果Array =>String
+      var contentstr=" "
+      for(word <-content_seg){
+        contentstr +=","+word.toString().trim
+      }
+
+      //获取类别编号
+      val label=file.getParentFile.getName
+
+      //获取类别编号
+      val labelNum_f=
+        label match {
+          case "neg" =>1
+          case "neu" =>4   //中性标注为 4
+          case "pos" =>4   //中性标注为 4
+        }
+      //按格式写入到本地文本进行保存
+      writer1.append(labelNum_f+"#"+contentstr+"\n")
+      writer1.flush()
+
+      val labelNum_s=
+        label match {
+          case "neg" =>1
+          case "neu" =>2
+          case "pos" =>3
+        }
+      //按格式写入到本地文本进行保存
+      if(labelNum_s==2){
+        writer2.append(labelNum_s+"#"+contentstr+"\n")
+        writer2.flush()
+      }else if(labelNum_s==3){
+        writer2.append(labelNum_s+"#"+contentstr+"\n")
+        writer2.flush()
+      }
+
+      //计数
+      count +=1
+    }
+    writer1.close()
+    writer2.close()
   }
 }
