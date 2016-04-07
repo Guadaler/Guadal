@@ -11,15 +11,15 @@ import org.apache.spark.mllib.stat.Statistics
 import org.apache.spark.mllib.stat.test.ChiSqTestResult
 import org.apache.spark.rdd.RDD
 
-class BetterChiSqSelector(numTopFeatures: Int){
+class BetterChiSqSelector(){
 
-  def fitPre(data: RDD[LabeledPoint]): Array[(ChiSqTestResult, Int)] = {
+  def preFit(data: RDD[LabeledPoint]): Array[(ChiSqTestResult, Int)] = {
     val indices = Statistics.chiSqTest(data)
       .zipWithIndex.sortBy { case (res, _) => -res.statistic }
     indices
   }
 
-  def fit(temp: Array[(ChiSqTestResult, Int)]): ChiSqSelectorModel = {
+  def fit(temp: Array[(ChiSqTestResult, Int)], numTopFeatures: Int): ChiSqSelectorModel = {
     val result = temp
       .take(numTopFeatures)
       .map { case (_, indices) => indices }

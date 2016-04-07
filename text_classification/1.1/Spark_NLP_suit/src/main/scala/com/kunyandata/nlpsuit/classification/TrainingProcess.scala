@@ -31,7 +31,7 @@ object TrainingProcess {
     * @return 返回（精度，召回率）
     */
   def trainingProcessWithRDD(train: RDD[(Double, Array[String])], test: RDD[(Double, Array[String])],
-                             parasDoc: Array[Int], parasFeatrues: Array[Int], writeModel:Boolean) = {
+                             parasDoc: Array[Int], parasFeatrues: Array[Int], fasterModel: Boolean, writeModel: Boolean) = {
 
     // 获得向量长度
     val VSMlength = countWords(train)
@@ -44,23 +44,45 @@ object TrainingProcess {
     })
 
     // 计算idf
-    val idfSets = parasDoc.map(minDoc => {
+    val idfTemp = parasDoc.map(minDoc => {
       val idfModel = new feature.IDF(minDoc).fit(trainTFRDD.map(line => {line._2}))
       val labeledTrainTfIdf = trainTFRDD.map( line => {
         val temp = idfModel.transform(line._2)
         LabeledPoint(line._1, temp)
       })
-      labeledTrainTfIdf
+      (minDoc, labeledTrainTfIdf)
     })
 
-    idfSets.foreach(labeledTfIdf => {
-      val chiSqTest = parasFeatrues.map(numFeatrue => {
-        val ChiSqTestArray = new BetterChiSqSelector(numFeatrue).fitPre(labeledTfIdf)
-        ChiSqTestArray
+    // 判断是否为快速模式
+    if (fasterModel) {
+      // 优化过的卡方检验选择器
+      idfTemp.foreach(labeledTfidfTuple => {
+        val betterChi = new BetterChiSqSelector()
+        val ChiSqTestArray = betterChi.preFit(labeledTfidfTuple._2)
+        val tempResult = parasFeatrues.map(numTopFeatrues => {
+          val chiSqResModel = betterChi.fit(ChiSqTestArray, numTopFeatrues)
+          val selectedTrain = labeledTfidfTuple._2.map(line => {
+            val temp = chiSqResModel.transform(line.features)
+            LabeledPoint(line.label, temp)
+          })
+          select
+        })
       })
-      chiSqTest.foreach(testArray => {
-        val result = new BetterChiSqSelector(numFeatrue).fit()
+
+    }else {
+      idfTemp.foreach(labeledTfidfTuple => {
+        parasFeatrues.foreach(numTopFeatures => {
+          // 卡方降维特征选择器
+          val chiSqSelectorModel = new feature.ChiSqSelector(numTopFeatures).fit(labeledTfidfTuple._2)
+          val selectedTrain = labeledTfidfTuple._2.map(line => {
+            val temp = chiSqSelectorModel.transform(line.features)
+            LabeledPoint(line.label, temp)
+          })
+        })
       })
+    }
+
+
 
 
     })
@@ -69,12 +91,6 @@ object TrainingProcess {
     val ChiSqTestArray = new BetterChiSqSelector(parasFeatrues).fitPre(labeledTrainTfIdf)
 
 
-    // 卡方降维特征选择器
-    val chiSqSelectorModel = new feature.ChiSqSelector(parasFeatrues).fit(labeledTrainTfIdf)
-    val selectedTrain = labeledTrainTfIdf.map(line => {
-      val temp = chiSqSelectorModel.transform(line.features)
-      LabeledPoint(line.label, temp)
-    })
 
     println("+++++++++++++++++++++++++++++++++++++++++++++特征选择结束++++++++++++++++++++++++++++++++++++++++++++++++++")
 
@@ -111,27 +127,27 @@ object TrainingProcess {
     println("Confusion matrix:")
     println(metrics.confusionMatrix)
 
-    // Precision by label
-    val labels = metrics.labels
-    labels.foreach { l =>
-      println(s"Precision($l) = " + metrics.precision(l))
-    }
-
-    // Recall by label
-    labels.foreach { l =>
-      println(s"Recall($l) = " + metrics.recall(l))
-    }
-
-    // False positive rate by label
-    labels.foreach { l =>
-      println(s"FPR($l) = " + metrics.falsePositiveRate(l))
-    }
-
-    // F-measure by label
-    labels.foreach { l =>
-      println(s"F1-Score($l) = " + metrics.fMeasure(l))
-    }
     (metrics.precision(1.0), metrics.recall(1.0))
+//    // Precision by label
+//    val labels = metrics.labels
+//    labels.foreach { l =>
+//      println(s"Precision($l) = " + metrics.precision(l))
+//    }
+//
+//    // Recall by label
+//    labels.foreach { l =>
+//      println(s"Recall($l) = " + metrics.recall(l))
+//    }
+//
+//    // False positive rate by label
+//    labels.foreach { l =>
+//      println(s"FPR($l) = " + metrics.falsePositiveRate(l))
+//    }
+//
+//    // F-measure by label
+//    labels.foreach { l =>
+//      println(s"F1-Score($l) = " + metrics.fMeasure(l))
+//    }
   }
 
   /**
@@ -266,11 +282,11 @@ object TrainingProcess {
       (temp(0).toDouble, temp(1).split(","))
     }).randomSplit(Array(0.2, 0.2, 0.2, 0.2, 0.2), seed = 2016L)
     val dataSet = Array(
-      Map("id" -> 1, "train" -> tempRDD(0).++(tempRDD(1)).++(tempRDD(2)).++(tempRDD(3)), "test" -> tempRDD(4)),
-      Map("id" -> 2, "train" -> tempRDD(0).++(tempRDD(1)).++(tempRDD(2)).++(tempRDD(4)), "test" -> tempRDD(3)),
-      Map("id" -> 3, "train" -> tempRDD(0).++(tempRDD(1)).++(tempRDD(3)).++(tempRDD(4)), "test" -> tempRDD(2)),
-      Map("id" -> 4, "train" -> tempRDD(0).++(tempRDD(2)).++(tempRDD(3)).++(tempRDD(4)), "test" -> tempRDD(1)),
-      Map("id" -> 5, "train" -> tempRDD(1).++(tempRDD(2)).++(tempRDD(3)).++(tempRDD(4)), "test" -> tempRDD(0))
+      Map("train" -> tempRDD(0).++(tempRDD(1)).++(tempRDD(2)).++(tempRDD(3)), "test" -> tempRDD(4)),
+      Map("train" -> tempRDD(0).++(tempRDD(1)).++(tempRDD(2)).++(tempRDD(4)), "test" -> tempRDD(3)),
+      Map("train" -> tempRDD(0).++(tempRDD(1)).++(tempRDD(3)).++(tempRDD(4)), "test" -> tempRDD(2)),
+      Map("train" -> tempRDD(0).++(tempRDD(2)).++(tempRDD(3)).++(tempRDD(4)), "test" -> tempRDD(1)),
+      Map("train" -> tempRDD(1).++(tempRDD(2)).++(tempRDD(3)).++(tempRDD(4)), "test" -> tempRDD(0))
     )
     TrainingProcess.tuneParas(dataSet, args(1).split(",").map(_.toInt), args(2).split(",").map(_.toInt), args(0))
 
