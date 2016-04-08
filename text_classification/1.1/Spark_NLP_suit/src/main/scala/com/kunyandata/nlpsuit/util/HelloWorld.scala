@@ -33,8 +33,8 @@ object HelloWorld {
       Map("train" -> dataSets(1).++(dataSets(2)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(0))
     )
 
-    TrainingProcess.tuneParas(dataSet, Array(1),
-        Array(300))
+   /* TrainingProcess.tuneParas(dataSet, Array(1),
+        Array(300))*/
     sc.stop()
   }
 }

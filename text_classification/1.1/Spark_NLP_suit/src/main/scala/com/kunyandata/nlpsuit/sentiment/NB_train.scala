@@ -34,38 +34,67 @@ object NB_train extends App{
   //------------------------------------------
   val outPath_content="D:\\000_DATA\\out\\【第五次标注程序结果】\\【1700+1500+1700】textSeg_content.txt"
   val outPath_content_F="D:\\000_DATA\\out\\【第五次标注程序结果】\\F_1700_textSeg_content.txt"
+  val outPath_content_F_2="D:\\000_DATA\\out\\【第五次标注程序结果】\\F_1700_textSeg_content_2.txt"
   val outPath_content_S="D:\\000_DATA\\out\\【第五次标注程序结果】\\S_1600_textSeg_content.txt"
 
-  val trainData=sc.textFile(outPath_content_S)  //中性 +综合
+  //NB训练
+  nbTrain(sc,outPath_content)
+
+  //网格参数寻优训练
+//  tuneParasTrain(sc,outPath_content_F_2)
 
 
-  //基于RDD的训练流程
-// val t=Array[String]("test1","test2")
-//  val dataRDD=trainData.map(line =>{
-//    val temp = line.split("#")
-//    if(temp.length >1){
-//      (temp(0).toDouble, temp(1).split(","))
-//    }else{
-//      println("空值"+line)
-//      (temp(0).toDouble, t)
-//    }
-//  })
+  /**
+    * 基于RDD的贝叶斯训练
+    * @param sc
+    * @param filepath
+    */
+  def nbTrain(sc:SparkContext,filepath:String): Unit ={
+    val trainData=sc.textFile(filepath)
 
-  //基于RDD的训练流程
-  val dataRDD=trainData.map(line =>{
-    val temp = line.split("#")
-    (temp(0).toDouble, temp(1).split(","))
-  })
+    //基于RDD的训练流程
+    val dataRDD=trainData.map(line =>{
+      val temp = line.split("#")
+      (temp(0).toDouble, temp(1).split(","))
+    })
 
-  println("数据载入结束")
-  //按照8:2的比例随机划分数据集
-  val dataSets = dataRDD.randomSplit(Array(0.8, 0.2), seed = 2016L)
+    println("数据载入结束")
+    //按照8:2的比例随机划分数据集
+    val dataSets = dataRDD.randomSplit(Array(0.8, 0.2), seed = 2016L)
 
-  val dataSet=Seq(
-    Map("train" -> dataSets(0), "test" -> dataSets(1))
-  )
+    val dataSet=Seq(
+      Map("train" -> dataSets(0), "test" -> dataSets(1))
+    )
 
-  val result = TrainingProcess.trainingProcessWithRDD(dataSet(0)("train"), dataSet(0)("test"), 0, 500,true)
-  println(result)
-  sc.stop()
+    val result = TrainingProcess.trainingProcessWithRDD(dataSet(0)("train"), dataSet(0)("test"), 0, 1000,true)
+    println(result)
+    sc.stop()
+  }
+
+  /**
+    * 基于网格参数寻优的训练
+    * @param sc
+    * @param filepath  数据集路径
+    */
+  def tuneParasTrain(sc:SparkContext,filepath:String): Unit ={
+    val trainData=sc.textFile(filepath)
+    val dataRDD=trainData.map(line=>{
+      val temp=line.split("#")
+      (temp(0).toDouble, temp(1).split(","))
+    })
+
+    //数据分割
+    val dataSets = dataRDD.randomSplit(Array(0.2, 0.2, 0.2, 0.2, 0.2), seed = 2016L)
+    val dataSet = Array(
+      Map("train" -> dataSets(0).++(dataSets(1)).++(dataSets(2)).++(dataSets(3)), "test" -> dataSets(4)),
+      Map("train" -> dataSets(0).++(dataSets(1)).++(dataSets(2)).++(dataSets(4)), "test" -> dataSets(3)),
+      Map("train" -> dataSets(0).++(dataSets(1)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(2)),
+      Map("train" -> dataSets(0).++(dataSets(2)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(1)),
+      Map("train" -> dataSets(1).++(dataSets(2)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(0))
+    )
+
+    TrainingProcess.tuneParas(dataSet,Array(1),Array(500),"Testzx")
+  }
+
+
 }

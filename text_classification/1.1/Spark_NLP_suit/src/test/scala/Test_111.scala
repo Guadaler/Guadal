@@ -1,7 +1,8 @@
 import com.kunyandata.nlpsuit.sentiment.{TextPre_KunAnalyzer, Analyzer, Util}
-import com.kunyandata.nlpsuit.util.WordSeg
+import com.kunyandata.nlpsuit.util.{TextProcess, WordSeg}
 import org.apache.spark.{SparkContext, SparkConf}
 
+import scala.util.Random
 import scala.util.parsing.json.JSON
 
 /**
@@ -104,7 +105,7 @@ object Test_111 {
     val file1="D:\\000_DATA\\out\\【第四次标注程序结果】\\【2000+1600+1700】textSeg_content.txt"
     val file2="D:\\000_DATA\\out\\【第四次标注程序结果】\\【2000+1600+1700】_pre_textSeg_content.txt"
 
-    Util.textPro(file1,file2)
+//    Util.textPro(file1,file2)
 
 
     var artNum="niaho#zheshi"
@@ -112,5 +113,49 @@ object Test_111 {
     var num=artNum.substring(artNum.indexOf("#")+1,artNum.length)
     println(label)
     println(num)
+
+    //随机数
+    val n=new Random().nextInt(10)
+
+
+    val arr=Array[Int](10)
+    val random=new Random()
+    for (a <- arr) {
+      val a=random.nextInt(10)
+//      println(a)
+    }
+
+    for(i <- 1 to 10) {
+      val a=random.nextInt(100)
+      println(a)
+    }
+    /*val arr2=new Array[Int](10)
+    for(index =0;index<arr2.length;index++){
+
+    }*/
+
+    val aa=5
+    val bb=4
+    aa match {
+      case 5 => println("aa="+aa)
+    }
+
+    bb match {
+      case 4 => println("bb="+bb)
+    }
+
+    val stopWordsPath="D:\\111_DATA\\data\\stop_words_CN"
+    val conf = new SparkConf().setAppName("mltest").setMaster("local")
+    val sc = new SparkContext(conf)
+    val stopWords = sc.textFile(stopWordsPath).collect()
+
+    var content_seg=Array[String]("你好","%","15","~")
+    for(seg <- content_seg){
+      println(seg)
+    }
+    content_seg=TextProcess.removeStopWords(content_seg,stopWords)
+    for(seg <- content_seg){
+      println(seg)
+    }
   }
 }
