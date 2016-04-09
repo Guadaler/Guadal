@@ -4,7 +4,6 @@ package com.kunyandata.nlpsuit.util
   * Created by QQ on 2016/4/6.
   */
 
-import org.apache.spark.annotation.Since
 import org.apache.spark.mllib.feature.ChiSqSelectorModel
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.stat.Statistics
