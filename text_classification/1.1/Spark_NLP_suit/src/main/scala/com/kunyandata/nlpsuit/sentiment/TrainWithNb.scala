@@ -11,7 +11,7 @@ import scala.io.Source
 /**
   * Created by zx on 2016/3/28.
   */
-object NB_train extends App{
+object TrainWithNb extends App{
 
   val conf=new SparkConf().setAppName("test").setMaster("local")
   val sc=new SparkContext(conf)
@@ -33,12 +33,12 @@ object NB_train extends App{
 
   //------------------------------------------
   val outPath_content="D:\\000_DATA\\out\\【第五次标注程序结果】\\【1700+1500+1700】textSeg_content.txt"
-  val outPath_content_F="D:\\000_DATA\\out\\【第五次标注程序结果】\\F_1700_textSeg_content.txt"
-  val outPath_content_F_2="D:\\000_DATA\\out\\【第五次标注程序结果】\\F_1700_textSeg_content_2.txt"
+  val outPath_content_F="D:\\000_DATA\\out\\【第五次标注程序结果】\\F_1700_textSeg_content.txt"  //1和4样本不平衡
+  val outPath_content_F_2="D:\\000_DATA\\out\\【第五次标注程序结果】\\F_1700_textSeg_content_2.txt"  //分别从2和3中随机挑选894条数据，组成类别4，使得与1达到样本平衡
   val outPath_content_S="D:\\000_DATA\\out\\【第五次标注程序结果】\\S_1600_textSeg_content.txt"
 
   //NB训练
-  nbTrain(sc,outPath_content)
+  nbTrain(sc,outPath_content,true)
 
   //网格参数寻优训练
 //  tuneParasTrain(sc,outPath_content_F_2)
@@ -47,9 +47,10 @@ object NB_train extends App{
   /**
     * 基于RDD的贝叶斯训练
     * @param sc
-    * @param filepath
+    * @param filepath  数据集文件路径(经过预处理的数据集)
+    * @param writeModel 模型是否保存到本地
     */
-  def nbTrain(sc:SparkContext,filepath:String): Unit ={
+  def nbTrain(sc:SparkContext,filepath:String,writeModel:Boolean): Unit ={
     val trainData=sc.textFile(filepath)
 
     //基于RDD的训练流程
@@ -66,7 +67,11 @@ object NB_train extends App{
       Map("train" -> dataSets(0), "test" -> dataSets(1))
     )
 
-    val result = TrainingProcess.trainingProcessWithRDD(dataSet(0)("train"), dataSet(0)("test"), 0, 1000,true)
+    var result=new Tuple2[Double,Double](0.0,0.0)
+    writeModel match {
+      case true =>result = TrainingProcess.trainingProcessWithRDD(dataSet(0)("train"), dataSet(0)("test"), 0, 1000,true)
+      case false =>result = TrainingProcess.trainingProcessWithRDD(dataSet(0)("train"), dataSet(0)("test"), 0, 1000,false)
+    }
     println(result)
     sc.stop()
   }
@@ -86,13 +91,15 @@ object NB_train extends App{
     //数据分割
     val dataSets = dataRDD.randomSplit(Array(0.2, 0.2, 0.2, 0.2, 0.2), seed = 2016L)
     val dataSet = Array(
-      Map("train" -> dataSets(0).++(dataSets(1)).++(dataSets(2)).++(dataSets(3)), "test" -> dataSets(4)),
+//      Map[Array[String],Array[String]](dataSets(0).++(dataSets(1)).++(dataSets(2)).++(dataSets(3)), "test" -> dataSets(4)
+      Map("train" ->dataSets(0).++(dataSets(1)).++(dataSets(2)).++(dataSets(3)), "test" -> dataSets(4)),
       Map("train" -> dataSets(0).++(dataSets(1)).++(dataSets(2)).++(dataSets(4)), "test" -> dataSets(3)),
       Map("train" -> dataSets(0).++(dataSets(1)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(2)),
       Map("train" -> dataSets(0).++(dataSets(2)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(1)),
       Map("train" -> dataSets(1).++(dataSets(2)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(0))
     )
 
+    RDD
     TrainingProcess.tuneParas(dataSet,Array(1),Array(500),"Testzx")
   }
 
