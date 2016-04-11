@@ -92,7 +92,7 @@ object PredictWithNb extends App{
     * @return  预测label
     * @author zhangxin
     */
-  def predictWithSigle(content:String,model:Map[String, Any],stopWordsBr: Broadcast[Array[String]]): String ={
+  def predictWithSigle(content:String,model:Map[String, Any],stopWordsBr: Broadcast[Array[String]],typ: Int): String ={
     val temp = predict(content,model, stopWordsBr)
     val result=replaceLabel(temp)
     result
@@ -100,7 +100,7 @@ object PredictWithNb extends App{
   /**
     * 用ansj分词
     */
-  def predictWithSigle(content:String,model:Map[String, Any],stopWordsBr: Broadcast[Array[String]],typ: Int): String ={
+  def predictWithSigle(content:String,model:Map[String, Any],stopWordsBr: Broadcast[Array[String]]): String ={
     val temp = predict(content,model, stopWordsBr,typ: Int)
     val result=replaceLabel(temp)
     result
