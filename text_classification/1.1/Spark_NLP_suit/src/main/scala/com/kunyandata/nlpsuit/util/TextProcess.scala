@@ -110,6 +110,24 @@ object TextProcess {
     else removeStopWords(resultWords, stopWordsBr.value)
   }
 
+  /**
+    * 实现字符串的分词和去停,并分装成方法  ，与上面的process()方法相同，只是分词采用ansj
+    *
+    * @param content 需要处理的字符串
+    * @param stopWordsBr  停用词
+    * @return 返回分词去停后的结果
+    * @author zhangxin
+    */
+  def process_ansj(content: String, stopWordsBr: Broadcast[Array[String]]): Array[String] = {
+    // 格式化文本
+    val formatedContent =TextProcess.formatText(content)
+    // 实现分词
+    val resultWords=AnsjAnalyzer.cut(content)
+    // 实现去停用词
+    if (resultWords == null) null
+    else TextProcess.removeStopWords(resultWords, stopWordsBr.value)
+  }
+
 //  def main(args: Array[String]): Unit = {
 //
 //    val conf = new SparkConf().setAppName("wordSegmentation")
