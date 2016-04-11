@@ -20,16 +20,8 @@ object Test_predict {
 
     //单模型+单篇文章
     val model=PredictWithNb.init()
-    val content = "宽带中国”战略提速 设备商大块朵颖四千亿蛋糕"
+    val content = "原标题：国家发改委：中国足球2030年前跻身世界强队\n"
     val result =PredictWithNb.predictWithSigle(content, model, stopWordsBr)
     println(result)
-
-
-    //测试RDD
-    val a = sc.parallelize(1 to 9, 3)
-    println(a)
-
-
-
   }
 }

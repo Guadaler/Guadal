@@ -89,10 +89,10 @@ object PredictWithNb extends App{
     * @param content 文章内容
     * @param model 模型
     * @param stopWordsBr 停用词
-    * @return  预测label
+    * @return  情感label
     * @author zhangxin
     */
-  def predictWithSigle(content:String,model:Map[String, Any],stopWordsBr: Broadcast[Array[String]],typ: Int): String ={
+  def predictWithSigle(content:String,model:Map[String, Any],stopWordsBr: Broadcast[Array[String]],typ:Int): String ={
     val temp = predict(content,model, stopWordsBr,typ: Int)
     val result=replaceLabel(temp)
     result
@@ -111,7 +111,7 @@ object PredictWithNb extends App{
     * @param content  文章内容
     * @param arr  二级模型数组
     * @param stopWordsBr  停用词表
-    * @return 预测label
+    * @return 情感label
     * @author zhangxin
     */
   def predictWithFS(content:String,arr:Array[Map[String, Any]],stopWordsBr: Broadcast[Array[String]],typ: Int): String ={
