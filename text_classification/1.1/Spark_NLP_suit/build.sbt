@@ -10,20 +10,21 @@ libraryDependencies += "org.scalactic" %% "scalactic" % "2.2.5" % "test"
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.5" % "test"
 
-libraryDependencies += "org.apache.spark" % "spark-mllib_2.10" % "1.5.2" % "provided"
+libraryDependencies += "org.apache.spark" % "spark-mllib_2.10" % "1.5.2"
 
 libraryDependencies += "org.apache.spark" % "spark-core_2.10" % "1.5.2"
 
-libraryDependencies += "redis.clients" % "jedis" % "2.8.0" % "provided"
+libraryDependencies += "redis.clients" % "jedis" % "2.8.0" //% "provided"
 
-libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.5.1" % "provided"
+libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.5.1" //% "provided"
 
-libraryDependencies += "mysql" % "mysql-connector-java" % "3.1.14" % "provided"
+libraryDependencies += "mysql" % "mysql-connector-java" % "3.1.14"// % "provided"
 
-libraryDependencies += "org.ansj" % "ansj_seg" % "0.9" % "provided"
+libraryDependencies += "org.ansj" % "ansj_seg" % "0.9" //% "provided"
 
-libraryDependencies += "org.json" % "json" % "20160212" % "provided"
+libraryDependencies += "org.json" % "json" % "20160212"// % "provided"
 
+libraryDependencies += "org.apache.commons" % "commons-pool2" % "2.2"
 
 assemblyMergeStrategy in assembly := {
   case PathList("javax", "servlet", xs @ _*) => MergeStrategy.last

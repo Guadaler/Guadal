@@ -31,7 +31,7 @@ object TrainingProcess {
   def trainingProcessWithRDD(train: RDD[(Double, Array[String])], test: RDD[(Double, Array[String])], parasDoc: Int, parasFeatrues: Int, writeModel:Boolean) = {
     // 构建hashingTF模型，同时将数据转化为LabeledPoint类型
     val vocabNum = countWords(train)
-    val hashingTFModel = new feature.HashingTF(vocabNum)
+     val hashingTFModel = new feature.HashingTF(vocabNum)
     val trainTFRDD = train.map(line => {
       val temp = hashingTFModel.transform(line._2)
       (line._1, temp)

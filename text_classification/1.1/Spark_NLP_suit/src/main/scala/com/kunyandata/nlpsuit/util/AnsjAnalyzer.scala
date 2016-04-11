@@ -1,4 +1,4 @@
-package com.kunyandata.nlpsuit.sentiment
+package com.kunyandata.nlpsuit.util
 
 import java.util
 
@@ -12,7 +12,7 @@ import scala.collection.JavaConversions._
 /**
   * Created by zx on 2016/3/8   基于ansj的分词工具
   */
-object Analyzer extends App{
+object AnsjAnalyzer extends App{
 
   override def main(args: Array[String]) {
     val conf=new SparkConf().setAppName("News_title_sentiment_lm").setMaster("local")
