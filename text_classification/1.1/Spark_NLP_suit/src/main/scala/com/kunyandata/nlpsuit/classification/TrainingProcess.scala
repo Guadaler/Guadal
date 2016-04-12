@@ -1,21 +1,22 @@
 package com.kunyandata.nlpsuit.classification
 
 /**
-  * Created by QQ on 2016/2/18.
+  * Created by QQ on 2016/4/1.
   */
 
 import java.io._
+import com.kunyandata.nlpsuit.util.Statistic
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{Path, FileSystem}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.mllib.feature
+import com.kunyandata.nlpsuit.util.BetterChiSqSelector
 import org.apache.spark.rdd.RDD
 import org.apache.spark.mllib.classification.{NaiveBayes, SVMWithSGD}
 import org.apache.spark.mllib.evaluation.MulticlassMetrics
 import org.apache.spark.mllib.regression.LabeledPoint
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.io.Source
 
 object TrainingProcess {
 
@@ -28,85 +29,63 @@ object TrainingProcess {
     * @param parasFeatrues 特征选择数量参数
     * @return 返回（精度，召回率）
     */
-  def trainingProcessWithRDD(train: RDD[(Double, Array[String])], test: RDD[(Double, Array[String])], parasDoc: Int, parasFeatrues: Int, writeModel:Boolean) = {
+  def trainingProcessWithRDD(train: RDD[(Double, Array[String])], test: RDD[(Double, Array[String])],
+                             parasDoc: Array[Int], parasFeatrues: Array[Int], VSMlength: Int) = {
+
     // 构建hashingTF模型，同时将数据转化为LabeledPoint类型
-    val vocabNum = countWords(train)
-     val hashingTFModel = new feature.HashingTF(vocabNum)
+    val hashingTFModel = new feature.HashingTF(VSMlength)
     val trainTFRDD = train.map(line => {
       val temp = hashingTFModel.transform(line._2)
       (line._1, temp)
     })
 
     // 计算idf
-    val idfModel = new feature.IDF(parasDoc).fit(trainTFRDD.map(line => {line._2}))
-    val labeedTrainTfIdf = trainTFRDD.map( line => {
-      val temp = idfModel.transform(line._2)
-      LabeledPoint(line._1, temp)
+    val idfTemp = parasDoc.map(minDoc => {
+      val idfModel = new feature.IDF(minDoc).fit(trainTFRDD.map(line => {line._2}))
+      val labeledTrainTfIdf = trainTFRDD.map( line => {
+        val temp = idfModel.transform(line._2)
+        LabeledPoint(line._1, temp)
+      })
+      (minDoc, labeledTrainTfIdf, idfModel)
     })
 
-    // 卡方降维特征选择器
-    val chiSqSelectorModel = new feature.ChiSqSelector(parasFeatrues).fit(labeedTrainTfIdf)
-    val selectedTrain = labeedTrainTfIdf.map(line => {
-      val temp = chiSqSelectorModel.transform(line.features)
-      LabeledPoint(line.label, temp)
-    })
+    // 优化过的卡方检验选择器
+    idfTemp.map(labeledTfidfTuple => {
+      val betterChiSqTest = new BetterChiSqSelector()
+      val ChiSqTestArray = betterChiSqTest.preFit(labeledTfidfTuple._2)
+      val tempResult = parasFeatrues.map(numTopFeatrues => {
+        val chiSqTestModel = betterChiSqTest.fit(ChiSqTestArray, numTopFeatrues)
+        val selectedTrain = labeledTfidfTuple._2.map(line => {
+          val temp = chiSqTestModel.transform(line.features)
+          LabeledPoint(line.label, temp)
+        })
 
-    println("+++++++++++++++++++++++++++++++++++++++++++++特征选择结束++++++++++++++++++++++++++++++++++++++++++++++++++")
+        // 创建NB模型
+        val nbModel = NaiveBayes.train(selectedTrain, 1.0, "multinomial")
 
-    // 创建贝叶斯分类器
-    val nbModel = NaiveBayes.train(selectedTrain, 1.0, "multinomial")
+        // 测试集同步
+        val testRDD = test.map(line => {
+          val temp = line._2
+          val tempTf = hashingTFModel.transform(temp)
+          val tempTfidf = labeledTfidfTuple._3.transform(tempTf)
+          val tempSelected = chiSqTestModel.transform(tempTfidf)
+          LabeledPoint(line._1, tempSelected)
+        })
 
-    if(writeModel){
-      val tfModelOutput = new ObjectOutputStream(new FileOutputStream("D:/tfModel"))
-      tfModelOutput.writeObject(hashingTFModel)
-      val idfModelOutput = new ObjectOutputStream(new FileOutputStream("D:/idfModel"))
-      idfModelOutput.writeObject(idfModel)
-      val chiSqSelectorModelOutput = new ObjectOutputStream(new FileOutputStream("D:/chiSqSelectorModel"))
-      chiSqSelectorModelOutput.writeObject(chiSqSelectorModel)
-      val nbModelOutput = new ObjectOutputStream(new FileOutputStream("D:/nbModel"))
-      nbModelOutput.writeObject(nbModel)
-    }
+        // 预测
+        val predictionAndLabels = testRDD.map {line =>
+          val prediction = nbModel.predict(line.features)
+          //      println((prediction, line.label))
+          (prediction, line.label)
+        }
 
-    // 根据训练集同步测试集特征
-    val testRDD = test.map(line => {
-      val temp = line._2
-      val tempTf = hashingTFModel.transform(temp)
-      val tempTfidf = idfModel.transform(tempTf)
-      val tempSelected = chiSqSelectorModel.transform(tempTfidf)
-      LabeledPoint(line._1, tempSelected)
-    })
+        // 计算精度和召回率
+        val metrics = new MulticlassMetrics(predictionAndLabels)
+        (numTopFeatrues, (metrics.precision(1.0), metrics.recall(1.0)))
+      }).toMap
 
-    val predictionAndLabels = testRDD.map {line =>
-      val prediction = nbModel.predict(line.features)
-      //      println((prediction, line.label))
-      (prediction, line.label)
-    }
-
-    val metrics = new MulticlassMetrics(predictionAndLabels)
-    println("Confusion matrix:")
-    println(metrics.confusionMatrix)
-
-    // Precision by label
-    val labels = metrics.labels
-    labels.foreach { l =>
-      println(s"Precision($l) = " + metrics.precision(l))
-    }
-
-    // Recall by label
-    labels.foreach { l =>
-      println(s"Recall($l) = " + metrics.recall(l))
-    }
-
-    // False positive rate by label
-    labels.foreach { l =>
-      println(s"FPR($l) = " + metrics.falsePositiveRate(l))
-    }
-
-    // F-measure by label
-    labels.foreach { l =>
-      println(s"F1-Score($l) = " + metrics.fMeasure(l))
-    }
-    (metrics.precision(1.0), metrics.recall(1.0))
+      (labeledTfidfTuple._1, tempResult)
+    }).toMap
   }
 
   /**
@@ -120,23 +99,33 @@ object TrainingProcess {
     val hdfsConf = new Configuration()
     hdfsConf.set("fs.defaultFS", "hdfs://222.73.34.92:9000")
     val fs = FileSystem.get(hdfsConf)
-    val output = fs.create(new Path("/mlearning/ParasTuningResult"))
+    val output = fs.create(new Path("/mlearning/ParasTuning/" + indusName))
     val writer = new PrintWriter(output)
-    var result:Map[String,(Double, Double)] = Map()
-    parasDoc.foreach(paraDoc => {
-      parasFeatrues.foreach(paraFeatrues => {
-        df.foreach(data => {
-          val paraSets = paraDoc.toString + "_" + paraFeatrues.toString
-          val results = trainingProcessWithRDD(data("train"), data("test"), paraDoc, paraFeatrues, writeModel = false)
-          result += (paraSets -> results)
-          val writeOut = indusName + "\t" +  paraSets + "\t\tPrecision:" + results._1 + "\tRecall:" + results._2 + "\n"
-          writer.write(writeOut)
-        })
-        writer.write("\n")
-      })
-      writer.write("\n\n")
+    val parasTuningResult = df.map(data => {
+      val VSMlength = countWords(data("train"))
+      val temp = trainingProcessWithRDD(data("train"),
+        data("test"), parasDoc, parasFeatrues, VSMlength)
+      (VSMlength, temp)
     })
-    result.foreach(println)
+
+    // 将统计信息写入本地
+    writer.write("行业\'" + indusName +"\'的统计信息如下:\n")
+    parasDoc.foreach(paraDoc => {
+      parasFeatrues.foreach(paraFea => {
+        parasTuningResult.foreach(line => {
+          val temp = line._2(paraDoc)(paraFea)
+          writer.write( "语料库特征长度为" + line._1 + "\n")
+          val outLabel = "minDoc和topFeatrueNum参数分别为: " + paraDoc + "," + paraFea
+          writer.write(outLabel + "\t精度和召回率为: " + temp + "\n")
+        })
+        val preArray = parasTuningResult.map(_._2(paraDoc)(paraFea)._1)
+        val recArray = parasTuningResult.map(_._2(paraDoc)(paraFea)._2)
+        val avePrecision = Statistic.sum(preArray)/preArray.count(_ != null)
+        val aveRecall = Statistic.sum(recArray) / recArray.count(_ != null)
+        writer.write("参数组合:" + paraDoc + "," + paraFea +
+          "的平均精度为: " + avePrecision + ",平均召回率为: " + aveRecall + "\n\n")
+      })
+    })
     writer.close()
   }
 
@@ -192,6 +181,7 @@ object TrainingProcess {
 
   /**
     * 计算语料库中的词汇数量
+    *
     * @param trainingSet 语料库RDD
     * @return 返回一个整形
     */
@@ -202,10 +192,59 @@ object TrainingProcess {
     wordCount
   }
 
+
+  def outPutModels(train: RDD[(Double, Array[String])], indus: String, minDF: Int, topFeat: Int) = {
+
+    val hdfsConf = new Configuration()
+    hdfsConf.set("fs.defaultFS", "hdfs://222.73.34.92:9000")
+    val fs = FileSystem.get(hdfsConf)
+
+    val VSMlength = countWords(train)
+    val hashingTFModel = new feature.HashingTF(VSMlength)
+    val trainTFRDD = train.map(line => {
+      val temp = hashingTFModel.transform(line._2)
+      (line._1, temp)
+    })
+    // 计算idf
+    val idfModel = new feature.IDF(minDF).fit(trainTFRDD.map(line => {line._2}))
+    val labeedTrainTfIdf = trainTFRDD.map( line => {
+      val temp = idfModel.transform(line._2)
+      LabeledPoint(line._1, temp)
+    })
+    // 卡方降维
+    val chiSqSelectorModel = new feature.ChiSqSelector(topFeat).fit(labeedTrainTfIdf)
+    val selectedTrain = labeedTrainTfIdf.map(line => {
+      val temp = chiSqSelectorModel.transform(line.features)
+      LabeledPoint(line.label, temp)
+    })
+    // 贝叶斯分类器
+    val nbModel = NaiveBayes.train(selectedTrain, 1.0, "multinomial")
+    val models = Map("TfModel" -> hashingTFModel, "IdfModel" -> idfModel,
+      "ChiSelector" -> chiSqSelectorModel, "NBayesModel" -> nbModel)
+    models.foreach(model => {
+      val ModelOutput = new ObjectOutputStream(fs.create(new Path("/mlearning/Models/" + indus + "_" + model._1)))
+      ModelOutput.writeObject(model._2)
+    })
+
+  }
+
+
   def main(args: Array[String]) {
 
-    val conf = new SparkConf().setAppName("MlTraining")
+    val conf = new SparkConf().setAppName("MlTraining_" + args(0))
     val sc = new SparkContext(conf)
+
+    val parasSets = sc.textFile("hdfs://222.73.34.92:9000/mlearning/ParasSets").collect()
+    parasSets.foreach(each => {
+      val Array(indus, minDF, topFeat) = each.split("\t")
+      val trainData = sc.textFile("hdfs://222.73.34.92:9000/mlearning/trainingData/trainingWithIndus/" + indus).map(line => {
+        val Array(label, content) = line.split("\t")
+        (label.toDouble, content.split(","))
+      })
+      val result = outPutModels(trainData, indus, minDF.toInt, topFeat.toInt)
+      println(result)
+    })
+
 
     //    val text = Source.fromFile("D:/mlearning/trainingLabel.new").getLines().toArray.map(line => {
     //      val temp = line.split("\t")
@@ -219,195 +258,68 @@ object TrainingProcess {
     //    })
     //    writer.close()
 
-    val labeledContent = sc.textFile("hdfs://222.73.34.92:9000/mlearning/trainingData/labeledContent").collect().map(line => {
-      val temp = line.split("\t")
-      (temp(0), temp(1).split(","))
-    }).toMap
+    // 获取每个行业的url集合
+    //    val labeledContent = sc.textFile("hdfs://222.73.34.92:9000/mlearning/trainingData/labeledContent").collect().map(line => {
+    //      val temp = line.split("\t")
+    //      (temp(0), temp(1).split(","))
+    //    }).toMap
 
-    val totalTrianRDD = sc.textFile("hdfs://222.73.34.92:9000/mlearning/trainingData/segTrainSet").repartition(4).map(line => {
-      val temp = line.split("\t")
-      if (temp.length == 2) {
-        (temp(0), temp(1).split(","))
-      }
-    }).filter(_ != ()).map(_.asInstanceOf[(String, Array[String])])
+    // #################################################################################################################
+    // ##########################################    基于5阶交叉验证的参数网格寻优过程    ##################################
+    // #################################################################################################################
+//    val trainingData = sc.textFile("hdfs://222.73.34.92:9000/mlearning/trainingData/trainingWithIndus/" + args(0)).repartition(4)
+//    val tempRDD = trainingData.map(line => {
+//      val temp = line.split("\t")
+//      (temp(0).toDouble, temp(1).split(","))
+//    }).randomSplit(Array(0.2, 0.2, 0.2, 0.2, 0.2), seed = 2016L)
+//    val dataSet = Array(
+//      Map("train" -> tempRDD(0).++(tempRDD(1)).++(tempRDD(2)).++(tempRDD(3)), "test" -> tempRDD(4)),
+//      Map("train" -> tempRDD(0).++(tempRDD(1)).++(tempRDD(2)).++(tempRDD(4)), "test" -> tempRDD(3)),
+//      Map("train" -> tempRDD(0).++(tempRDD(1)).++(tempRDD(3)).++(tempRDD(4)), "test" -> tempRDD(2)),
+//      Map("train" -> tempRDD(0).++(tempRDD(2)).++(tempRDD(3)).++(tempRDD(4)), "test" -> tempRDD(1)),
+//      Map("train" -> tempRDD(1).++(tempRDD(2)).++(tempRDD(3)).++(tempRDD(4)), "test" -> tempRDD(0))
+//    )
+//    TrainingProcess.tuneParas(dataSet, args(1).split(",").map(_.toInt), args(2).split(",").map(_.toInt), args(0))
+    // #################################################################################################################
+    // #################################################################################################################
+    // #################################################################################################################
 
-    //    val writer = new PrintWriter(new File("D:/trainingStatic"))
+
+
+
+
+    // #################################################################################################################
+    // ########################################    根据行业分割数据集    #################################################
+    // #################################################################################################################
+    // 获取总训练集
+    //    val totalTrianRDD = sc.textFile("hdfs://222.73.34.92:9000/mlearning/trainingData/segTrainSet").repartition(4).map(line => {
+    //      val temp = line.split("\t")
+    //      if (temp.length == 2) {
+    //        (temp(0), temp(1).split(","))
+    //      }
+    //    }).filter(_ != ()).map(_.asInstanceOf[(String, Array[String])])
+
+    //    // 根据行业分割数据集，并输出成本地文本
+    //    val writer = new PrintWriter(new File("D:/mlearning/trainingSets/trainingStatic"))
     //    labeledContent.foreach(line => {
-    //      val temp = matchRDD(line._2, totalTrianRDD)
-    //      val posTemp = temp.filter(_._1 == 1.0).count()
-    //      writer.write("训练集\'" + line._1 + "\'的数量为" + ":" + temp.count() + "\t" + "其中正例的样本数量为" + posTemp + "\n")
+    //      val traingingWriter = new PrintWriter(new File("D:/mlearning/trainingSets/" + line._1))
+    //      val temp = matchRDD(line._2, totalTrianRDD).collect()
+    //      temp.foreach(content => {
+    //        val outPutString = content._1 + "\t" + content._2.mkString(",") + "\n"
+    //        traingingWriter.write(outPutString)
+    //      })
+    //      traingingWriter.close()
+    //      val posTemp = temp.count(_._1 == 1.0)
+    //      val negTemp = temp.count(_._1 == 0.0)
+    //      writer.write("训练集\'" + line._1 + "\'的数量为" + ":" + temp.length + "\t"
+    //        + "其中正例的样本数量为" + posTemp + "\t"
+    //        + "其中负例的样本数量为" + negTemp + "\n")
     //      writer.flush()
     //    })
     //    writer.close()
-
-    val trainingSets = labeledContent.map(target => {
-      val tempRDD = matchRDD(target._2, totalTrianRDD).repartition(4).randomSplit(Array(0.2, 0.2, 0.2, 0.2, 0.2), seed = 2016L)
-      val dataSet = Array(
-        Map("train" -> tempRDD(0).++(tempRDD(1)).++(tempRDD(2)).++(tempRDD(3)), "test" -> tempRDD(4)),
-        Map("train" -> tempRDD(0).++(tempRDD(1)).++(tempRDD(2)).++(tempRDD(4)), "test" -> tempRDD(3)),
-        Map("train" -> tempRDD(0).++(tempRDD(1)).++(tempRDD(3)).++(tempRDD(4)), "test" -> tempRDD(2)),
-        Map("train" -> tempRDD(0).++(tempRDD(2)).++(tempRDD(3)).++(tempRDD(4)), "test" -> tempRDD(1)),
-        Map("train" -> tempRDD(1).++(tempRDD(2)).++(tempRDD(3)).++(tempRDD(4)), "test" -> tempRDD(0))
-      )
-      (target._1, dataSet)
-    })
-
-    trainingSets.foreach(trainRDD => {
-      TrainingProcess.tuneParas(trainRDD._2, Array(1, 2), Array(100, 300, 500), trainRDD._1)
-      println("行业\'" + trainRDD._1 + "\'参数调优已完成")
-    })
+    // #################################################################################################################
+    // #################################################################################################################
+    // #################################################################################################################
     sc.stop()
   }
-
-
-
-  //1.5.2的机器学习库中没有实现chisqselector的pipline，所以参数寻优在RDD上完成
-  //  /**
-  //    * 基于dataframe的训练，主要用于网格参数寻优。
-  // *
-  //    * @param sc sparkcontext
-  //    * @param train 训练集
-  //    * @param test 测试集
-  //    * @param parasDoc idf最小文档频数参数
-  //    * @param parasFeatrues 特征选择数量参数
-  //    * @return 返回（精度，召回率）
-  //    */
-  //  def trainingProcessWithDF(sc: SparkContext, train:RDD[Seq[Object]], test: RDD[Seq[Object]], parasDoc: Int, parasFeatrues: Int) = {
-  //    val sqlContext = new SQLContext(sc)
-  //    val schema =
-  //      StructType(
-  //        StructField("id", StringType, nullable = false) ::
-  //          StructField("category", StringType, nullable = false) ::
-  //          StructField("content", ArrayType(StringType, containsNull = true), nullable = false) ::
-  //          StructField("label", DoubleType, nullable = false) :: Nil)
-  //    val dataDF = sqlContext.createDataFrame(train.map(line => {
-  //      Row(line(0), line(1), line(2).asInstanceOf[Seq[String]].toArray, if(line(1) == "881155") 1.0 else 0.0)
-  //    }), schema).toDF()
-  //
-  //    val testDF = sqlContext.createDataFrame(test.map(line => {
-  //      Row(line(0), line(1), line(2).asInstanceOf[Seq[String]].toArray, if(line(1) == "881155") 1.0 else 0.0)
-  //    }), schema).toDF()
-  //
-  //    // 去除停用词
-  ////    val stopWordsRemover = new StopWordsRemover()
-  ////      .setStopWords(stopWords)
-  ////      .setInputCol("content")
-  ////      .setOutputCol("filtered")
-  //    //  val worddf = stopWordsRemover.transform(wordDataFrame)
-  //
-  ////     构建向量空间模型
-  //    val hashingTFModel = new HashingTF()
-  //      .setInputCol("content")
-  //      .setOutputCol("rawFeatures")
-  //      .setNumFeatures(55000)
-  //
-  ////    val cvModel = new CountVectorizer()
-  ////      .setInputCol(stopWordsRemover.getOutputCol)
-  ////      .setOutputCol("rawFeatures")
-  //
-  //    // 计算idf值，并根据向量空间模型中的tf值获得tfidf
-  //    val idfModel = new IDF()
-  //      .setInputCol(hashingTFModel.getOutputCol)
-  //      .setOutputCol("features")
-  //      .setMinDocFreq(parasDoc)
-  //
-  //    //  val inppput = new ObjectInputStream(new FileInputStream("D:/idfModel"))
-  //    //  val idfModel = inppput.readObject().asInstanceOf[IDF]
-  //
-  //    val featureSelector = new ChiSqSelector()
-  //      .setNumTopFeatures(parasFeatrues)
-  //      .setFeaturesCol(idfModel.getOutputCol)
-  //      .setLabelCol("label")
-  //      .setOutputCol("selectedFeatures")
-  //
-  //    val vectorSpacePipline = new Pipeline()
-  //      .setStages(Array(hashingTFModel, idfModel, featureSelector))
-  //    val vectorSpacePiplineM = vectorSpacePipline.fit(dataDF)
-  //    val trainCM = vectorSpacePiplineM.transform(dataDF)
-  //    val testCM = vectorSpacePiplineM.transform(testDF)
-  //    trainCM.show
-  //
-  //
-  //    // 转换数据类型
-  //    val trainData = trainCM.select("label", "selectedFeatures").map(line => {
-  //      LabeledPoint(line.getDouble(0), line.getAs[SparseVector](1))
-  //    })
-  //
-  //    val testData = testCM.select("label", "selectedFeatures").map(line => {
-  //      LabeledPoint(line.getDouble(0), line.getAs[SparseVector](1))
-  //    })
-  //
-  //    val nbModel = NaiveBayes.train(trainData, 1.0, "multinomial")
-  //
-  //    val predictionAndLabels = testData.map {line =>
-  //      val prediction = nbModel.predict(line.features)
-  //      (prediction, line.label)
-  //    }
-  //
-  //    val metrics = new MulticlassMetrics(predictionAndLabels)
-  //    println("Confusion matrix:")
-  //    println(metrics.confusionMatrix)
-  //
-  //    // Precision by label
-  //    val labels = metrics.labels
-  //    labels.foreach { l =>
-  //      println(s"Precision($l) = " + metrics.precision(l))
-  //    }
-  //
-  //    // Recall by label
-  //    labels.foreach { l =>
-  //      println(s"Recall($l) = " + metrics.recall(l))
-  //    }
-  //
-  //    // False positive rate by label
-  //    labels.foreach { l =>
-  //      println(s"FPR($l) = " + metrics.falsePositiveRate(l))
-  //    }
-  //
-  //    // F-measure by label
-  //    labels.foreach { l =>
-  //      println(s"F1-Score($l) = " + metrics.fMeasure(l))
-  //    }
-  //    (metrics.precision(1.0), metrics.recall(1.0))
-  //  }
-
-  //  val conf = new SparkConf().setAppName("mltest").setMaster("local")
-  //  val sc = new SparkContext(conf)
-  //
-  //  val data = Source.fromFile("D:\\WorkSpace\\Spark_WorkSpace\\ein" +
-  //    "\\text_classification\\1.1\\Spark_NLP_suit\\src\\main" +
-  //    "\\resources\\train\\wordseg_881155").getLines().toArray
-  //
-  //  // 获取停用词
-  //  val stopWords = Source.fromFile("D:\\WorkSpace\\Spark_WorkSpace" +
-  //    "\\ein\\text_classification\\1.1\\Spark_NLP_suit\\src\\main" +
-  //    "\\resources\\dicts\\stop_words_CN").getLines().toArray
-  //
-  //  // 基于RDD的模型训练流程
-  //  val dataRDD = sc.parallelize(data.map(line => {
-  //    val temp = line.split("\t")
-  //    val removedStopWords = WordSeg.removeStopWords(temp(2).split(" "), stopWords)
-  //    Seq(temp(0), temp(1), removedStopWords.toSeq)
-  //  }))
-  //
-  //  val dataSets = dataRDD.randomSplit(Array(0.2, 0.2, 0.2, 0.2, 0.2), seed = 2016L)
-  //  val dataSet = Seq(
-  //    Map("train" -> dataSets(0).++(dataSets(1)).++(dataSets(2)).++(dataSets(3)), "test" -> dataSets(4)),
-  //    Map("train" -> dataSets(0).++(dataSets(1)).++(dataSets(2)).++(dataSets(4)), "test" -> dataSets(3)),
-  //    Map("train" -> dataSets(0).++(dataSets(1)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(2)),
-  //    Map("train" -> dataSets(0).++(dataSets(2)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(1)),
-  //    Map("train" -> dataSets(1).++(dataSets(2)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(0))
-  //  )
-  //  tuneParas(dataSet, Array(1,2),
-  //    Array(500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000,
-  //      5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000))
-
-  //  val result1 = trainingProcessWithDF(sc, dataSet(0)("train"), dataSet(0)("test"), 0, 500)
-  //  val result2 = trainingProcessWithRDD(dataSet(0)("train"), dataSet(0)("test"), 0, 500)
-  //  println(result1)
-  //  println(result2)
-  //  trainingProcessWithDF(sc, dataSet(0)("train"), dataSet(0)("test"), 2, 500)
-  //  trainingProcessWithRDD(trainDataRDD, testDataRDD)
-
-  //  sc.stop()
 }
