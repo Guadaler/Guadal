@@ -64,7 +64,7 @@ object TextProcess {
           bufferString.append(ch)
         }
       })
-      bufferString.mkString.replaceAll("""\s""", "")
+      bufferString.mkString.replaceAll("""\s""", "").replaceAll("\"", ",")
     }
   }
 
