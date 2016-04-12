@@ -4,9 +4,7 @@
 
 
 import org.scalatest.{Matchers, FlatSpec}
-
 import scala.collection.{mutable, Map}
-import scala.collection.mutable.ArrayBuffer
 
 class RegularTest extends  FlatSpec with Matchers{
 
