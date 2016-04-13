@@ -1,4 +1,4 @@
-mainClass in (Compile, packageBin) := Some("com.kunyandata.nlpsuit.util.TextProcess")
+mainClass in (Compile, packageBin) := Some("com.kunyandata.nlpsuit.classification.TrainingProcess")
 
 name := "Spark_NLP_suit"
 

@@ -9,6 +9,7 @@ import scala.collection.{mutable, Map}
 class RegularTest extends  FlatSpec with Matchers{
 
   "test " should "work" in{
+
     def grep(textString: String, categoryKeywords: Map[String, Array[String]],
                      categoryList: mutable.MutableList[String]): Unit = {
 
