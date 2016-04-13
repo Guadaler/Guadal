@@ -13,6 +13,7 @@ class FormatTest extends  FlatSpec with Matchers {
 
   "test " should "work" in{
 
+    println(System.getProperty("user.dir"))
     val text = Source.fromFile("/home/ParasResult/new 3.txt").getLines().toArray
     text.foreach(line => {
     val a = line.replaceAll("<[^<]*>", "").replaceAll("&nbsp", "")
