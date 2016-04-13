@@ -34,23 +34,22 @@ object TrainWithNb extends App{
   //------------------------------------------
   val outPath_content="D:\\000_DATA\\out\\【第五次标注程序结果】\\【1700+1500+1700】textSeg_content.txt"
   val outPath_content_F="D:\\000_DATA\\out\\【第五次标注程序结果】\\F_1700_textSeg_content.txt"  //1和4样本不平衡
-  val outPath_content_F_2="D:\\000_DATA\\out\\【第五次标注程序结果】\\F_1700_textSeg_content_2.txt"  //分别从2和3中随机挑选894条数据，组成类别4，使得与1达到样本平衡
+  val outPath_content_F_2="D:\\000_DATA\\out\\【第五次标注程序结果】\\F_1700_textSeg_content_2.txt"  //2和3各随机抽取，使1和4样本平衡
   val outPath_content_S="D:\\000_DATA\\out\\【第五次标注程序结果】\\S_1600_textSeg_content.txt"
 
   //NB训练
-  nbTrain(sc,outPath_content,true)
+  nbTrain(sc,outPath_content)
 
   //网格参数寻优训练
 //  tuneParasTrain(sc,outPath_content_F_2)
 
-
   /**
     * 基于RDD的贝叶斯训练
+    * 备注：仅训练测试，模型不保存
     * @param sc
     * @param filepath  数据集文件路径(经过预处理的数据集)
-    * @param writeModel 模型是否保存到本地
     */
-  def nbTrain(sc:SparkContext,filepath:String,writeModel:Boolean): Unit ={
+  def nbTrain(sc:SparkContext,filepath:String): Unit ={
     val trainData=sc.textFile(filepath)
 
     //基于RDD的训练流程
@@ -62,16 +61,10 @@ object TrainWithNb extends App{
     println("数据载入结束")
     //按照8:2的比例随机划分数据集
     val dataSets = dataRDD.randomSplit(Array(0.8, 0.2), seed = 2016L)
+    val train=dataSets(0).cache()
+    val test=dataSets(1).cache()
 
-    val dataSet=Seq(
-      Map("train" -> dataSets(0), "test" -> dataSets(1))
-    )
-
-    var result=new Tuple2[Double,Double](0.0,0.0)
-    writeModel match {
-      case true =>result = TrainingProcess.trainingProcessWithRDD(dataSet(0)("train"), dataSet(0)("test"), 0, 1000,true)
-      case false =>result = TrainingProcess.trainingProcessWithRDD(dataSet(0)("train"), dataSet(0)("test"), 0, 1000,false)
-    }
+    val result=TrainingProcess.trainingProcessWithRDD(train,test, Array(0), Array(1000),10000)
     println(result)
     sc.stop()
   }
