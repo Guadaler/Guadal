@@ -37,7 +37,8 @@ object PredictWithNb extends App{
     * @return  模型数组
     */
   def init(): Map[String, Any] = {
-    val path = "text_classification/1.1/Spark_NLP_suit/src/main/resources/sentimodels"  //模型路径  三分类模型
+//    val path = "text_classification/1.1/Spark_NLP_suit/src/main/resources/sentimodels"  //模型路径  三分类模型
+    val path = "text_classification/1.1/Spark_NLP_suit/src/main/resources/sentimodels/F_2_1500"  //模型路径  二分类（负类和其他）
     val fileList = new File(path)
     val modelList = fileList.listFiles()
     var modelMap:Map[String, Any] = Map()
@@ -153,8 +154,8 @@ object PredictWithNb extends App{
   /**
     * 编号替换成标签  如 1.0 =》 neg
     *
-    * @param tempresult
-    * @return
+    * @param tempresult 替换前类别编号
+    * @return 替换后的类别标签
     * @author zhangxin
     */
   def replaceLabel(tempresult:Double): String ={
@@ -163,6 +164,7 @@ object PredictWithNb extends App{
         case 1.0 => "neg"
         case 2.0 => "neu"
         case 3.0 => "pos"
+        case 4.0 => "neu_pos"  //综合类分为pos
       }
     result
   }
