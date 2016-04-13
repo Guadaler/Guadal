@@ -44,6 +44,7 @@ object TextProcess {
     */
   def formatText(content: String): String = {
 
+
     val step = 65248
     val dbcStart = 33.toChar
     val dbcEnd = 126.toChar
@@ -55,7 +56,10 @@ object TextProcess {
     if(content == null){
       content
     }else{
-      content.foreach(ch => {
+      content
+        .replaceAll("<[^<]*>", "")
+        .replaceAll("&nbsp", "")
+        .foreach(ch => {
         if (ch == sbcSpace){
           bufferString.append(dbcSpace)
         }else if (ch >= sbcStart && ch <= sbcEnd){
@@ -64,7 +68,10 @@ object TextProcess {
           bufferString.append(ch)
         }
       })
-      bufferString.mkString.replaceAll("""\s""", "").replaceAll("\"", ",")
+      bufferString
+        .mkString
+        .replaceAll("""\s""", "")
+        .replaceAll("\"", ",")
     }
   }
 

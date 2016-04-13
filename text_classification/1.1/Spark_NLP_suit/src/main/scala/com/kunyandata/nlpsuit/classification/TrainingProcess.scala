@@ -198,7 +198,7 @@ object TrainingProcess {
     val hdfsConf = new Configuration()
     hdfsConf.set("fs.defaultFS", "hdfs://222.73.34.92:9000")
     val fs = FileSystem.get(hdfsConf)
-
+    // 计算tf
     val VSMlength = countWords(train)
     val hashingTFModel = new feature.HashingTF(VSMlength)
     val trainTFRDD = train.map(line => {
@@ -219,13 +219,15 @@ object TrainingProcess {
     })
     // 贝叶斯分类器
     val nbModel = NaiveBayes.train(selectedTrain, 1.0, "multinomial")
-    val models = Map("TfModel" -> hashingTFModel, "IdfModel" -> idfModel,
-      "ChiSelector" -> chiSqSelectorModel, "NBayesModel" -> nbModel)
+    val models = Map("tfModel" -> hashingTFModel, "idfModel" -> idfModel,
+      "chiSqSelectorModel" -> chiSqSelectorModel, "nbModel" -> nbModel)
     models.foreach(model => {
-      val ModelOutput = new ObjectOutputStream(fs.create(new Path("/mlearning/Models/" + indus + "_" + model._1)))
-      ModelOutput.writeObject(model._2)
+      val mkIndusDir = fs.mkdirs(new Path("/mlearning/Models/" + indus + "/"))
+      if (mkIndusDir){
+        val ModelOutput = new ObjectOutputStream(fs.create(new Path("/mlearning/Models/" + model._1)))
+        ModelOutput.writeObject(model._2)
+      }
     })
-
   }
 
 
