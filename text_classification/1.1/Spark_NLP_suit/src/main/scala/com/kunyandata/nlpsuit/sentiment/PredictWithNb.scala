@@ -76,7 +76,7 @@ object PredictWithNb extends App{
     * @return  返回情感label编号
     */
   def predict(content: String, models: Map[String, Any], stopWordsBr: Broadcast[Array[String]]): Double = {
-    val wordSegNoStop = TextProcess.process_ansj(content, stopWordsBr)
+    val wordSegNoStop = TextProcess.process(content, stopWordsBr)
     val prediction = models("nbModel").asInstanceOf[NaiveBayesModel]
       .predict(models("chiSqSelectorModel").asInstanceOf[ChiSqSelectorModel]
         .transform(models("idfModel").asInstanceOf[IDFModel]

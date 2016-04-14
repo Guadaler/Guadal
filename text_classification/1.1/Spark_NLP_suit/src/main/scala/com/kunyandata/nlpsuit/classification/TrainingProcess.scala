@@ -97,7 +97,7 @@ object TrainingProcess {
     */
   def tuneParas(df: Array[Map[String, RDD[(Double, Array[String])]]], parasDoc:Array[Int], parasFeatrues:Array[Int], indusName: String) = {
     val hdfsConf = new Configuration()
-    hdfsConf.set("fs.defaultFS", "hdfs://222.73.34.92:9000")
+    hdfsConf.set("fs.defaultFS", "hdfs://222.73.57.12:9000")
     val fs = FileSystem.get(hdfsConf)
     val output = fs.create(new Path("/mlearning/ParasTuning/" + indusName))
     val writer = new PrintWriter(output)
@@ -164,12 +164,12 @@ object TrainingProcess {
     //    val intersectId = idA.toSet & idB.toSet
     val poInst = dataSet.map(line => {
       if (targetIDList.contains(line._1)) (1.0, line._2)
-    }).filter(_ != ()).map(_.asInstanceOf[(Double, Array[String])])
+    }).filter(_ != ()).map(_.asInstanceOf[(Double, Array[String])]).cache()
     val poInstNum = poInst.count()
 
     val neInst = dataSet.map(line => {
       if (!targetIDList.contains(line._1)) (0.0, line._2)
-    }).filter(_ != ()).map(_.asInstanceOf[(Double, Array[String])])
+    }).filter(_ != ()).map(_.asInstanceOf[(Double, Array[String])]).cache()
     val neInstNum = neInst.count()
 
     if (poInstNum <= neInstNum){
@@ -196,7 +196,7 @@ object TrainingProcess {
   def outPutModels(train: RDD[(Double, Array[String])], indus: String, minDF: Int, topFeat: Int) = {
 
     val hdfsConf = new Configuration()
-    hdfsConf.set("fs.defaultFS", "hdfs://222.73.34.92:9000")
+    hdfsConf.set("fs.defaultFS", "hdfs://222.73.57.12:9000")
     val fs = FileSystem.get(hdfsConf)
     // 计算tf
     val VSMlength = countWords(train)
@@ -224,7 +224,7 @@ object TrainingProcess {
     models.foreach(model => {
       val mkIndusDir = fs.mkdirs(new Path("/mlearning/Models/" + indus + "/"))
       if (mkIndusDir){
-        val ModelOutput = new ObjectOutputStream(fs.create(new Path("/mlearning/Models/" + model._1)))
+        val ModelOutput = new ObjectOutputStream(fs.create(new Path("/mlearning/Models/"+ indus + "/" + model._1)))
         ModelOutput.writeObject(model._2)
       }
     })
@@ -236,16 +236,19 @@ object TrainingProcess {
     val conf = new SparkConf().setAppName("MlTraining_" + args(0))
     val sc = new SparkContext(conf)
 
-    val parasSets = sc.textFile("hdfs://222.73.34.92:9000/mlearning/ParasSets").collect()
+    // 根据最优参数组合，训练并输出模型
+    val parasSets = sc.textFile("hdfs://222.73.57.12:9000/mlearning/ParasSets").collect()
     parasSets.foreach(each => {
       val Array(indus, minDF, topFeat) = each.split("\t")
-      val trainData = sc.textFile("hdfs://222.73.34.92:9000/mlearning/trainingData/trainingWithIndus/" + indus).map(line => {
+      val trainData = sc.textFile("hdfs://222.73.57.12:9000/mlearning/trainingData/trainingWithIndus/" + indus)
+        .map(line => {
         val Array(label, content) = line.split("\t")
         (label.toDouble, content.split(","))
       })
       val result = outPutModels(trainData, indus, minDF.toInt, topFeat.toInt)
       println(result)
     })
+
 
 
     //    val text = Source.fromFile("D:/mlearning/trainingLabel.new").getLines().toArray.map(line => {
@@ -261,7 +264,7 @@ object TrainingProcess {
     //    writer.close()
 
     // 获取每个行业的url集合
-    //    val labeledContent = sc.textFile("hdfs://222.73.34.92:9000/mlearning/trainingData/labeledContent").collect().map(line => {
+    //    val labeledContent = sc.textFile("hdfs://222.73.57.12:9000/mlearning/trainingData/labeledContent").collect().map(line => {
     //      val temp = line.split("\t")
     //      (temp(0), temp(1).split(","))
     //    }).toMap
@@ -269,7 +272,7 @@ object TrainingProcess {
     // #################################################################################################################
     // ##########################################    基于5阶交叉验证的参数网格寻优过程    ##################################
     // #################################################################################################################
-//    val trainingData = sc.textFile("hdfs://222.73.34.92:9000/mlearning/trainingData/trainingWithIndus/" + args(0)).repartition(4)
+//    val trainingData = sc.textFile("hdfs://222.73.57.12:9000/mlearning/trainingData/trainingWithIndus/" + args(0)).repartition(16).cache()
 //    val tempRDD = trainingData.map(line => {
 //      val temp = line.split("\t")
 //      (temp(0).toDouble, temp(1).split(","))
@@ -294,7 +297,7 @@ object TrainingProcess {
     // ########################################    根据行业分割数据集    #################################################
     // #################################################################################################################
     // 获取总训练集
-    //    val totalTrianRDD = sc.textFile("hdfs://222.73.34.92:9000/mlearning/trainingData/segTrainSet").repartition(4).map(line => {
+    //    val totalTrianRDD = sc.textFile("hdfs://222.73.57.12:9000/mlearning/trainingData/segTrainSet").repartition(4).map(line => {
     //      val temp = line.split("\t")
     //      if (temp.length == 2) {
     //        (temp(0), temp(1).split(","))

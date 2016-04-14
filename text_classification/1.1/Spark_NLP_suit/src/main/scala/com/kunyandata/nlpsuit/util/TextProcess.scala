@@ -97,19 +97,19 @@ object TextProcess {
   }
 
   /**
-    * 调用WordSeq里面的函数实现字符串的分词和去停,并分装成方法
+    * 调用WordSeq里面的函数实现字符串的分词和去停,并封装成方法
     *
     * @param content 需要处理的字符串
     * @param stopWordsBr 停用词
-    * @param typ 分词模式选择，0为调用本地分词工具（只支持linux下运行），1为远程调用，过长的文章可能报错。
+    * @param kunyanSegTyp 分词模式选择，0为调用本地分词工具（只支持linux下运行），1为远程调用，过长的文章可能报错。
     * @return 返回分词去停后的结果
     */
-  def process(content: String, stopWordsBr: Broadcast[Array[String]], typ: Int): Array[String] = {
+  def process(content: String, stopWordsBr: Broadcast[Array[String]], kunyanSegTyp: Int): Array[String] = {
 
     // 格式化文本
     val formatedContent = formatText(content)
     // 实现分词
-    val splitWords = WordSeg.splitWord(formatedContent, typ)
+    val splitWords = WordSeg.splitWord(formatedContent, kunyanSegTyp)
     // 读取分词内容并转化成Array格式
     val resultWords = WordSeg.getWords(splitWords)
     // 实现去停用词
@@ -125,14 +125,14 @@ object TextProcess {
     * @return 返回分词去停后的结果
     * @author zhangxin
     */
-  def process_ansj(content: String, stopWordsBr: Broadcast[Array[String]]): Array[String] = {
+  def process(content: String, stopWordsBr: Broadcast[Array[String]]): Array[String] = {
     // 格式化文本
     val formatedContent =TextProcess.formatText(content)
     // 实现分词
     val resultWords=AnsjAnalyzer.cut(content)
     // 实现去停用词
     if (resultWords == null) null
-    else TextProcess.removeStopWords(resultWords, stopWordsBr.value)
+    else removeStopWords(resultWords, stopWordsBr.value)
   }
 
 //  def main(args: Array[String]): Unit = {
