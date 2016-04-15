@@ -1,4 +1,4 @@
-mainClass in (Compile, packageBin) := Some("com.kunyandata.nlpsuit.classification.Bayes")
+mainClass in (Compile, packageBin) := Some("com.kunyandata.nlpsuit.classification.TrainingProcess")
 
 name := "Spark_NLP_suit"
 
@@ -23,6 +23,19 @@ libraryDependencies += "mysql" % "mysql-connector-java" % "3.1.14"// % "provided
 libraryDependencies += "org.ansj" % "ansj_seg" % "0.9" //% "provided"
 
 libraryDependencies += "org.json" % "json" % "20160212"// % "provided"
+
+libraryDependencies += "org.apache.commons" % "commons-pool2" % "2.3"
+
+
+//libraryDependencies += "org.apache.hbase" % "hbase" % "1.1.2"
+
+libraryDependencies += "org.apache.hbase" % "hbase-client" % "1.1.2"
+
+libraryDependencies += "org.apache.hbase" % "hbase-common" % "1.1.2"
+
+libraryDependencies +="org.apache.hbase" % "hbase-server" % "1.1.2"
+
+libraryDependencies += "com.ibm.icu" % "icu4j" % "56.1"
 
 //libraryDependencies += "org.apache.commons" % "commons-pool2" % "2.2"
 
