@@ -38,7 +38,7 @@ object PredictWithNb extends App{
     */
   def init(): Map[String, Any] = {
 //    val path = "text_classification/1.1/Spark_NLP_suit/src/main/resources/sentimodels"  //模型路径  三分类模型
-    val path = "text_classification/1.1/Spark_NLP_suit/src/main/resources/sentimodels/F_2_1500"  //模型路径  二分类（负类和其他）
+    val path = "src/main/resources/sentimodels/F_2_1500"  //模型路径  二分类（负类和其他）
     val fileList = new File(path)
     val modelList = fileList.listFiles()
     var modelMap:Map[String, Any] = Map()
