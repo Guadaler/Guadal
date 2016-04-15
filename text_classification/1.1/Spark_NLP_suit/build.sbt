@@ -1,4 +1,4 @@
-mainClass in (Compile, packageBin) := Some("com.kunyandata.nlpsuit.classification.TrainingProcess")
+mainClass in (Compile, packageBin) := Some("com.kunyandata.nlpsuit.classification.Bayes")
 
 name := "Spark_NLP_suit"
 
@@ -24,7 +24,7 @@ libraryDependencies += "org.ansj" % "ansj_seg" % "0.9" //% "provided"
 
 libraryDependencies += "org.json" % "json" % "20160212"// % "provided"
 
-libraryDependencies += "org.apache.commons" % "commons-pool2" % "2.2"
+//libraryDependencies += "org.apache.commons" % "commons-pool2" % "2.2"
 
 assemblyMergeStrategy in assembly := {
   case PathList("javax", "servlet", xs @ _*) => MergeStrategy.last
