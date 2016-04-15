@@ -50,10 +50,12 @@ object News_trend_pre {
       val key_time = "News_" + time                           // -------------------------------- news ---------------------------------
 
       val list0 = count_percents(sc, redis, ind_time, key_time, hbaseConf, stopWordsBr)
-//      val list1 = count_percents(sc, redis, sto_time, key_time, hbaseConf, stopWordsBr)
-//      val list2 = count_percents(sc, redis, sec_time, key_time, hbaseConf, stopWordsBr)
+      val list1 = count_percents(sc, redis, sto_time, key_time, hbaseConf, stopWordsBr)
+      val list2 = count_percents(sc, redis, sec_time, key_time, hbaseConf, stopWordsBr)
 
-      RedisUtil.write_To_Redis(redis, "sentiment", list0)
+      RedisUtil.write_To_Redis(redis, "industry_sentiment", list0)
+      RedisUtil.write_To_Redis(redis, "stock_sentiment", list1)
+      RedisUtil.write_To_Redis(redis, "section_sentiment", list2)
 
       redis.close()
       println("close redis connection>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
@@ -87,6 +89,7 @@ object News_trend_pre {
     s.toArray(classify)
     c.toArray(code)
 
+    //初始化 -> Byes -> initModel 文件路径 （目前是绝对路径）
     val model = PredictWithNb.init()
 
     // create a Map to store result
@@ -103,6 +106,7 @@ object News_trend_pre {
       var n = 0
       var p_m = 0
       var sum = 0.0f
+      var conse = ""
       // get every industry's all news code
       val ss = redis.hget(db_name, classify(i))
       // print classify name
@@ -150,13 +154,15 @@ object News_trend_pre {
 
       println(classify(i) + " " + n + " " + p_m)
 
-      val jsoninfo = RedisUtil.toJSON( classify(i), n, p_m, sum)
-      result += (classify(i) -> jsoninfo)
+//      val jsoninfo = RedisUtil.toJSON( classify(i), n, p_m, sum)
+
+      conse = (n/sum).toString + "," + (p_m/sum).toString
+
+      result += (classify(i) -> conse)
 
     }
     writer.close()
     result
   }
-
 
 }
