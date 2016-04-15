@@ -259,37 +259,37 @@ object TrainingProcess {
   def main(args: Array[String]) {
 
     val conf = new SparkConf().setAppName("outputModelsTest")
-      .setMaster("local")
+//      .setMaster("local")
 //      .setMaster("spark://222.73.57.12:7077")
-      .set("spark.local.ip","192.168.2.65")
-      .set("spark.driver.host","192.168.2.65")
-      .set("spark.executor.memory", "15G")
-      .set("spark.executor.cores", "4")
-      .set("spark.cores.max", "8")
+//      .set("spark.local.ip","192.168.2.65")
+//      .set("spark.driver.host","192.168.2.65")
+//      .set("spark.executor.memory", "15G")
+//      .set("spark.executor.cores", "4")
+//      .set("spark.cores.max", "8")
     val sc = new SparkContext(conf)
 
     // 根据最优参数组合，训练并输出模型
-//    val parasSets = sc.textFile("hdfs://222.73.57.12:9000/mlearning/ParasSets").collect()
-//    parasSets.foreach(each => {
-//      val Array(indus, minDF, topFeat) = each.split("\t")
-//      val trainData = sc.textFile("hdfs://222.73.57.12:9000/mlearning/trainingData/trainingWithIndus/" + indus)
-//        .map(line => {
-//        val Array(label, content) = line.split("\t")
-//        (label.toDouble, content.split(","))
-//      })
-//      val result = outPutModels(trainData, indus, minDF.toInt, topFeat.toInt, args(1).toBoolean)
-//      println(result)
-//    })
-    val parasSets = Source.fromFile("/home/mlearning/ParasSets_test").getLines().take(1)
-    parasSets.foreach(line => {
-      val Array(indus, minDf, topNum) = line.split("\t")
-      val trainData = sc.parallelize(Source.fromFile("/home/mlearning/trainingData/trainingWithIndus/" + indus)
-        .getLines().toSeq).map(row => {
-        val Array(label, content) = row.split("\t")
+    val parasSets = sc.textFile("hdfs://222.73.57.12:9000/mlearning/ParasSets").collect()
+    parasSets.foreach(each => {
+      val Array(indus, minDF, topFeat) = each.split("\t")
+      val trainData = sc.textFile("hdfs://222.73.57.12:9000/mlearning/trainingData/trainingWithIndus/" + indus)
+        .map(line => {
+        val Array(label, content) = line.split("\t")
         (label.toDouble, content.split(","))
       })
-      outPutModels(trainData, indus, minDf.toInt, topNum.toInt, hdfs = false)
+      val result = outPutModels(trainData, indus, minDF.toInt, topFeat.toInt, args(1).toBoolean)
+      println(result)
     })
+//    val parasSets = Source.fromFile("/home/mlearning/ParasSets_test").getLines().take(1)
+//    parasSets.foreach(line => {
+//      val Array(indus, minDf, topNum) = line.split("\t")
+//      val trainData = sc.parallelize(Source.fromFile("/home/mlearning/trainingData/trainingWithIndus/" + indus)
+//        .getLines().toSeq).map(row => {
+//        val Array(label, content) = row.split("\t")
+//        (label.toDouble, content.split(","))
+//      })
+//      outPutModels(trainData, indus, minDf.toInt, topNum.toInt, hdfs = false)
+//    })
 
 
 
