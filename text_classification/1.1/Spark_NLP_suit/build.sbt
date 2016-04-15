@@ -37,6 +37,7 @@ libraryDependencies +="org.apache.hbase" % "hbase-server" % "1.1.2"
 
 libraryDependencies += "com.ibm.icu" % "icu4j" % "56.1"
 
+//libraryDependencies += "org.apache.commons" % "commons-pool2" % "2.2"
 
 assemblyMergeStrategy in assembly := {
   case PathList("javax", "servlet", xs @ _*) => MergeStrategy.last
