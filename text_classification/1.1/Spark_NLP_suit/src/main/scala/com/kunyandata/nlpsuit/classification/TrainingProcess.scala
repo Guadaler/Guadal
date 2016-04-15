@@ -5,9 +5,10 @@ package com.kunyandata.nlpsuit.classification
   */
 
 import java.io._
+
 import com.kunyandata.nlpsuit.util.Statistic
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{Path, FileSystem}
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.mllib.feature
 import com.kunyandata.nlpsuit.util.BetterChiSqSelector
@@ -15,8 +16,10 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.mllib.classification.{NaiveBayes, SVMWithSGD}
 import org.apache.spark.mllib.evaluation.MulticlassMetrics
 import org.apache.spark.mllib.regression.LabeledPoint
+
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scala.io.Source
 
 object TrainingProcess {
 
@@ -193,11 +196,9 @@ object TrainingProcess {
   }
 
 
-  def outPutModels(train: RDD[(Double, Array[String])], indus: String, minDF: Int, topFeat: Int) = {
 
-    val hdfsConf = new Configuration()
-    hdfsConf.set("fs.defaultFS", "hdfs://222.73.57.12:9000")
-    val fs = FileSystem.get(hdfsConf)
+  def outPutModels(train: RDD[(Double, Array[String])], indus: String, minDF: Int, topFeat: Int, hdfs: Boolean) = {
+
     // 计算tf
     val VSMlength = countWords(train)
     val hashingTFModel = new feature.HashingTF(VSMlength)
@@ -221,33 +222,76 @@ object TrainingProcess {
     val nbModel = NaiveBayes.train(selectedTrain, 1.0, "multinomial")
     val models = Map("tfModel" -> hashingTFModel, "idfModel" -> idfModel,
       "chiSqSelectorModel" -> chiSqSelectorModel, "nbModel" -> nbModel)
-    models.foreach(model => {
-      val mkIndusDir = fs.mkdirs(new Path("/mlearning/Models/" + indus + "/"))
-      if (mkIndusDir){
-        val ModelOutput = new ObjectOutputStream(fs.create(new Path("/mlearning/Models/"+ indus + "/" + model._1)))
-        ModelOutput.writeObject(model._2)
-      }
-    })
+
+    if (hdfs) {
+      val hdfsConf = new Configuration()
+      hdfsConf.set("fs.defaultFS", "hdfs://222.73.57.12:9000")
+      val fs = FileSystem.get(hdfsConf)
+      models.foreach(model => {
+        if (fs.exists(new Path("/mlearning/Models/" + indus + "/"))) {
+          val mkIndusDir = fs.mkdirs(new Path("/mlearning/Models/" + indus + "/"))
+          if (mkIndusDir){
+            val ModelOutput = new ObjectOutputStream(fs.create(new Path("/mlearning/Models/"+ indus + "/" + model._1)))
+            ModelOutput.writeObject(model._2)
+          }
+        } else {
+          val ModelOutput = new ObjectOutputStream(fs.create(new Path("/mlearning/Models/"+ indus + "/" + model._1)))
+          ModelOutput.writeObject(model._2)
+        }
+      })
+    } else {
+      models.foreach(model => {
+        val fs = new File("/home/mlearning/Models/" + indus)
+        if (fs.exists()){
+          val modelOutput = new ObjectOutputStream(new FileOutputStream("/home/mlearning/Models/" + indus + "/" + model._1))
+          modelOutput.writeObject(model._2)
+        } else {
+          fs.mkdir()
+          val modelOutput = new ObjectOutputStream(new FileOutputStream("/home/mlearning/Models/" + indus + "/" + model._1))
+          modelOutput.writeObject(model._2)
+        }
+
+      })
+    }
   }
 
 
   def main(args: Array[String]) {
 
-    val conf = new SparkConf().setAppName("MlTraining_" + args(0))
+    val conf = new SparkConf().setAppName("outputModelsTest")
+      .setMaster("local")
+//      .setMaster("spark://222.73.57.12:7077")
+      .set("spark.local.ip","192.168.2.65")
+      .set("spark.driver.host","192.168.2.65")
+      .set("spark.executor.memory", "15G")
+      .set("spark.executor.cores", "4")
+      .set("spark.cores.max", "8")
     val sc = new SparkContext(conf)
 
     // 根据最优参数组合，训练并输出模型
-    val parasSets = sc.textFile("hdfs://222.73.57.12:9000/mlearning/ParasSets").collect()
-    parasSets.foreach(each => {
-      val Array(indus, minDF, topFeat) = each.split("\t")
-      val trainData = sc.textFile("hdfs://222.73.57.12:9000/mlearning/trainingData/trainingWithIndus/" + indus)
-        .map(line => {
-        val Array(label, content) = line.split("\t")
+//    val parasSets = sc.textFile("hdfs://222.73.57.12:9000/mlearning/ParasSets").collect()
+//    parasSets.foreach(each => {
+//      val Array(indus, minDF, topFeat) = each.split("\t")
+//      val trainData = sc.textFile("hdfs://222.73.57.12:9000/mlearning/trainingData/trainingWithIndus/" + indus)
+//        .map(line => {
+//        val Array(label, content) = line.split("\t")
+//        (label.toDouble, content.split(","))
+//      })
+//      val result = outPutModels(trainData, indus, minDF.toInt, topFeat.toInt, args(1).toBoolean)
+//      println(result)
+//    })
+    val parasSets = Source.fromFile("/home/mlearning/ParasSets_test").getLines().take(1)
+    parasSets.foreach(line => {
+      val Array(indus, minDf, topNum) = line.split("\t")
+      val trainData = sc.parallelize(Source.fromFile("/home/mlearning/trainingData/trainingWithIndus/" + indus)
+        .getLines().toSeq).map(row => {
+        val Array(label, content) = row.split("\t")
         (label.toDouble, content.split(","))
       })
-      val result = outPutModels(trainData, indus, minDF.toInt, topFeat.toInt)
-      println(result)
+      outPutModels(trainData, indus, minDf.toInt, topNum.toInt, hdfs = false)
     })
+
+
 
 
 
