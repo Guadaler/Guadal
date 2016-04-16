@@ -9,6 +9,7 @@ import java.io._
 import com.kunyandata.nlpsuit.util.Statistic
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.log4j.Logger
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.mllib.feature
 import com.kunyandata.nlpsuit.util.BetterChiSqSelector
@@ -195,10 +196,7 @@ object TrainingProcess {
     wordCount
   }
 
-
-
-  def outPutModels(train: RDD[(Double, Array[String])], indus: String, minDF: Int, topFeat: Int, hdfs: Boolean) = {
-
+  private def trainModels(train: RDD[(Double, Array[String])], indus: String, minDF: Int, topFeat: Int) = {
     // 计算tf
     val VSMlength = countWords(train)
     val hashingTFModel = new feature.HashingTF(VSMlength)
@@ -222,43 +220,56 @@ object TrainingProcess {
     val nbModel = NaiveBayes.train(selectedTrain, 1.0, "multinomial")
     val models = Map("tfModel" -> hashingTFModel, "idfModel" -> idfModel,
       "chiSqSelectorModel" -> chiSqSelectorModel, "nbModel" -> nbModel)
-
-    if (hdfs) {
-      val hdfsConf = new Configuration()
-      hdfsConf.set("fs.defaultFS", "hdfs://222.73.57.12:9000")
-      val fs = FileSystem.get(hdfsConf)
-      models.foreach(model => {
-        if (fs.exists(new Path("/mlearning/Models/" + indus + "/"))) {
-          val mkIndusDir = fs.mkdirs(new Path("/mlearning/Models/" + indus + "/"))
-          if (mkIndusDir){
-            val ModelOutput = new ObjectOutputStream(fs.create(new Path("/mlearning/Models/"+ indus + "/" + model._1)))
-            ModelOutput.writeObject(model._2)
-          }
-        } else {
-          val ModelOutput = new ObjectOutputStream(fs.create(new Path("/mlearning/Models/"+ indus + "/" + model._1)))
-          ModelOutput.writeObject(model._2)
-        }
-      })
-    } else {
-      models.foreach(model => {
-        val fs = new File("/home/mlearning/Models/" + indus)
-        if (fs.exists()){
-          val modelOutput = new ObjectOutputStream(new FileOutputStream("/home/mlearning/Models/" + indus + "/" + model._1))
-          modelOutput.writeObject(model._2)
-        } else {
-          fs.mkdir()
-          val modelOutput = new ObjectOutputStream(new FileOutputStream("/home/mlearning/Models/" + indus + "/" + model._1))
-          modelOutput.writeObject(model._2)
-        }
-
-      })
+    val predictionAndLabels = selectedTrain.map {line =>
+      val prediction = nbModel.predict(line.features)
+      //      println((prediction, line.label))
+      (prediction, line.label)
     }
+    // 计算精度和召回率
+    val metrics = new MulticlassMetrics(predictionAndLabels)
+    (models, metrics.precision(1.0))
+  }
+
+  /**
+    * 根据参数，序列化训练模型到制定hdfs上
+    *
+    * @param defaultFS hdfs的地址
+    * @param path hdfs中的路径
+    * @param train 训练集
+    * @param indus 行业
+    * @param minDF 计算idf值的最小文档频数
+    * @param topFeat 特征数量
+    */
+  def outPutModels(defaultFS: String, path: String, train: RDD[(Double, Array[String])], indus: String, minDF: Int, topFeat: Int) = {
+    val models = trainModels(train, indus, minDF, topFeat)
+    println("presision: " + models._2)
+    val hdfsConf = new Configuration()
+    hdfsConf.set("fs.defaultFS", defaultFS)
+    val fs = FileSystem.get(hdfsConf)
+    val modelOutput = new ObjectOutputStream(fs.create(new Path(path+ indus + ".models")))
+    modelOutput.writeObject(models._1)
+  }
+
+  /**
+    * 根据参数，输出训练模型到制定本地路径下
+    *
+    * @param path 模型保存路径
+    * @param train 训练集
+    * @param indus 行业
+    * @param minDF 计算idf值的最小文档频数
+    * @param topFeat 特征数量
+    */
+  def outPutModels(path: String, train: RDD[(Double, Array[String])], indus: String, minDF: Int, topFeat: Int): Unit = {
+    val models = trainModels(train, indus, minDF, topFeat)
+    println("presision: " + models._2)
+    val modelOutput = new ObjectOutputStream(new FileOutputStream(path + indus + ".models"))
+    modelOutput.writeObject(models._1)
   }
 
 
   def main(args: Array[String]) {
 
-    val conf = new SparkConf().setAppName("outputModelsTest")
+    val conf = new SparkConf().setAppName("outputModels_" + args(0))
 //      .setMaster("local")
 //      .setMaster("spark://222.73.57.12:7077")
 //      .set("spark.local.ip","192.168.2.65")
@@ -272,13 +283,14 @@ object TrainingProcess {
     val parasSets = sc.textFile("hdfs://222.73.57.12:9000/mlearning/ParasSets").collect()
     parasSets.foreach(each => {
       val Array(indus, minDF, topFeat) = each.split("\t")
-      val trainData = sc.textFile("hdfs://222.73.57.12:9000/mlearning/trainingData/trainingWithIndus/" + indus)
-        .map(line => {
-        val Array(label, content) = line.split("\t")
-        (label.toDouble, content.split(","))
-      })
-      val result = outPutModels(trainData, indus, minDF.toInt, topFeat.toInt, args(1).toBoolean)
-      println(result)
+      if (args(0) == indus){
+        val trainData = sc.textFile("hdfs://222.73.57.12:9000/mlearning/trainingData/trainingWithIndus/" + indus)
+          .map(line => {
+            val Array(label, content) = line.split("\t")
+            (label.toDouble, content.split(","))
+          })
+        outPutModels("hdfs://222.73.57.12:9000", "/mlearning/Models/", trainData, indus, minDF.toInt, topFeat.toInt)
+      }
     })
 //    val parasSets = Source.fromFile("/home/mlearning/ParasSets_test").getLines().take(1)
 //    parasSets.foreach(line => {

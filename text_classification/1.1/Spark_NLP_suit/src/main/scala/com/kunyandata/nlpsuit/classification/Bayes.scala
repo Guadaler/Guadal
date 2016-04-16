@@ -23,16 +23,16 @@ object Bayes {
 //      .setMaster("local")
 //      .set("spark.local.ip","192.168.2.65")
 //      .set("spark.driver.host","192.168.2.65")
-//      .setMaster("spark://222.73.57.12:7077")
+      .setMaster("spark://222.73.57.12:7077")
 //      .set("spark.local.ip","222.73.57.12")
 //      .set("spark.driver.host","222.73.57.12")
-//      .set("spark.executor.memory", "15G")
-//      .set("spark.executor.cores", "4")
-//      .set("spark.cores.max", "8")
+      .set("spark.executor.memory", "15G")
+      .set("spark.executor.cores", "4")
+      .set("spark.cores.max", "8")
     val sc = new SparkContext(conf)
 //    val modelMap = initModel("/home/mlearning/Models/", hdfs = false)
 //    val stopWords = getStopWords("/home/mlearning/dicts/stop_words_CN", hdfs = false)
-    val modelMap = initModel("hdfs://222.73.57.12:9000", "/mlearning/Models/", hdfs = true)
+    val modelMap = initModel("hdfs://222.73.57.12:9000", "/mlearning/Models/")
     val modelMapBr = sc.broadcast(modelMap)
     val stopWords = getStopWords(sc, "hdfs://222.73.57.12:9000/mlearning/dicts/stop_words_CN")
     val stopWordsBr = sc.broadcast(stopWords)
@@ -48,38 +48,36 @@ object Bayes {
     * @param path 保存模型的路径
     * @return 返回一个嵌套Map，第一层key是行业名称，第二层key是模型名称。
     */
-  def initModel(fsPath: String, path: String, hdfs: Boolean): Map[String, Map[String, AnyRef]] = {
+  def initModel(defaultFS: String, path: String): Map[String, Map[String, Serializable]] = {
     val modelKey = Array("tfModel", "idfModel", "chiSqSelectorModel", "nbModel")
-    if (hdfs){
-      //读取hdfs上保存的模型
-      val hdfsConf = new Configuration()
-      hdfsConf.set("fs.defaultFS", fsPath)
-      val fs = FileSystem.get(hdfsConf)
-      val resultMap = fs.listStatus(new Path(path)).map(_.getPath.toString).map(filePath => {
-        val indus = filePath.replaceAll(path, "")
-        val models = modelKey.map(modelName => {
-          val tempInput = new ObjectInputStream(fs.open(new Path(path + indus + "/" + modelName)))
-          (modelName, tempInput.readObject())
-        }).toMap
-        (indus, models)
-      }).toMap
-      resultMap
-    } else {
-      // 读取本地保存的模型
-      val fileList = new File(path)
-      val cateList = fileList.listFiles()
-      val resultMap = cateList.map(catePath => {
-        val models = modelKey.map(modelName => {
-          val tempModelPath = catePath + "/" + modelName
-          val tempModelInput = new ObjectInputStream(new FileInputStream(tempModelPath))
-          (modelName, tempModelInput.readObject())
-        }).toMap
-        (catePath.getName.replaceAll(path, ""), models)
-      }).toMap
-      resultMap
-    }
+    //读取hdfs上保存的模型
+    val hdfsConf = new Configuration()
+    hdfsConf.set("fs.defaultFS", defaultFS)
+    val fs = FileSystem.get(hdfsConf)
+    val fileList = fs.listStatus(new Path(path)).map(_.getPath.toString)
+    val result = fileList.map(file => {
+      val indus = file.replaceAll(".models", "").replaceAll(defaultFS, "").replaceAll(path, "")
+      val temp = new ObjectInputStream(fs.open(new Path(file))).readObject()
+      val modelMap = temp.asInstanceOf[Map[String, Serializable]]
+      (indus, modelMap)
+    }).toMap
+    result
   }
 
+  def initModel(path: String): Map[String, Map[String, Serializable]] = {
+    val modelKey = Array("tfModel", "idfModel", "chiSqSelectorModel", "nbModel")
+    //读取本地保存的模型
+    val fileList = new File(path).listFiles().map(_.getName.toString)
+    val result = fileList.map(file => {
+      println(file)
+      val indus = file.replaceAll(".models", "")
+      println(indus)
+      val temp = new ObjectInputStream(new FileInputStream(path + file))
+      val modelMap = temp.asInstanceOf[Map[String, Serializable]]
+      (indus, modelMap)
+    }).toMap
+    result
+  }
   /**
     * 获取停用词典
     *
