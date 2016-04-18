@@ -250,7 +250,6 @@ object TrainingProcess {
     */
   def outPutModels(defaultFS: String, path: String, train: RDD[(Double, Array[String])], indus: String, minDF: Int, topFeat: Int) = {
     val models = trainModels(train, indus, minDF, topFeat)
-    println("presision: " + models._2)
     val hdfsConf = new Configuration()
     hdfsConf.set("fs.defaultFS", defaultFS)
     val fs = FileSystem.get(hdfsConf)
@@ -269,7 +268,6 @@ object TrainingProcess {
     */
   def outPutModels(path: String, train: RDD[(Double, Array[String])], indus: String, minDF: Int, topFeat: Int): Unit = {
     val models = trainModels(train, indus, minDF, topFeat)
-    println("presision: " + models._2)
     val modelOutput = new ObjectOutputStream(new FileOutputStream(path + indus + ".models"))
     modelOutput.writeObject(models._1)
   }
