@@ -9,7 +9,6 @@ import java.io._
 import com.kunyandata.nlpsuit.util.Statistic
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
-import org.apache.log4j.Logger
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.mllib.feature
 import com.kunyandata.nlpsuit.util.BetterChiSqSelector
@@ -196,6 +195,15 @@ object TrainingProcess {
     wordCount
   }
 
+  /**
+    * 根据最优参数组合训练模型
+    *
+    * @param train 训练集
+    * @param indus 行业
+    * @param minDF 计算Idf的最小文档频数
+    * @param topFeat 特征维度
+    * @return 返回保存模型的Mpa和模型在训练集上的精度
+    */
   private def trainModels(train: RDD[(Double, Array[String])], indus: String, minDF: Int, topFeat: Int) = {
     // 计算tf
     val VSMlength = countWords(train)
