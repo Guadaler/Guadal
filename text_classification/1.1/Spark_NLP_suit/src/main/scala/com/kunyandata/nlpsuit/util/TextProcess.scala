@@ -44,6 +44,7 @@ object TextProcess {
     */
   def formatText(content: String): String = {
 
+
     val step = 65248
     val dbcStart = 33.toChar
     val dbcEnd = 126.toChar
@@ -55,7 +56,10 @@ object TextProcess {
     if(content == null){
       content
     }else{
-      content.foreach(ch => {
+      content
+        .replaceAll("<[^<]*>", "")
+        .replaceAll("&nbsp", "")
+        .foreach(ch => {
         if (ch == sbcSpace){
           bufferString.append(dbcSpace)
         }else if (ch >= sbcStart && ch <= sbcEnd){
@@ -64,7 +68,10 @@ object TextProcess {
           bufferString.append(ch)
         }
       })
-      bufferString.mkString.replaceAll("""\s""", "")
+      bufferString
+        .mkString
+        .replaceAll("""\s""", "")
+        .replaceAll("\"", ",")
     }
   }
 
@@ -90,21 +97,39 @@ object TextProcess {
   }
 
   /**
-    * 调用WordSeq里面的函数实现字符串的分词和去停,并分装成方法
+    * 调用WordSeq里面的函数实现字符串的分词和去停,并封装成方法
     *
     * @param content 需要处理的字符串
     * @param stopWordsBr 停用词
-    * @param typ 分词模式选择，0为调用本地分词工具（只支持linux下运行），1为远程调用，过长的文章可能报错。
+    * @param kunyanSegTyp 分词模式选择，0为调用本地分词工具（只支持linux下运行），1为远程调用，过长的文章可能报错。
     * @return 返回分词去停后的结果
     */
-  def process(content: String, stopWordsBr: Broadcast[Array[String]], typ: Int): Array[String] = {
+  def process(content: String, stopWordsBr: Broadcast[Array[String]], kunyanSegTyp: Int): Array[String] = {
 
     // 格式化文本
     val formatedContent = formatText(content)
     // 实现分词
-    val splitWords = WordSeg.splitWord(formatedContent, typ)
+    val splitWords = WordSeg.splitWord(formatedContent, kunyanSegTyp)
     // 读取分词内容并转化成Array格式
     val resultWords = WordSeg.getWords(splitWords)
+    // 实现去停用词
+    if (resultWords == null) null
+    else removeStopWords(resultWords, stopWordsBr.value)
+  }
+
+  /**
+    * 实现字符串的分词和去停,并分装成方法  ，与上面的process()方法相同，只是分词采用ansj
+    *
+    * @param content 需要处理的字符串
+    * @param stopWordsBr  停用词
+    * @return 返回分词去停后的结果
+    * @author zhangxin
+    */
+  def process(content: String, stopWordsBr: Broadcast[Array[String]]): Array[String] = {
+    // 格式化文本
+    val formatedContent =TextProcess.formatText(content)
+    // 实现分词
+    val resultWords=AnsjAnalyzer.cut(content)
     // 实现去停用词
     if (resultWords == null) null
     else removeStopWords(resultWords, stopWordsBr.value)

@@ -4,7 +4,7 @@
 		module="spark_nlp_suit-build"
 		revision="0.1-SNAPSHOT"
 		status="integration"
-		publication="20160409140629"
+		publication="20160410095306"
 		e:sbtVersion="0.13" e:scalaVersion="2.10"
 	>
 		<description>
