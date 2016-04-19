@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import com.kunyandata.nlp.util.{HbaseUtil, RedisUtil}
-import com.kunyandata.nlpsuit.sentiment.{PredictWithNb, Title_senti_dic}
+import com.kunyandata.nlpsuit.sentiment.{PredictWithNb, TitleSentiDic}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.{SparkConf, SparkContext}
@@ -18,17 +18,17 @@ import scala.io.Source
   * Created by Liu on 2016/4/13.
   */
 
-object News_trend_pre {
+object NewsTrendPre {
 
   def main(args: Array[String]) {
 
-    val conf = new SparkConf().setAppName("News_trend_pre")
+    val conf = new SparkConf().setAppName("NewsTrendPre")
       .setMaster("local")
     val sc = new SparkContext(conf)
 
     try {
 
-      val redis = RedisUtil.get_redis(sc, args(0))
+      val redis = RedisUtil.getRedis(sc, args(0))
 
       val hbaseConf = HbaseUtil.getHbaseConf()
 
@@ -41,18 +41,18 @@ object News_trend_pre {
       val time = dateFormat.format(now)
 
 
-     val ind_time = "Industry_" + time                        // ------------------------------- industry -----------------------------
-      val sto_time = "Stock_" + time                           // ------------------------------- stock --------------------------------
-      val sec_time = "Section_" + time                        // ------------------------------- section -------------------------------
-      val key_time = "News_" + time                           // -------------------------------- news ---------------------------------
+      val indTime = "Industry_" + time                        // ------------------------------- industry -----------------------------
+      val stoTime = "Stock_" + time                           // ------------------------------- stock --------------------------------
+      val secTime = "Section_" + time                        // ------------------------------- section -------------------------------
+      val keyTime = "News_" + time                           // -------------------------------- news ---------------------------------
 
-      val list0 = count_percents(sc, redis, ind_time, key_time, hbaseConf, stopWordsBr, args(2), args(3), args(4), args(5), args(6))
-      val list1 = count_percents(sc, redis, sto_time, key_time, hbaseConf, stopWordsBr, args(2), args(3), args(4), args(5), args(6))
-      val list2 = count_percents(sc, redis, sec_time, key_time, hbaseConf, stopWordsBr, args(2), args(3), args(4), args(5), args(6))
+      val list0 = countPercents(sc, redis, indTime, keyTime, hbaseConf, stopWordsBr, args(2), args(3), args(4), args(5), args(6))
+      val list1 = countPercents(sc, redis, stoTime, keyTime, hbaseConf, stopWordsBr, args(2), args(3), args(4), args(5), args(6))
+      val list2 = countPercents(sc, redis, secTime, keyTime, hbaseConf, stopWordsBr, args(2), args(3), args(4), args(5), args(6))
 
-      RedisUtil.write_To_Redis(redis, "industry_sentiment", list0)
-      RedisUtil.write_To_Redis(redis, "stock_sentiment", list1)
-      RedisUtil.write_To_Redis(redis, "section_sentiment", list2)
+      RedisUtil.writeToRedis(redis, "industry_sentiment", list0)
+      RedisUtil.writeToRedis(redis, "stock_sentiment", list1)
+      RedisUtil.writeToRedis(redis, "section_sentiment", list2)
 
       redis.close()
       println("close redis connection>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
@@ -72,16 +72,16 @@ object News_trend_pre {
     * 根据分类信息计算情感倾向的比例
     *
     * @param redis Jedis对象
-    * @param db_name 数据表名称
-    * @param db_news 新闻数据表名称
+    * @param dbName 数据表名称
+    * @param dbNews 新闻数据表名称
     * @param hbaseconf hbase
     * @return 返回（存有类别-比值信息的Map）
     */
-  def count_percents(sc:SparkContext, redis:Jedis, db_name:String, db_news:String, hbaseconf:Configuration,stopWordsBr:Broadcast[Array[String]],
-                     dic_user:String, dic_op:String, dic_ng:String, dic_n:String, paths:String):Map[String, String] = {
+  def countPercents(sc:SparkContext, redis:Jedis, dbName:String, dbNews:String, hbaseconf:Configuration, stopWordsBr:Broadcast[Array[String]],
+                    dicUser:String, dicOp:String, dicNg:String, dicN:String, paths:String):Map[String, String] = {
     // get all classify information and news' code
-    val s = redis.hkeys(db_name)                           // get classify name
-    val c = redis.hkeys(db_news)                           // get all news code
+    val s = redis.hkeys(dbName)                           // get classify name
+    val c = redis.hkeys(dbNews)                           // get all news code
     val classify = new  Array[String](s.size())
     val code = new Array[String](c.size())
     s.toArray(classify)
@@ -103,18 +103,18 @@ object News_trend_pre {
     // for every industry count news tendency percent
     for (i <- Range(0,classify.length)) {
       var n = 0
-      var p_m = 0
+      var pm = 0
       var sum = 0.0f
       var conse = ""
       // get every industry's all news code
-      val ss = redis.hget(db_name, classify(i))
+      val ss = redis.hget(dbName, classify(i))
       // print classify name
       //      writer.write(classify(i) + "\n")
       val news = ss.split(",")
 
       // for every new get it's title info
       for (j <- Range(0, news.length)) {
-        val all = redis.hget(db_news, news(j))
+        val all = redis.hget(dbNews, news(j))
         // get title
         val tt = new JSONObject(all)
  //       val t = tt.getString("title")
@@ -132,26 +132,26 @@ object News_trend_pre {
             n = n + 1
           }
           else{
-            p_m = p_m + 1
+            pm = pm + 1
           }
         }
         // 如果匹配不到正文，利用词典预测标题的情感倾向
         else{
-          val title_cut = Title_senti_dic.cut(sc, t, dic_user)
-          val value = Title_senti_dic.search_senti(sc, title_cut, dic_op, dic_ng, dic_n)
+          val titlecut = TitleSentiDic.cut(sc, t, dicUser)
+          val value = TitleSentiDic.searchSenti(sc, titlecut, dicOp, dicNg, dicN)
           if (value < 0) {
             n = n + 1
           }
           else {
-            p_m = p_m + 1
+            pm = pm + 1
           }
         }
       }
-      sum = n + p_m
-      println(classify(i) + " " + n + " " + p_m)
+      sum = n + pm
+      println(classify(i) + " " + n + " " + pm)
 
-//      val jsoninfo = RedisUtil.toJSON( classify(i), n, p_m, sum)
-      conse = (n/sum).toString + "," + (p_m/sum).toString
+//      val jsoninfo = RedisUtil.toJSON( classify(i), n, pm, sum)
+      conse = (n/sum).toString + "," + (pm/sum).toString
       result += (classify(i) -> conse)
     }
 //    writer.close()

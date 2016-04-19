@@ -7,7 +7,7 @@ import org.apache.spark.SparkContext
 /**
   * Created by Liu on 2016/4/15.
   */
-object Title_senti_dic {
+object TitleSentiDic {
 
 
   /**
@@ -46,7 +46,7 @@ object Title_senti_dic {
     * @return 返回（+1表示不翻转，-1表示翻转）
     * @author liumiao
     */
-  def count_senti( i:Int, sentence:Array[String], dic:Array[String]): Int ={
+  def countSenti(i:Int, sentence:Array[String], dic:Array[String]): Int ={
     // 寻找情感词前面的否定词，若有则返回-1
     if (i-1 > 0){
       if (dic.contains(sentence(i-1))){
@@ -78,25 +78,25 @@ object Title_senti_dic {
   /**
     * 情感分析
     *
-    * @param title_cut 当前句子的分词结果
+    * @param titleCut 当前句子的分词结果
     * @return 返回（句子的情感倾向，+1表示正向，-1表示负向，0表示中性）
     * @author liumiao
     */
-  def search_senti(sc:SparkContext, title_cut:Array[String], file1:String, file2:String, file3:String): Int ={
+  def searchSenti(sc:SparkContext, titleCut:Array[String], file1:String, file2:String, file3:String): Int ={
 
-    val dict_p = sc.textFile(file1).collect()
-    val dict_n = sc.textFile(file2).collect()
-    val dict_f = sc.textFile(file3).collect()
+    val dictP = sc.textFile(file1).collect()
+    val dictN = sc.textFile(file2).collect()
+    val dictF = sc.textFile(file3).collect()
 
     var p = 0
     var n = 0
 
     // 匹配每一个词
-    for (i <- Range(0,title_cut.length)) {
-      val t_c = title_cut(i)
+    for (i <- Range(0,titleCut.length)) {
+      val tc = titleCut(i)
       // 匹配正向情感词词典
-      if(dict_p.contains(t_c)){
-        if(count_senti(i, title_cut, dict_f)>0){
+      if(dictP.contains(tc)){
+        if(countSenti(i, titleCut, dictF)>0){
           p += 1
         }
         else{
@@ -104,8 +104,8 @@ object Title_senti_dic {
         }
       }
       // if word in negative dictionary
-      else if (dict_n.contains(t_c)){
-        if(count_senti(i, title_cut, dict_f)>0){
+      else if (dictN.contains(tc)){
+        if(countSenti(i, titleCut, dictF)>0){
           n = n + 1
         }
         else{
