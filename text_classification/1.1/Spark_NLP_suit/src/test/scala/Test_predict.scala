@@ -85,6 +85,24 @@ object Test_predict {
 //      .collect()
 //        .foreach(println(_))
 
+    val a1=Array()
+
+    val a=Array[Int](10)
+    val a2=new Array[Int](10)
+
+    val b1=Map[String,Int]()
+    val b2=Map()
+
+    val c1=Array(1,2,3,4,5,6)
+    val c1_rdd=sc.parallelize(c1)
+    val tt=c1_rdd.map(line =>(line,line*line))
+
+    //那么t到底是tuples还是kv呢
+//    t.collect.foreach()
+
+    tt.collect().foreach(element=>println("c: "+element))
+
+    val kv=t.mapValues()
   }
 
   def myfunc[T](iter: Iterator[T]) : Iterator[(T, T)] = {

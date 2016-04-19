@@ -122,6 +122,13 @@ object PredictWithNb extends App{
     }
     val result=replaceLabel(temp)
     result
+
+    /*val result=if(predict(content,arr(0), stopWordsBr,typ: Int) ==0.4){
+      replaceLabel(predict(content,arr(0), stopWordsBr,typ: Int))
+    }else{
+      replaceLabel(predict(content,arr(1), stopWordsBr,typ: Int))
+    }
+    result*/
   }
 
   /**

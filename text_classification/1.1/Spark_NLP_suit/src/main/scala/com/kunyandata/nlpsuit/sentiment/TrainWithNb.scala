@@ -78,7 +78,7 @@ object TrainWithNb extends App{
     val trainData=sc.textFile(filepath)
     val dataRDD=trainData.map(line=>{
       val temp=line.split("#")
-      (temp(0).toDouble, temp(1).split(","))
+      (temp(0).toDouble, temp(1).split(","))  //K_V二元组
     })
 
     //数据分割
