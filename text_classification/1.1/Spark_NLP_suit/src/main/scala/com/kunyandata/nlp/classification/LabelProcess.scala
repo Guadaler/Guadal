@@ -1,8 +1,7 @@
-package com.kunyandata.nlpsuit.util
+package com.kunyandata.nlp.classification
 
-import java.io.{FileWriter, BufferedWriter, File}
+import java.io.{BufferedWriter, File, FileWriter}
 
-import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
 

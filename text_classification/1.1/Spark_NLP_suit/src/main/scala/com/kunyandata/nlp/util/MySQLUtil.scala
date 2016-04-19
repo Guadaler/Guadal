@@ -1,4 +1,4 @@
-package com.kunyandata.nlpsuit.util
+package com.kunyandata.nlp.util
 
 import java.sql.{Connection, DriverManager, ResultSet}
 

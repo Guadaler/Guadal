@@ -1,6 +1,7 @@
 package com.kunyandata.nlpsuit.deduplication
 
 import scala.collection.mutable.ArrayBuffer
+import com.kunyandata.nlpsuit.util.TextPreprocessing.formatText
 
 /**
   * Created by QQ on 2016/2/18.
@@ -9,22 +10,22 @@ import scala.collection.mutable.ArrayBuffer
 
 object TitleDeduplication {
 
-  /**
-    * 格式化title字符串，去掉多余的空格，字母小写，标点符号英文
-    * @param titleString 标题字符串
-    * @return 格式化之后的标题字符串
-    */
-  private def formatTitle(titleString: String): String = {
-
-    val engPunc = Array(",", ".", "!", ";", ":","\"","\"")
-    val chiPunc = Array("，", "。", "！", "；", "：", "“", "”")
-    val blank = """\s"""
-    var result = titleString.toLowerCase().replaceAll(blank, "")
-    for (ind <- chiPunc) {
-      result = result.replaceAll(ind, engPunc(chiPunc.indexOf(ind)))
-    }
-    result
-  }
+//  /**
+//    * 格式化title字符串，去掉多余的空格，字母小写，标点符号英文
+//    * @param titleString 标题字符串
+//    * @return 格式化之后的标题字符串
+//    */
+//  private def formatTitle(titleString: String): String = {
+//
+//    val engPunc = Array(",", ".", "!", ";", ":","\"","\"")
+//    val chiPunc = Array("，", "。", "！", "；", "：", "“", "”")
+//    val blank = """\s"""
+//    var result = titleString.toLowerCase().replaceAll(blank, "")
+//    for (ind <- chiPunc) {
+//      result = result.replaceAll(ind, engPunc(chiPunc.indexOf(ind)))
+//    }
+//    result
+//  }
 
   /**
     * 输入标题，返回一组哈希数组
@@ -34,16 +35,16 @@ object TitleDeduplication {
     */
   private def hashList(titleString: String, n: Int) = {
 
-      val title = formatTitle(titleString)
-      val titleList= new ArrayBuffer[Int]
-      var loopCtrl = true
-      for (w <- title if loopCtrl){
-        val indexOfw = title.indexOf(w)
-        val indexOfRange = indexOfw + n
-        titleList.+=(title.slice(indexOfw, indexOfRange).hashCode)
-        loopCtrl = indexOfw < (title.length - n)
-      }
-      titleList
+    val title = formatText(titleString)
+    val titleList= new ArrayBuffer[Int]
+    var loopCtrl = true
+    for (w <- title if loopCtrl){
+      val indexOfw = title.indexOf(w)
+      val indexOfRange = indexOfw + n
+      titleList.+=(title.slice(indexOfw, indexOfRange).hashCode)
+      loopCtrl = indexOfw < (title.length - n)
+    }
+    titleList
     }
 
   /**

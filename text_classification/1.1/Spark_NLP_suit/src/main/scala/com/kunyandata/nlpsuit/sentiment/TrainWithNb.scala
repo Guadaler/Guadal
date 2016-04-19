@@ -1,8 +1,7 @@
 package com.kunyandata.nlpsuit.sentiment
 
 import java.io.File
-
-import com.kunyandata.nlpsuit.classification.TrainingProcess
+import com.kunyandata.nlp.classification.TrainingProcess
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -46,6 +45,7 @@ object TrainWithNb extends App{
   /**
     * 基于RDD的贝叶斯训练
     * 备注：仅训练测试，模型不保存
+ *
     * @param sc
     * @param filepath  数据集文件路径(经过预处理的数据集)
     */
@@ -94,6 +94,7 @@ object TrainWithNb extends App{
 
   /**
     * 基于网格参数寻优的训练
+ *
     * @param sc
     * @param filepath  数据集路径
     */
