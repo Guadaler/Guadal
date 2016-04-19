@@ -1,16 +1,12 @@
-package com.kunyandata.nlpsuit.sentiment
+package com.kunyandata.nlp.sentiment
 
-import java.io.{File, PrintWriter}
 import java.text.SimpleDateFormat
 import java.util.Date
 
 import com.kunyandata.nlp.util.{HbaseUtil, RedisUtil}
-import com.kunyandata.nlpsuit.util.RedisUtil
+import com.kunyandata.nlpsuit.sentiment.{PredictWithNb, Title_senti_dic}
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.hbase.TableName
-import org.apache.hadoop.hbase.client.{ConnectionFactory, Get, Table}
 import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 import org.json.JSONObject
 import redis.clients.jedis.Jedis
