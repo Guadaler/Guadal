@@ -35,7 +35,6 @@ object PredictWithNb extends App{
 
   /**
     *初始化读取模型  调用默认路径的模型
- *
     * @return  模型数组
     */
   def init(): Map[String, Any] = {
