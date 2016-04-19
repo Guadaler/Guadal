@@ -14,28 +14,31 @@ libraryDependencies += "org.apache.spark" % "spark-mllib_2.10" % "1.5.2"
 
 libraryDependencies += "org.apache.spark" % "spark-core_2.10" % "1.5.2"
 
-libraryDependencies += "redis.clients" % "jedis" % "2.8.0" //% "provided"
+libraryDependencies += "redis.clients" % "jedis" % "2.8.0" % "provided"
 
-libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.5.1" //% "provided"
+libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.5.1" % "provided"
 
-libraryDependencies += "mysql" % "mysql-connector-java" % "3.1.14"// % "provided"
+libraryDependencies += "mysql" % "mysql-connector-java" % "3.1.14" % "provided"
 
-libraryDependencies += "org.ansj" % "ansj_seg" % "0.9" //% "provided"
+libraryDependencies += "org.ansj" % "ansj_seg" % "0.9" % "provided"
 
-libraryDependencies += "org.json" % "json" % "20160212"// % "provided"
+libraryDependencies += "org.json" % "json" % "20160212" % "provided"
 
-libraryDependencies += "org.apache.commons" % "commons-pool2" % "2.3"
+libraryDependencies += "org.apache.spark" % "spark-streaming_2.10" % "1.5.2"
 
+libraryDependencies += "org.apache.spark" % "spark-streaming-kafka_2.10" % "1.5.2" exclude("org.apache.spark", "spark-streaming_2.10")
+
+libraryDependencies += "org.apache.commons" % "commons-pool2" % "2.3" % "provided"
 
 //libraryDependencies += "org.apache.hbase" % "hbase" % "1.1.2"
 
-libraryDependencies += "org.apache.hbase" % "hbase-client" % "1.1.2"
+libraryDependencies += "org.apache.hbase" % "hbase-client" % "1.1.2" % "provided"
 
-libraryDependencies += "org.apache.hbase" % "hbase-common" % "1.1.2"
+libraryDependencies += "org.apache.hbase" % "hbase-common" % "1.1.2" % "provided"
 
-libraryDependencies +="org.apache.hbase" % "hbase-server" % "1.1.2"
+libraryDependencies +="org.apache.hbase" % "hbase-server" % "1.1.2" % "provided"
 
-libraryDependencies += "com.ibm.icu" % "icu4j" % "56.1"
+libraryDependencies += "com.ibm.icu" % "icu4j" % "56.1" % "provided"
 
 //libraryDependencies += "org.apache.commons" % "commons-pool2" % "2.2"
 

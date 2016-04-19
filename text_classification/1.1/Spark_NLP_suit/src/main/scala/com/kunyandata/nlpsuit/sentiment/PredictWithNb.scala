@@ -2,7 +2,7 @@ package com.kunyandata.nlpsuit.sentiment
 
 import java.io.{PrintWriter, File, FileInputStream, ObjectInputStream}
 
-import com.kunyandata.nlpsuit.util.TextProcess
+import com.kunyandata.nlpsuit.util.TextPreprocessing
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.mllib.classification.NaiveBayesModel
 import org.apache.spark.mllib.feature.{ChiSqSelectorModel, HashingTF, IDFModel}
@@ -17,6 +17,7 @@ object PredictWithNb extends App{
 
   /**
     * 初始化读取模型  给出模型路径
+ *
     * @param path  模型路径
     * @return 模型Map[模型名称，模型]
     */
@@ -34,6 +35,7 @@ object PredictWithNb extends App{
 
   /**
     *初始化读取模型  调用默认路径的模型
+ *
     * @return  模型数组
     */
   def init(): Map[String, Any] = {
@@ -52,6 +54,7 @@ object PredictWithNb extends App{
 
   /**
     * 情感预测   _坤雁分词
+ *
     * @param content  待预测文章
     * @param models  模型Map[模型名称，模型]，由init初始化得到
     * @param stopWordsBr 停用词
@@ -59,7 +62,7 @@ object PredictWithNb extends App{
     * @return  返回情感label编号
     */
   def predict(content: String, models: Map[String, Any], stopWordsBr: Broadcast[Array[String]],typ: Int): Double = {
-    val wordSegNoStop = TextProcess.process(content, stopWordsBr,typ)
+    val wordSegNoStop = TextPreprocessing.process(content, stopWordsBr,typ)
     val prediction = models("nbModel").asInstanceOf[NaiveBayesModel]
       .predict(models("chiSqSelectorModel").asInstanceOf[ChiSqSelectorModel]
         .transform(models("idfModel").asInstanceOf[IDFModel]
@@ -70,13 +73,14 @@ object PredictWithNb extends App{
 
   /**
     * 情感预测  _ansj分词器
+ *
     * @param content  待预测文章
     * @param models  模型Map[模型名称，模型]，由init初始化得到
     * @param stopWordsBr 停用词
     * @return  返回情感label编号
     */
   def predict(content: String, models: Map[String, Any], stopWordsBr: Broadcast[Array[String]]): Double = {
-    val wordSegNoStop = TextProcess.process(content, stopWordsBr)
+    val wordSegNoStop = TextPreprocessing.process(content, stopWordsBr)
     val prediction = models("nbModel").asInstanceOf[NaiveBayesModel]
       .predict(models("chiSqSelectorModel").asInstanceOf[ChiSqSelectorModel]
         .transform(models("idfModel").asInstanceOf[IDFModel]
@@ -87,6 +91,7 @@ object PredictWithNb extends App{
 
   /**
     * 单模型+单篇文章 +坤雁分词
+ *
     * @param content 文章内容
     * @param model 模型
     * @param stopWordsBr 停用词
@@ -109,6 +114,7 @@ object PredictWithNb extends App{
 
   /**
     * 二级模型 +单篇文章
+ *
     * @param content  文章内容
     * @param arr  二级模型数组
     * @param stopWordsBr  停用词表
@@ -126,6 +132,7 @@ object PredictWithNb extends App{
 
   /**
     * 二级模型，批量预测
+ *
     * @param filepath  批量预测文章路径
     * @param outpath  输出预测结果
     * @param arr  二级模型数组
