@@ -14,15 +14,15 @@ object Test_predict {
   def main(args: Array[String]) {
     val sconf=new SparkConf().setAppName("test").setMaster("local")
     val sc=new SparkContext(sconf)
-
-    val stopWords=Source.fromFile("D:\\111_DATA\\data\\stop_words_CN").getLines().toArray  //读取停用词典并转成Array
-    val stopWordsBr = sc.broadcast(stopWords)
-
-    //单模型+单文章预测
-    val model=PredictWithNb.init()
-    val content = "原标题：国家发改委：中国足球2030年前跻身世界强队\n"
-    val result =PredictWithNb.predictWithSigle(content, model, stopWordsBr)
-    println(result)
+//
+//    val stopWords=Source.fromFile("D:\\111_DATA\\data\\stop_words_CN").getLines().toArray  //读取停用词典并转成Array
+//    val stopWordsBr = sc.broadcast(stopWords)
+//
+//    //单模型+单文章预测
+//    val model=PredictWithNb.init()
+//    val content = "原标题：国家发改委：中国足球2030年前跻身世界强队\n"
+//    val result =PredictWithNb.predictWithSigle(content, model, stopWordsBr)
+//    println(result)
 
 
     //
@@ -99,10 +99,14 @@ object Test_predict {
 
     //那么t到底是tuples还是kv呢
 //    t.collect.foreach()
+    tt.map(line =>
+      println("******************************************************************"+line._1+"  "+line._2)
+    )
 
     tt.collect().foreach(element=>println("c: "+element))
 
-    val kv=t.mapValues()
+
+    tt.mapValues("x" + _ + "x").collect.foreach(println(_))
   }
 
   def myfunc[T](iter: Iterator[T]) : Iterator[(T, T)] = {

@@ -70,6 +70,29 @@ object TrainWithNb extends App{
   }
 
   /**
+    * 基于RDD的贝叶斯训练
+    * 备注：
+    * 1.训练测试，保存模型，所有数据全部用于train，并不进行train和test的划分
+    * 2.四个模型保存到hdfs上去，路径为：hdfs://222.73.57.12:9000/mlearning/Models/indus/...
+    * @param sc
+    * @param filepath 训练集数据路径
+    * @param indus 模型名称
+    * @param minDF  最小文档频数参数
+    * @param topFeat 最大特征值空间
+    */
+  def nbTrain(sc:SparkContext,filepath:String,indus: String,minDF:Int,topFeat:Int): Unit ={
+    val trainData=sc.textFile(filepath)
+    //基于RDD的训练流程
+    val dataRDD=trainData.map(line =>{
+      val temp = line.split("#")
+      (temp(0).toDouble, temp(1).split(","))
+    })
+    val result=TrainingProcess.outPutModels(dataRDD,indus,minDF,topFeat,true)
+    println(result)
+    sc.stop()
+  }
+
+  /**
     * 基于网格参数寻优的训练
     * @param sc
     * @param filepath  数据集路径
@@ -92,7 +115,6 @@ object TrainWithNb extends App{
       Map("train" -> dataSets(1).++(dataSets(2)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(0))
     )
 
-    RDD
     TrainingProcess.tuneParas(dataSet,Array(1),Array(500),"Testzx")
   }
 
