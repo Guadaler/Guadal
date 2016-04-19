@@ -7,6 +7,7 @@ package com.kunyandata.nlp.classification
 import java.io._
 
 import com.kunyandata.nlpsuit.util.Statistic
+import com.kunyandata.nlpsuit.feature.BetterChiSqSelector
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.mllib.classification.NaiveBayes
@@ -15,7 +16,6 @@ import org.apache.spark.mllib.feature
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
-
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 

@@ -1,14 +1,14 @@
-package com.kunyandata.nlpsuit.util
+package com.kunyandata.nlp.util
 
 import com.ibm.icu.text.CharsetDetector
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.hbase.client.{ConnectionFactory, Get, Result}
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
 import org.apache.hadoop.hbase.mapreduce.TableInputFormat
 import org.apache.hadoop.hbase.util.Bytes
-import org.apache.hadoop.hbase.{TableName, HBaseConfiguration}
-import org.apache.hadoop.hbase.client.{Result, Get, ConnectionFactory}
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.hadoop.hbase.{HBaseConfiguration, TableName}
 import org.apache.spark.rdd.RDD
+import org.apache.spark.{SparkConf, SparkContext}
 
 /**
   * Created by Liu on 2016/4/13.

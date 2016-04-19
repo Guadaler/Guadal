@@ -1,7 +1,7 @@
-package com.kunyandata.nlpsuit.util
+package com.kunyandata.nlp.util
 
 import org.apache.spark.SparkContext
-import redis.clients.jedis.{JedisPool, JedisPoolConfig, Jedis}
+import redis.clients.jedis.{Jedis, JedisPool, JedisPoolConfig}
 
 import scala.collection.mutable.Map
 import scala.util.parsing.json.JSONObject
