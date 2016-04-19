@@ -12,14 +12,13 @@ import org.json.JSONObject
 import redis.clients.jedis.Jedis
 
 import scala.collection.mutable
-import scala.collection.mutable.Map
 import scala.io.Source
 
 /**
   * Created by Liu on 2016/4/13.
   */
 
-object News_trend_pre {
+object NewsTrendPre {
 
   def main(args: Array[String]) {
 
@@ -30,7 +29,7 @@ object News_trend_pre {
 
     try {
 
-      val redis = RedisUtil.get_redis(sc, args(0))
+      val redis = RedisUtil.getRedis(sc, args(0))
 
       val hbaseConf = HbaseUtil.getHbaseConf()
 
@@ -52,9 +51,9 @@ object News_trend_pre {
       val list1 = count_percents(sc, redis, sto_time, key_time, hbaseConf, stopWordsBr, args(2), args(3), args(4), args(5), args(6))
       val list2 = count_percents(sc, redis, sec_time, key_time, hbaseConf, stopWordsBr, args(2), args(3), args(4), args(5), args(6))
 
-      RedisUtil.write_To_Redis(redis, "industry_sentiment", list0)
-      RedisUtil.write_To_Redis(redis, "stock_sentiment", list1)
-      RedisUtil.write_To_Redis(redis, "section_sentiment", list2)
+      RedisUtil.writeToRedis(redis, "industry_sentiment", list0)
+      RedisUtil.writeToRedis(redis, "stock_sentiment", list1)
+      RedisUtil.writeToRedis(redis, "section_sentiment", list2)
 
       redis.close()
       println("close redis connection>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
