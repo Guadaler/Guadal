@@ -17,7 +17,6 @@ object PredictWithNb extends App{
 
   /**
     * 初始化读取模型  给出模型路径
- *
     * @param path  模型路径
     * @return 模型Map[模型名称，模型]
     */
@@ -90,7 +89,6 @@ object PredictWithNb extends App{
 
   /**
     * 单模型+单篇文章 +坤雁分词
- *
     * @param content 文章内容
     * @param model 模型
     * @param stopWordsBr 停用词
@@ -113,7 +111,6 @@ object PredictWithNb extends App{
 
   /**
     * 二级模型 +单篇文章
- *
     * @param content  文章内容
     * @param arr  二级模型数组
     * @param stopWordsBr  停用词表
@@ -138,7 +135,6 @@ object PredictWithNb extends App{
 
   /**
     * 二级模型，批量预测
- *
     * @param filepath  批量预测文章路径
     * @param outpath  输出预测结果
     * @param arr  二级模型数组
@@ -166,7 +162,6 @@ object PredictWithNb extends App{
 
   /**
     * 编号替换成标签  如 1.0 =》 neg
-    *
     * @param tempresult 替换前类别编号
     * @return 替换后的类别标签
     * @author zhangxin
