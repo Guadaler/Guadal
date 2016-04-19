@@ -6,7 +6,6 @@ import java.io._
 import org.apache.spark.mllib.feature.ChiSqSelector
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.mllib.feature
-import com.kunyandata.nlpsuit.util.BetterChiSqSelector
 import org.apache.spark.rdd.RDD
 import org.apache.spark.mllib.classification.{NaiveBayes, SVMWithSGD}
 import org.apache.spark.mllib.evaluation.MulticlassMetrics

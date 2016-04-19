@@ -5,7 +5,7 @@ package com.kunyandata.nlpsuit.classification
   */
 
 import java.io._
-import com.kunyandata.nlpsuit.util.TextProcess
+import com.kunyandata.nlpsuit.util.TextPreprocessing
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.{SparkConf, SparkContext}

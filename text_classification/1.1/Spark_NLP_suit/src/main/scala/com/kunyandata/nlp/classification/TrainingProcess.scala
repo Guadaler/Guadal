@@ -6,7 +6,7 @@ package com.kunyandata.nlp.classification
 
 import java.io._
 
-import com.kunyandata.nlpsuit.util.{BetterChiSqSelector, Statistic}
+import com.kunyandata.nlpsuit.util.Statistic
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.mllib.classification.NaiveBayes

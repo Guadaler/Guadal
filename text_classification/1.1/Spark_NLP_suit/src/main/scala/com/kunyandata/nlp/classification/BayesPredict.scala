@@ -1,6 +1,6 @@
 package com.kunyandata.nlp.classification
 
-import com.kunyandata.nlpsuit.util.TextProcess
+import com.kunyandata.nlpsuit.util.TextPreprocessing
 import com.kunyandata.nlpsuit.classification.Bayes._
 import org.apache.spark.{SparkContext, SparkConf}
 
