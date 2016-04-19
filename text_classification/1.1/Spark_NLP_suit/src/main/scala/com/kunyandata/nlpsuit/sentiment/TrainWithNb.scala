@@ -10,42 +10,11 @@ import scala.io.Source
 /**
   * Created by zx on 2016/3/28.
   */
-object TrainWithNb extends App{
-
-  val conf=new SparkConf().setAppName("test").setMaster("local")
-  val sc=new SparkContext(conf)
-  val trainData1=sc.textFile("text_classification\\1.1\\Spark_NLP_suit\\src\\test\\resources\\sentiment_data\\sourcedata\\traindata_200.txt")
-  val trainData2=sc.textFile("D:\\000_DATA\\out\\【3842】labelNum_content.txt")
-  val trainData0=sc.textFile("E:\\data\\textSeg_content(1_ansj_6071).txt")
-  val trainData3=sc.textFile("E:\\data\\textSeg (第三次程序运行结果_6071_ansj).txt")
-  val trainData4=sc.textFile("D:\\000_DATA\\out\\【3842】labelNum_content_noNeu.txt")  //积极和消极
-  val trainData5=sc.textFile("D:\\000_DATA\\out\\【第二次标注程序结果】\\【3842】【Neu+pos】labelNum_content.txt")  //中性 +积极
-  val trainData6=sc.textFile("D:\\000_DATA\\out\\【第三次标注程序结果】\\【2000+2000】【pro】textSeg_content.txt")  //中性 +综合
-  val trainData8=sc.textFile("D:\\000_DATA\\out\\【第三次标注程序结果】\\【1000+1000】【pro】textSeg_content.txt")  //pos +neu
-  val trainData9=sc.textFile("D:\\000_DATA\\out\\【第三次标注程序结果】\\【500+500】【pro】textSeg_content.txt")  //中性 +综合
-  val trainData10=sc.textFile("D:\\000_DATA\\out\\【第三次标注程序结果】\\【neg+1000+1000】textSeg_content.txt")  //中性 +综合
-
-  //------------------------------------------
-  val outPath_content_4="D:\\000_DATA\\out\\【第四次标注程序结果】\\【2000+1600+1700】_pre_textSeg_content.txt"
-  val outPath_content_F_4="D:\\000_DATA\\out\\【第四次标注程序结果】\\F_2000_textSeg_content.txt"
-  val outPath_content_S_4="D:\\000_DATA\\out\\【第四次标注程序结果】\\S_1600_textSeg_content.txt"
-
-  //------------------------------------------
-  val outPath_content="D:\\000_DATA\\out\\【第五次标注程序结果】\\【1700+1500+1700】textSeg_content.txt"
-  val outPath_content_F="D:\\000_DATA\\out\\【第五次标注程序结果】\\F_1700_textSeg_content.txt"  //1和4样本不平衡
-  val outPath_content_F_2="D:\\000_DATA\\out\\【第五次标注程序结果】\\F_1700_textSeg_content_2.txt"  //2和3各随机抽取，使1和4样本平衡
-  val outPath_content_S="D:\\000_DATA\\out\\【第五次标注程序结果】\\S_1600_textSeg_content.txt"
-
-  //NB训练
-  nbTrain(sc,outPath_content)
-
-  //网格参数寻优训练
-//  tuneParasTrain(sc,outPath_content_F_2)
+object TrainWithNb {
 
   /**
     * 基于RDD的贝叶斯训练
     * 备注：仅训练测试，模型不保存
- *
     * @param sc
     * @param filepath  数据集文件路径(经过预处理的数据集)
     */
@@ -70,8 +39,50 @@ object TrainWithNb extends App{
   }
 
   /**
+    * 基于RDD的贝叶斯训练,并保存模型到默认的hdfs "hdfs://222.73.57.12:9000"
+    * @param sc
+    * @param filepath 数据集路径
+    * @param indus  模型名称（行业名称）
+    * @param minDF 最小文档阈值
+    * @param topFeat 最大特征空间值
+    */
+  def nbTrainToHdfs(sc:SparkContext,filepath:String,indus: String,minDF:Int,topFeat:Int): Unit ={
+    val hdfsAddress="hdfs://222.73.57.12:9000"
+    val trainData=sc.textFile(filepath)
+    //基于RDD的训练流程
+    val dataRDD=trainData.map(line =>{
+      val temp = line.split("#")
+      (temp(0).toDouble, temp(1).split(","))
+    })
+    val result=TrainingProcess.outPutModels(hdfsAddress,filepath,dataRDD,indus,minDF,topFeat)
+    println(result)
+    sc.stop()
+  }
+
+  /**
+    * 基于RDD的贝叶斯训练，并保存模型到本地路径
+    * 备注：数据不划分，全部用于train
+    * @param sc
+    * @param filepath 数据集路径
+    * @param outPath 模型输出路径 如E:/svmmodels/
+    * @param indus  模型名称（行业名称）
+    * @param minDF 最小文档阈值
+    * @param topFeat 最大特征空间值
+    */
+  def nbTrainToLocal(sc:SparkContext,filepath:String,outPath:String,indus: String,minDF:Int,topFeat:Int): Unit ={
+    val trainData=sc.textFile(filepath)
+    //基于RDD的训练流程
+    val dataRDD=trainData.map(line =>{
+      val temp = line.split("#")
+      (temp(0).toDouble, temp(1).split(","))
+    })
+    val result=TrainingProcess.outPutModels(outPath,dataRDD,indus,minDF,topFeat)
+    println(result)
+    sc.stop()
+  }
+
+  /**
     * 基于网格参数寻优的训练
- *
     * @param sc
     * @param filepath  数据集路径
     */
@@ -79,7 +90,7 @@ object TrainWithNb extends App{
     val trainData=sc.textFile(filepath)
     val dataRDD=trainData.map(line=>{
       val temp=line.split("#")
-      (temp(0).toDouble, temp(1).split(","))
+      (temp(0).toDouble, temp(1).split(","))  //K_V二元组
     })
 
     //数据分割
@@ -93,9 +104,6 @@ object TrainWithNb extends App{
       Map("train" -> dataSets(1).++(dataSets(2)).++(dataSets(3)).++(dataSets(4)), "test" -> dataSets(0))
     )
 
-    RDD
     TrainingProcess.tuneParas(dataSet,Array(1),Array(500),"Testzx")
   }
-
-
 }
