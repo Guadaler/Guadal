@@ -35,10 +35,10 @@ object RedisUtil {
     val redisTimeout = 30000
     val redisPassword = info(2)
     val redisDatabase = info(3).toInt
-    // connect
+//   connect
     val pool = new JedisPool(config, redisHost, redisPort, redisTimeout, redisPassword, redisDatabase)
     val jedis = pool.getResource()
-    // close JedisPool
+//   close JedisPool
     pool.close()
     jedis
   }
@@ -55,7 +55,8 @@ object RedisUtil {
   def write_To_Redis(jedis: Jedis, name:String, result:Map[String, String]): Unit ={
     for(i <- result.keys){
       jedis.hset(name, i, result(i))
-      jedis.expire(name, 60 * 60 * 48)
+      //设置表的生存时间（60秒*60分*48小时）
+//      jedis.expire(name, 60 * 60 * 48)
     }
   }
 
