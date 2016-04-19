@@ -20,7 +20,7 @@ object RedisUtil {
     * @return  返回jedis资源
     * @author  liumiao
     */
-  def get_redis(sc:SparkContext, file:String): Jedis ={
+  def getRedis(sc:SparkContext, file:String): Jedis ={
     // get redis info
     val info = sc.textFile(file).collect()
     // set the parameters
@@ -52,7 +52,7 @@ object RedisUtil {
     * @param result  待存储序列
     * @author  liumiao
     */
-  def write_To_Redis(jedis: Jedis, name:String, result:Map[String, String]): Unit ={
+  def writeToRedis(jedis: Jedis, name:String, result:Map[String, String]): Unit ={
     for(i <- result.keys){
       jedis.hset(name, i, result(i))
       //设置表的生存时间（60秒*60分*48小时）
