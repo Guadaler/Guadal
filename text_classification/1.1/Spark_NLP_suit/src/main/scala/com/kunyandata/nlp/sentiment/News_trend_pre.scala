@@ -11,6 +11,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 import org.json.JSONObject
 import redis.clients.jedis.Jedis
 
+import scala.collection.mutable
 import scala.collection.mutable.Map
 import scala.io.Source
 
@@ -78,7 +79,7 @@ object News_trend_pre {
     * @return 返回（存有类别-比值信息的Map）
     */
   def count_percents(sc:SparkContext, redis:Jedis, db_name:String, db_news:String, hbaseconf:Configuration,stopWordsBr:Broadcast[Array[String]],
-                     dic_user:String, dic_op:String, dic_ng:String, dic_n:String, paths:String):Map[String, String] = {
+                     dic_user:String, dic_op:String, dic_ng:String, dic_n:String, paths:String):mutable.Map[String, String] = {
     // get all classify information and news' code
     val s = redis.hkeys(db_name)                           // get classify name
     val c = redis.hkeys(db_news)                           // get all news code
@@ -91,7 +92,7 @@ object News_trend_pre {
     val model = PredictWithNb.init(paths)
 
     // create a Map to store result
-    val result = Map[String, String]()
+    val result = mutable.Map[String, String]()
 
     // 本地存储（文件）
     val now = new Date()
@@ -101,7 +102,7 @@ object News_trend_pre {
 //    val writer = new PrintWriter(new File("E:\\text\\feach_news_content.txt"))
 
     // for every industry count news tendency percent
-    for (i <- Range(0,classify.length)) {
+    for (i <- classify.indices) {
       var n = 0
       var p_m = 0
       var sum = 0.0f

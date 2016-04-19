@@ -117,16 +117,17 @@ object Bayes {
   }
 
   def getTopLabels(prediction: Vector): Array[String] = {
-
+//
     val temp = prediction.toArray
-    val result = ArrayBuffer[Int]()
-    temp.foreach(number => {
-      number
-    })
-    result.append(prediction.argmax)
+//    val result = ArrayBuffer[Int]()
+//    temp.foreach(number => {
+//      number
+//    })
+//    result.append(prediction.argmax)
+//
+//    val range = prediction.toArray.max - prediction.toArray.min
+//    prediction.
 
-    val range = prediction.toArray.max - prediction.toArray.min
-    prediction.
-
+    null
   }
 }
