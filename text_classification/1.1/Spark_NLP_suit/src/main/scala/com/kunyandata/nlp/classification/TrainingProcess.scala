@@ -30,7 +30,7 @@ object TrainingProcess {
     * @param parasFeatrues 特征选择数量参数
     * @return 返回（精度，召回率）
     */
-  def trainingProcessWithRDD(train: RDD[(Double, Array[String])], test: RDD[(Double, Array[String])],
+  private def trainingProcessWithRDD(train: RDD[(Double, Array[String])], test: RDD[(Double, Array[String])],
                              parasDoc: Array[Int], parasFeatrues: Array[Int], VSMlength: Int) = {
 
     // 构建hashingTF模型，同时将数据转化为LabeledPoint类型
@@ -96,7 +96,7 @@ object TrainingProcess {
     * @param parasDoc idf最小文档频数参数的序列
     * @param parasFeatrues 特征选择数量参数的序列
     */
-  def tuneParas(df: Array[Map[String, RDD[(Double, Array[String])]]], parasDoc:Array[Int], parasFeatrues:Array[Int], indusName: String) = {
+  private def tuneParas(df: Array[Map[String, RDD[(Double, Array[String])]]], parasDoc:Array[Int], parasFeatrues:Array[Int], indusName: String) = {
     val hdfsConf = new Configuration()
     hdfsConf.set("fs.defaultFS", "hdfs://222.73.57.12:9000")
     val fs = FileSystem.get(hdfsConf)
@@ -186,7 +186,7 @@ object TrainingProcess {
     * @param trainingSet 语料库RDD
     * @return 返回一个整形
     */
-  def countWords(trainingSet: RDD[(Double, Array[String])]): Int = {
+  private def countWords(trainingSet: RDD[(Double, Array[String])]): Int = {
     val wordCount = trainingSet.flatMap(training => {
       training._2
     }).collect().toSet.size
@@ -197,12 +197,11 @@ object TrainingProcess {
     * 根据最优参数组合训练模型
     *
     * @param train 训练集
-    * @param indus 行业
     * @param minDF 计算Idf的最小文档频数
     * @param topFeat 特征维度
     * @return 返回保存模型的Mpa和模型在训练集上的精度
     */
-  private def trainModels(train: RDD[(Double, Array[String])], indus: String, minDF: Int, topFeat: Int) = {
+  private def trainModels(train: RDD[(Double, Array[String])], minDF: Int, topFeat: Int) = {
     // 计算tf
     val VSMlength = countWords(train)
     val hashingTFModel = new feature.HashingTF(VSMlength)
@@ -242,16 +241,16 @@ object TrainingProcess {
     * @param defaultFS hdfs的地址
     * @param path hdfs中的路径
     * @param train 训练集
-    * @param indus 行业
+    * @param category 行业
     * @param minDF 计算idf值的最小文档频数
     * @param topFeat 特征数量
     */
-  def outPutModels(defaultFS: String, path: String, train: RDD[(Double, Array[String])], indus: String, minDF: Int, topFeat: Int) = {
-    val models = trainModels(train, indus, minDF, topFeat)
+  private def outPutIndusModels(defaultFS: String, path: String, train: RDD[(Double, Array[String])], category: String, minDF: Int, topFeat: Int) = {
+    val models = trainModels(train, minDF, topFeat)
     val hdfsConf = new Configuration()
     hdfsConf.set("fs.defaultFS", defaultFS)
     val fs = FileSystem.get(hdfsConf)
-    val modelOutput = new ObjectOutputStream(fs.create(new Path(path+ indus + ".models")))
+    val modelOutput = new ObjectOutputStream(fs.create(new Path(path+ category + ".models")))
     modelOutput.writeObject(models._1)
   }
 
@@ -260,16 +259,51 @@ object TrainingProcess {
     *
     * @param path 模型保存路径
     * @param train 训练集
-    * @param indus 行业
+    * @param category 行业
     * @param minDF 计算idf值的最小文档频数
     * @param topFeat 特征数量
     */
-  def outPutModels(path: String, train: RDD[(Double, Array[String])], indus: String, minDF: Int, topFeat: Int): Unit = {
-    val models = trainModels(train, indus, minDF, topFeat)
-    val modelOutput = new ObjectOutputStream(new FileOutputStream(path + indus + ".models"))
+  private def outPutIndusModels(path: String, train: RDD[(Double, Array[String])], category: String, minDF: Int, topFeat: Int): Unit = {
+    val models = trainModels(train, minDF, topFeat)
+    val modelOutput = new ObjectOutputStream(new FileOutputStream(path + category + ".models"))
     modelOutput.writeObject(models._1)
   }
 
+  /**
+    * 根据参数，序列化训练模型到制定hdfs上
+    *
+    * @param defaultFS hdfs的地址
+    * @param path hdfs中的路径
+    * @param train 训练集
+    * @param minDF 计算idf值的最小文档频数
+    * @param topFeat 特征数量
+    */
+  private def outPutSectModels(defaultFS: String, path: String, train: RDD[(Double, Array[String])],
+                               minDF: Int, topFeat: Int, labelIndex: Map[String, Double]) = {
+    val models = trainModels(train, minDF, topFeat)
+    val hdfsConf = new Configuration()
+    hdfsConf.set("fs.defaultFS", defaultFS)
+    val fs = FileSystem.get(hdfsConf)
+    val result = (models._1, labelIndex)
+    val modelOutput = new ObjectOutputStream(fs.create(new Path(path + "section.models")))
+    modelOutput.writeObject(result)
+  }
+
+  /**
+    * 根据参数，输出训练模型到制定本地路径下
+    *
+    * @param path hdfs中的路径
+    * @param train 训练集
+    * @param minDF 计算idf值的最小文档频数
+    * @param topFeat 特征数量
+    */
+  private def outPutSectModels(path: String, train: RDD[(Double, Array[String])],
+                               minDF: Int, topFeat: Int, labelIndex: Map[String, Double]) = {
+    val models = trainModels(train, minDF, topFeat)
+    val result = (models._1, labelIndex)
+    val modelOutput = new ObjectOutputStream(new FileOutputStream(path + "section.models"))
+    modelOutput.writeObject(result)
+  }
 
   def main(args: Array[String]) {
 
@@ -293,7 +327,7 @@ object TrainingProcess {
             val Array(label, content) = line.split("\t")
             (label.toDouble, content.split(","))
           })
-        outPutModels("hdfs://222.73.57.12:9000", "/mlearning/Models/", trainData, indus, minDF.toInt, topFeat.toInt)
+        outPutIndusModels("hdfs://222.73.57.12:9000", "/mlearning/Models/", trainData, indus, minDF.toInt, topFeat.toInt)
       }
     })
 //    val parasSets = Source.fromFile("/home/mlearning/ParasSets_test").getLines().take(1)

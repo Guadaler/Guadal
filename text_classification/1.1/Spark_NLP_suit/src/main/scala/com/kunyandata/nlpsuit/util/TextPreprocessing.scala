@@ -46,16 +46,14 @@ object TextPreprocessing {
 
 
     val step = 65248
-    val dbcStart = 33.toChar
-    val dbcEnd = 126.toChar
     val sbcStart = 65281.toChar
     val sbcEnd = 65374.toChar
     val sbcSpace = 12288.toChar
     val dbcSpace = 32.toChar
     val bufferString = new ArrayBuffer[Char]
-    if(content == null){
+    if(content == null) {
       content
-    }else{
+    } else {
       content
         .replaceAll("<[^<]*>", "")
         .replaceAll("&nbsp", "")
@@ -83,7 +81,7 @@ object TextPreprocessing {
     * @return 返回一个元素为String的Array
     */
   def removeStopWords(content: Array[String], stopWords:Array[String]): Array[String] = {
-    if(content !=null){
+    if (content !=null) {
       var result = content.toBuffer
       stopWords.foreach(stopWord => {
         if (result.contains(stopWord)){
@@ -91,7 +89,7 @@ object TextPreprocessing {
         }
       })
       result.toArray
-    }else{
+    } else {
       null
     }
   }

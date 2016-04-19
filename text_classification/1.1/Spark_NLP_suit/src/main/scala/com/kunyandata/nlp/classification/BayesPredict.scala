@@ -8,7 +8,7 @@ import org.apache.spark.{SparkContext, SparkConf}
 /**
   * Created by QQ on 2016/4/19.
   */
-class BayesPredict {
+object BayesPredict {
 
   def main(args: Array[String]) {
     val conf = new SparkConf().setAppName("BayesPredictTest")
@@ -24,7 +24,7 @@ class BayesPredict {
     val sc = new SparkContext(conf)
     //    val modelMap = initModel("/home/mlearning/Models/", hdfs = false)
     //    val stopWords = getStopWords("/home/mlearning/dicts/stop_words_CN", hdfs = false)
-    val modelMap = initModel("hdfs://222.73.57.12:9000", "/mlearning/indusModels/")
+    val modelMap = initIndusModel("hdfs://222.73.57.12:9000", "/mlearning/indusModels/")
     val modelMapBr = sc.broadcast(modelMap)
     val stopWords = getStopWords(sc, "hdfs://222.73.57.12:9000/mlearning/dicts/stop_words_CN")
     val stopWordsBr = sc.broadcast(stopWords)
