@@ -1,16 +1,12 @@
-package com.kunyandata.nlpsuit.sentiment
+package com.kunyandata.nlp.sentiment
 
-import java.io.{File, PrintWriter}
 import java.text.SimpleDateFormat
 import java.util.Date
 
 import com.kunyandata.nlp.util.{HbaseUtil, RedisUtil}
-import com.kunyandata.nlpsuit.util.RedisUtil
+import com.kunyandata.nlpsuit.sentiment.{PredictWithNb, Title_senti_dic}
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.hbase.TableName
-import org.apache.hadoop.hbase.client.{ConnectionFactory, Get, Table}
 import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 import org.json.JSONObject
 import redis.clients.jedis.Jedis
@@ -32,11 +28,11 @@ object News_trend_pre {
 
     try {
 
-      val redis = RedisUtil.get_redis(sc, "E:\\info_txt\\redis_info.txt")
+      val redis = RedisUtil.get_redis(sc, args(0))
 
       val hbaseConf = HbaseUtil.getHbaseConf()
 
-      val stopWords = Source.fromFile("E:\\senti_learn\\text_classification\\1.1\\Spark_NLP_suit\\src\\main\\resources\\dicts\\stop_words_CN").getLines().toArray  //读取停用词典并转成Array
+      val stopWords = Source.fromFile(args(1)).getLines().toArray  //读取停用词典并转成Array
       val stopWordsBr = sc.broadcast(stopWords)
 
       // get all table's name
@@ -44,15 +40,15 @@ object News_trend_pre {
       val dateFormat = new SimpleDateFormat("yyyyMMdd")
       val time = dateFormat.format(now)
 
-      //    val time = "20160129"
-      val ind_time = "Industry_" + time                        // ------------------------------- industry -----------------------------
+
+     val ind_time = "Industry_" + time                        // ------------------------------- industry -----------------------------
       val sto_time = "Stock_" + time                           // ------------------------------- stock --------------------------------
       val sec_time = "Section_" + time                        // ------------------------------- section -------------------------------
       val key_time = "News_" + time                           // -------------------------------- news ---------------------------------
 
-      val list0 = count_percents(sc, redis, ind_time, key_time, hbaseConf, stopWordsBr)
-      val list1 = count_percents(sc, redis, sto_time, key_time, hbaseConf, stopWordsBr)
-      val list2 = count_percents(sc, redis, sec_time, key_time, hbaseConf, stopWordsBr)
+      val list0 = count_percents(sc, redis, ind_time, key_time, hbaseConf, stopWordsBr, args(2), args(3), args(4), args(5), args(6))
+      val list1 = count_percents(sc, redis, sto_time, key_time, hbaseConf, stopWordsBr, args(2), args(3), args(4), args(5), args(6))
+      val list2 = count_percents(sc, redis, sec_time, key_time, hbaseConf, stopWordsBr, args(2), args(3), args(4), args(5), args(6))
 
       RedisUtil.write_To_Redis(redis, "industry_sentiment", list0)
       RedisUtil.write_To_Redis(redis, "stock_sentiment", list1)
@@ -81,7 +77,8 @@ object News_trend_pre {
     * @param hbaseconf hbase
     * @return 返回（存有类别-比值信息的Map）
     */
-  def count_percents(sc:SparkContext, redis:Jedis, db_name:String, db_news:String, hbaseconf:Configuration,stopWordsBr:Broadcast[Array[String]]):Map[String, String] = {
+  def count_percents(sc:SparkContext, redis:Jedis, db_name:String, db_news:String, hbaseconf:Configuration,stopWordsBr:Broadcast[Array[String]],
+                     dic_user:String, dic_op:String, dic_ng:String, dic_n:String, paths:String):Map[String, String] = {
     // get all classify information and news' code
     val s = redis.hkeys(db_name)                           // get classify name
     val c = redis.hkeys(db_news)                           // get all news code
@@ -91,7 +88,7 @@ object News_trend_pre {
     c.toArray(code)
 
     //初始化 -> Byes -> initModel 文件路径 （目前是绝对路径）
-    val model = PredictWithNb.init()
+    val model = PredictWithNb.init(paths)
 
     // create a Map to store result
     val result = Map[String, String]()
@@ -99,8 +96,9 @@ object News_trend_pre {
     // 本地存储（文件）
     val now = new Date()
     val dateFormat = new SimpleDateFormat("HHmmss")
-    //    val writer = new PrintWriter(new File(db_name + "_" +dateFormat.format(now) + ".txt" ))
-    val writer = new PrintWriter(new File("E:\\text\\feach_news_content.txt"))
+
+//    val writer = new PrintWriter(new File(db_name + "_" +dateFormat.format(now) + ".txt" ))
+//    val writer = new PrintWriter(new File("E:\\text\\feach_news_content.txt"))
 
     // for every industry count news tendency percent
     for (i <- Range(0,classify.length)) {
@@ -116,18 +114,17 @@ object News_trend_pre {
 
       // for every new get it's title info
       for (j <- Range(0, news.length)) {
-        //        if(code.contains(news(j))){
         val all = redis.hget(db_news, news(j))
         // get title
         val tt = new JSONObject(all)
-        //        val t = tt.getString("title")
+ //       val t = tt.getString("title")
         val t = tt.getString("url")
 
         //用“url”=> t 读出新闻的正文
         val content = HbaseUtil.getValue(hbaseconf, "wk_detail", t, "basic", "content")
 
         if(content != "Null"){
-          // 调用函数 获得正文的情感倾向
+          // 利用模型预测正文的情感倾向
 //          println(content)
           val value = PredictWithNb.predictWithSigle(content, model, stopWordsBr)
 //          println(value )
@@ -138,10 +135,10 @@ object News_trend_pre {
             p_m = p_m + 1
           }
         }
-        //如果匹配不到新闻
+        // 如果匹配不到正文，利用词典预测标题的情感倾向
         else{
-          val title_cut = Title_senti_dic.cut(sc, t)
-          val value = Title_senti_dic.search_senti(sc, title_cut)
+          val title_cut = Title_senti_dic.cut(sc, t, dic_user)
+          val value = Title_senti_dic.search_senti(sc, title_cut, dic_op, dic_ng, dic_n)
           if (value < 0) {
             n = n + 1
           }
@@ -149,20 +146,15 @@ object News_trend_pre {
             p_m = p_m + 1
           }
         }
-
       }
       sum = n + p_m
-
       println(classify(i) + " " + n + " " + p_m)
 
 //      val jsoninfo = RedisUtil.toJSON( classify(i), n, p_m, sum)
-
       conse = (n/sum).toString + "," + (p_m/sum).toString
-
       result += (classify(i) -> conse)
-
     }
-    writer.close()
+//    writer.close()
     result
   }
 
