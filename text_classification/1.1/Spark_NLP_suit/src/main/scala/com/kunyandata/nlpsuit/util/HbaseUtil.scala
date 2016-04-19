@@ -16,41 +16,37 @@ import org.apache.spark.rdd.RDD
 
 object HbaseUtil {
 
-  def main(args: Array[String]) {
-
-    val sparkConf = new SparkConf().setMaster("local").setAppName("HbaseUtil")
-    val sparkContext = new SparkContext(sparkConf)
-
-    try{
-      val hbaseConf = getHbaseConf()
-
-      val news = getRDD(sparkContext, hbaseConf)
-
-      news.take(5).foreach(println)
-
-      val newss = news.map( x => {
-        val s = x.split("\n\t")
-        s(0)
-      })
-
-      newss.take(5).foreach(println)
-      newss.saveAsTextFile("E:\\text\\news_url_20160414.txt")
-
-
-      val data = getValue(hbaseConf, "wk_detail", "http://news.hexun.com/2016-03-23/182919956.html", "basic", "content" )
-      println(data)
-
-
-    }catch {
-      case e:Exception =>
-        println(e.getMessage)
-    } finally {
-      sparkContext.stop()
-      println("sparkContext stop >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-    }
-
-
-  }
+//  def main(args: Array[String]) {
+//
+//    val sparkConf = new SparkConf().setMaster("local").setAppName("HbaseUtil")
+//    val sparkContext = new SparkContext(sparkConf)
+//
+//    try{
+//      val hbaseConf = getHbaseConf()
+//
+//      val news = getRDD(sparkContext, hbaseConf)
+//
+//      news.take(5).foreach(println)
+//
+//      val newss = news.map( x => {
+//        val s = x.split("\n\t")
+//        s(0)
+//      })
+//
+//      newss.take(5).foreach(println)
+//      newss.saveAsTextFile("E:\\text\\news_url_20160414.txt")
+//
+////      val data = getValue(hbaseConf, "wk_detail", "http://news.hexun.com/2016-03-23/182919956.html", "basic", "content" )
+////      println(data)
+//
+//    }catch {
+//      case e:Exception =>
+//        println(e.getMessage)
+//    } finally {
+//      sparkContext.stop()
+//      println("sparkContext stop >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+//    }
+//  }
 
   /**
     * 连接 hbase
@@ -93,24 +89,28 @@ object HbaseUtil {
     */
   def getRDD(sc:SparkContext, hbaseConf:Configuration): RDD[String] ={
 
+    //表名
     val tableName = "wk_detail"
-
     hbaseConf.set(TableInputFormat.INPUT_TABLE, tableName)
 
+    //获得RDD
     val hbaseRdd = sc.newAPIHadoopRDD(hbaseConf, classOf[TableInputFormat]
       , classOf[ImmutableBytesWritable], classOf[Result])
 
+    //获得url、title、content列
     val news = hbaseRdd.map( x => {
       val a = x._2.getValue(Bytes.toBytes("basic"), Bytes.toBytes("url"))
       val b = x._2.getValue(Bytes.toBytes("basic"), Bytes.toBytes("title"))
       val c = x._2.getValue(Bytes.toBytes("basic"), Bytes.toBytes("content"))
 
+      //编码转换
       val formata = judgeCharser(a)
       val formatb = judgeCharser(b)
       val formatc = judgeCharser(c)
 
       new String(a, formata) + "\n\t" + new String(b, formatb) + "\n\t" + new String(c, formatc)
     })
+    //返回RDD
     news
   }
 

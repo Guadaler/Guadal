@@ -10,16 +10,17 @@ import org.apache.spark.SparkContext
 object Title_senti_dic {
 
 
-
   /**
     * 分词
     *
     * @param sc
     * @param sentence 输入的待分词的句子
+    * @param file 用户自定义分词词典
     * @return 返回（分词结果，存储在字符串数组中）
+    * @author liumiao
     */
-  def cut(sc:SparkContext, sentence:String):Array[String] = {
-    val dic = sc.textFile("E:\\nlp\\text_classification\\1.1\\Spark_NLP_suit\\src\\test\\resources\\sentiment_data\\senti_dict\\user_dict.txt").collect()
+  def cut(sc:SparkContext, sentence:String, file:String):Array[String] = {
+    val dic = sc.textFile(file).collect()
     for(x <- dic){
       // add new words
       UserDefineLibrary.insertWord(x,"userDefine",100)
@@ -74,7 +75,6 @@ object Title_senti_dic {
 
 
 
-
   /**
     * 情感分析
     *
@@ -82,11 +82,11 @@ object Title_senti_dic {
     * @return 返回（句子的情感倾向，+1表示正向，-1表示负向，0表示中性）
     * @author liumiao
     */
-  def search_senti(sc:SparkContext, title_cut:Array[String]): Int ={
+  def search_senti(sc:SparkContext, title_cut:Array[String], file1:String, file2:String, file3:String): Int ={
 
-    val dict_p = sc.textFile("E:\\nlp\\text_classification\\1.1\\Spark_NLP_suit\\src\\test\\resources\\sentiment_data\\senti_dict\\posi_dic.txt").collect()
-    val dict_n = sc.textFile("E:\\nlp\\text_classification\\1.1\\Spark_NLP_suit\\src\\test\\resources\\sentiment_data\\senti_dict\\nega_dic.txt").collect()
-    val dict_f = sc.textFile("E:\\nlp\\text_classification\\1.1\\Spark_NLP_suit\\src\\test\\resources\\sentiment_data\\senti_dict\\neg_dic.txt").collect()
+    val dict_p = sc.textFile(file1).collect()
+    val dict_n = sc.textFile(file2).collect()
+    val dict_f = sc.textFile(file3).collect()
 
     var p = 0
     var n = 0
