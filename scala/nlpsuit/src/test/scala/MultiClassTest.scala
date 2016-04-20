@@ -1,4 +1,4 @@
-import com.kunyandata.nlp.classification.TrainingProcess
+import com.kunyan.nlp.classification.TrainingProcess
 import org.apache.spark.{SparkContext, SparkConf}
 import org.apache.spark.mllib.classification.NaiveBayes
 import org.apache.spark.mllib.evaluation.MulticlassMetrics

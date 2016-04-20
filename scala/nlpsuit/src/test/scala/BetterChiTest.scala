@@ -4,7 +4,7 @@
 
 import java.io._
 
-import com.kunyandata.nlpsuit.feature.BetterChiSqSelector
+import com.kunyan.nlpsuit.feature.BetterChiSqSelector
 import org.apache.spark.mllib.feature.ChiSqSelector
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.mllib.feature
