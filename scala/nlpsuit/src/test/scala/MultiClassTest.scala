@@ -1,11 +1,8 @@
-import com.kunyandata.nlp.classification.TrainingProcess
-import org.apache.spark.{SparkContext, SparkConf}
+import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.mllib.classification.NaiveBayes
 import org.apache.spark.mllib.evaluation.MulticlassMetrics
 import org.apache.spark.mllib.feature
 import org.apache.spark.mllib.regression.LabeledPoint
-import TrainingProcess.countWords
-
 import scala.io.Source
 
 

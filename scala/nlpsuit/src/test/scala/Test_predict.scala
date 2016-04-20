@@ -1,6 +1,6 @@
 //import com.kunyandata.nlpsuit.sentiment.{TextPre_KunAnalyzer, Analyzer, Util}
-import com.kunyandata.nlpsuit.sentiment.PredictWithNb
-import com.kunyandata.nlpsuit.util.{TextPreprocessing, WordSeg}
+import com.kunyan.nlpsuit.sentiment.PredictWithNb
+import com.kunyan.nlpsuit.util.{TextPreprocessing, WordSeg}
 import org.apache.spark.{SparkContext, SparkConf}
 
 import scala.io.Source

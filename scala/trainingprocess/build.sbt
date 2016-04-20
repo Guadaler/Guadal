@@ -1,18 +1,10 @@
-//mainClass in (Compile, packageBin) := Some("com.kunyandata.nlp.classification.TrainingProcess")
+name := "classification"
 
-name := "Spark_NLP_suit"
-
-version := "0.2"
+version := "1.0"
 
 scalaVersion := "2.10.4"
 
 libraryDependencies += "org.apache.spark" % "spark-mllib_2.10" % "1.5.2"
-
-libraryDependencies += "org.apache.spark" % "spark-core_2.10" % "1.5.2"
-
-libraryDependencies += "org.ansj" % "ansj_seg" % "0.9"
-
-libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.5.1"
 
 assemblyMergeStrategy in assembly := {
   case PathList("javax", "servlet", xs @ _*) => MergeStrategy.last
@@ -36,4 +28,3 @@ assemblyMergeStrategy in assembly := {
 }
 
 test in assembly := {}
-
