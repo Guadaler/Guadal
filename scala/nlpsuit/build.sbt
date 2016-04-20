@@ -16,7 +16,7 @@ libraryDependencies += "org.apache.spark" % "spark-core_2.10" % "1.5.2"
 
 libraryDependencies += "redis.clients" % "jedis" % "2.8.0" % "provided"
 
-libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.5.1" % "provided"
+libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.5.1"
 
 libraryDependencies += "mysql" % "mysql-connector-java" % "3.1.14" % "provided"
 

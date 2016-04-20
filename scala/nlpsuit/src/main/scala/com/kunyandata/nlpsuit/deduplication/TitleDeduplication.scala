@@ -51,16 +51,12 @@ object TitleDeduplication {
   def process(titleStringA: String, titleStringArray: Array[String], n: Int, threshold: Double): Boolean = {
 
     val titleListA = hashList(titleStringA, n)
-    for (i <- titleStringArray.slice(0, -1)) {
-      val titleListB = hashList(title, n)
-    }
-    val temp = titleStringArray.map(title => {
-
+    for (i <- titleStringArray.indices) {
+      val titleListB = hashList(titleStringArray(i), n)
       val pValue = titleListA.intersect(titleListB).length * 1.0 /
         Array(titleListA.length, titleListB.length).max
-      if (pValue >= threshold) true
-      else false
-    }).toSet
-    temp.size
+      if (pValue >= threshold) return true
+    }
+    false
   }
 }

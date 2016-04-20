@@ -120,8 +120,8 @@ object TrainingProcess {
         })
         val preArray = parasTuningResult.map(_._2(paraDoc)(paraFea)._1)
         val recArray = parasTuningResult.map(_._2(paraDoc)(paraFea)._2)
-        val avePrecision = preArray.sum / preArray.count(_ != null)
-        val aveRecall = recArray.sum / recArray.count(_ != null)
+        val avePrecision = preArray.sum / preArray.length
+        val aveRecall = recArray.sum / recArray.length
         writer.write("参数组合:" + paraDoc + "," + paraFea +
           "的平均精度为: " + avePrecision + ",平均召回率为: " + aveRecall + "\n\n")
       })
