@@ -5,30 +5,41 @@
 
 import java.util.Date
 
-import org.scalatest.{FlatSpec, Matchers}
 import com.kunyandata.nlpsuit.deduplication.TitleDeduplication
+import org.apache.spark.{SparkConf, SparkContext}
 
 /**
   * Created by QQ on 2016/2/21.
   */
-class TitleDedumplicationTest extends  FlatSpec with Matchers{
+object TitleDedumplicationTest {
 
-  "test " should "work" in{
+  def main(args: Array[String]) {
+    val conf = new SparkConf()
+      .setAppName("test123")
+      .setMaster("local")
+      .set("spark.local.ip","192.168.2.65")
+      .set("spark.driver.host","192.168.2.65")
+    //    .setMaster("spark://222.73.57.12:7077")
+    //      .set("spark.local.ip","222.73.57.12")
+    //      .set("spark.driver.host","222.73.57.12")
+    //    .set("spark.executor.memory", "15G")
+    //    .set("spark.executor.cores", "4")
+    //    .set("spark.cores.max", "8")
 
+    val sc = new SparkContext(conf)
     val n = 2
-    val title1 = "远望谷涨停 将独家供应上海迪士尼梦想护照"
+    val title1 = "远望谷涨nifsdadjsal;fjdlsajifewqrl;kejwqoireuwqlf;jdlsa"
     val title2 = "远望谷涨停 将独家供应迪士尼梦想护照"
-    val time1 = new Date().getTime
-    for (i <- 1 to 5000){
-      TitleDeduplication.process(title1, title2, n, 0.4)
+    val titleArray = sc.makeRDD(Seq(title2))
+    val i = 1
+    while (i <= 10){
+      titleArray.++(titleArray)
     }
+    println(titleArray.count())
+    val time1 = new Date().getTime
+    TitleDeduplication.process(title1, titleArray.collect(), n, 0.4)
     val time2 = new Date().getTime
     print(time2 - time1)
-
-
-
-//    for (w: Char <- title) {
-//      println(w)
-//    }
   }
+
 }
