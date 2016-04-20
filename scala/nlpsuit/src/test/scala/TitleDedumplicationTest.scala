@@ -28,18 +28,21 @@ object TitleDedumplicationTest {
 
     val sc = new SparkContext(conf)
     val n = 2
-    val title1 = "远望谷涨nifsdadjsal;fjdlsajifewqrl;kejwqoireuwqlf;jdlsa"
+    val title1 = "远望谷涨停 将独家供应迪士尼梦想护照"
     val title2 = "远望谷涨停 将独家供应迪士尼梦想护照"
-    val titleArray = sc.makeRDD(Seq(title2))
-    val i = 1
-    while (i <= 10){
-      titleArray.++(titleArray)
+    var titleRDD = sc.makeRDD(Seq(title2))
+    var i = 1
+    while (i <= 14){
+      titleRDD = titleRDD.++(titleRDD)
+      i = i + 1
     }
-    println(titleArray.count())
+    val titleArray = titleRDD.collect()
     val time1 = new Date().getTime
-    TitleDeduplication.process(title1, titleArray.collect(), n, 0.4)
+    val result = TitleDeduplication.process(title1, titleArray, n, 0.4)
     val time2 = new Date().getTime
-    print(time2 - time1)
+    println(titleRDD.count())
+    println(result)
+    println(time2 - time1)
   }
 
 }
