@@ -1,4 +1,4 @@
-package com.kunyan.nlp.classification
+package classification
 
 /**
   * Created by QQ on 2016/4/1.

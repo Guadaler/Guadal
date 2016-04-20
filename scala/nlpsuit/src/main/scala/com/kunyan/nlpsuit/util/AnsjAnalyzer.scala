@@ -1,7 +1,6 @@
 package com.kunyan.nlpsuit.util
 
 import java.util
-
 import org.ansj.domain.Term
 import org.ansj.library.UserDefineLibrary
 import org.ansj.splitWord.analysis.{NlpAnalysis, ToAnalysis}

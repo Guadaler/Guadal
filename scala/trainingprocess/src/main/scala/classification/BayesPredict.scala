@@ -1,4 +1,4 @@
-package com.kunyan.nlp.classification
+package classification
 
 import com.kunyan.nlpsuit.util.TextPreprocessing
 import com.kunyan.nlpsuit.classification.Bayes._

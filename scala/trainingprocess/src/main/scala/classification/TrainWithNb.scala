@@ -1,11 +1,6 @@
-package com.kunyan.nlpsuit.sentiment
+package classification
 
-import java.io.File
-import com.kunyan.nlp.classification.TrainingProcess
-import org.apache.spark.rdd.RDD
-import org.apache.spark.{SparkConf, SparkContext}
-
-import scala.io.Source
+import org.apache.spark.SparkContext
 
 /**
   * Created by zx on 2016/3/28.
@@ -34,7 +29,7 @@ object TrainWithNb {
     val train=dataSets(0).cache()
     val test=dataSets(1).cache()
 
-    val result=TrainingProcess.trainingProcessWithRDD(train,test, Array(0), Array(1000),10000)
+    val result = TrainingProcess.trainingProcessWithRDD(train,test, Array(0), Array(1000),10000)
     println(result)
     sc.stop()
   }
@@ -42,7 +37,7 @@ object TrainWithNb {
   /**
     * 基于RDD的贝叶斯训练,并保存模型到默认的hdfs "hdfs://222.73.57.12:9000"
  *
-    * @param sc
+    * @param sc SparkContext
     * @param filepath 数据集路径
     * @param indus  模型名称（行业名称）
     * @param minDF 最小文档阈值
@@ -56,7 +51,7 @@ object TrainWithNb {
       val temp = line.split("#")
       (temp(0).toDouble, temp(1).split(","))
     })
-    val result=TrainingProcess.outPutModels(hdfsAddress,filepath,dataRDD,indus,minDF,topFeat)
+    val result = TrainingProcess.outPutModels(hdfsAddress,filepath,dataRDD,indus,minDF,topFeat)
     println(result)
     sc.stop()
   }

@@ -1,4 +1,4 @@
-package com.kunyan.nlp.util
+package com.kunyan.util
 
 import java.text.SimpleDateFormat
 

@@ -1,4 +1,4 @@
-package com.kunyan.nlp.classification
+package classification
 
 import org.apache.spark.{SparkConf, SparkContext}
 import com.kunyan.nlpsuit.util.TextPreprocessing

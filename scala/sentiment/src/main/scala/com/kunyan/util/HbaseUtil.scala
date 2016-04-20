@@ -1,4 +1,4 @@
-package com.kunyan.nlp.util
+package com.kunyan.util
 
 import com.ibm.icu.text.CharsetDetector
 import org.apache.hadoop.conf.Configuration

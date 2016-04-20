@@ -1,4 +1,4 @@
-package com.kunyan.nlp.classification
+package classification
 
 import java.io.{BufferedWriter, File, FileWriter}
 

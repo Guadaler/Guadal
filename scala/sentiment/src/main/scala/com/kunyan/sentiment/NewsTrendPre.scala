@@ -1,10 +1,10 @@
-package com.kunyan.nlp.sentiment
+package com.kunyan.sentiment
 
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import com.kunyan.nlp.util.{HbaseUtil, RedisUtil}
 import com.kunyan.nlpsuit.sentiment.{PredictWithNb, Title_senti_dic}
+import com.kunyan.util._
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.{SparkConf, SparkContext}

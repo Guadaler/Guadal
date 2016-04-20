@@ -1,16 +1,12 @@
-import org.apache.spark.SparkConf
-import org.apache.spark.streaming.{Seconds, StreamingContext}
 import java.io.File
-import java.sql.DriverManager
 import java.util.Date
 import javax.xml.parsers.DocumentBuilderFactory
-import org.apache.log4j.{PropertyConfigurator, BasicConfigurator, Logger}
+
 import kafka.serializer.StringDecoder
-import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.streaming._
-import org.apache.spark.streaming.kafka
+import org.apache.log4j.{BasicConfigurator, Logger, PropertyConfigurator}
+import org.apache.spark.SparkConf
 import org.apache.spark.streaming.kafka.KafkaUtils
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.w3c.dom.Element
 
 import scala.collection.mutable

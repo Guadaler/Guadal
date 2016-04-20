@@ -12,8 +12,6 @@ import org.apache.spark.SparkContext
 import org.apache.spark.mllib.feature._
 import org.apache.spark.mllib.classification.NaiveBayesModel
 import org.apache.spark.mllib.linalg.Vector
-
-import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
 
 
