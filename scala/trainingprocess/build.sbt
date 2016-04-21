@@ -1,3 +1,5 @@
+mainClass in (Compile, packageBin) := Some("com.kunyandata.nlp.classification.TrainingProcess")
+
 name := "classification"
 
 version := "1.0"
