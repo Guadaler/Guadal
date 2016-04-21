@@ -43,7 +43,6 @@ object RedisUtil {
     jedis
   }
 
-
   /**
     * 写redis
     *
@@ -55,50 +54,25 @@ object RedisUtil {
   def writeToRedis(jedis: Jedis, name:String, result:Map[String, String]): Unit ={
     for(i <- result.keys){
       jedis.hset(name, i, result(i))
-      //设置表的生存时间（60秒*60分*48小时）
-//      jedis.expire(name, 60 * 60 * 48)
     }
   }
-
-
-//  /**
-//    * 将存储信息转换为json字符串
-//    *
-//    * @param classify  类别信息
-//    * @param p  正向新闻条数
-//    * @param n  负向新闻条数
-//    * @param m  中性新闻条数
-//    * @param sum  当前类别新闻总条数
-//    * @return  json字符串
-//    * @author  liumiao
-//    */
-//  def toJSON(classify:String, p:Int, n:Int, m:Int, sum:Float):String = {
-//    var infoMap:Predef.Map[String, Float] = Predef.Map()
-//    infoMap += ("positive_percent" -> p/sum)
-//    infoMap += ("negative_percent" -> n/sum)
-//    infoMap += ("neutral_percent" -> m/sum)
-//    val jsoninfo = JSONObject(infoMap).toString()
-//    println(classify + " " + infoMap("positive_percent") + " " + infoMap("negative_percent") + " " + infoMap("neutral_percent"))
-//    jsoninfo
-//  }
-
 
   /**
     * 将存储信息转换为json字符串
     *
     * @param classify  类别信息
-    * @param n  负向新闻条数
-    * @param p_m  正向和中性新闻条数
+    * @param negative  负向新闻条数
+    * @param positive  正向和中性新闻条数
     * @param sum  当前类别新闻总条数
     * @return  json字符串
     * @author  liumiao
     */
-  def toJSON(classify:String,n:Int, p_m:Int, sum:Float):String = {
+  def toJSON(classify:String, negative:Int, positive:Int, sum:Float):String = {
     var infoMap:Predef.Map[String, Float] = Predef.Map()
-    infoMap += ("negative_percent" -> n/sum)
-    infoMap += ("neu_pos_percent" -> p_m/sum)
+    infoMap += ("negative_percent" -> negative/sum)
+    infoMap += ("positive_percent" -> positive/sum)
     val jsoninfo = JSONObject(infoMap).toString()
-    println(classify +" " + infoMap("negative_percent") + " " + infoMap("neu_pos_percent"))
+    println(classify +" " + infoMap("negative_percent") + " " + infoMap("positive_percent"))
     jsoninfo
   }
 
