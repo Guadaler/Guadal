@@ -14,7 +14,7 @@ object Regular {
     * @param categoryKeywords 类别字典，（股票、行业或者概念板块）
     * @param categoryList 所属类别List
     */
-  private def grep(textString: String, categoryKeywords: Map[String, Array[String]],
+  def grep(textString: String, categoryKeywords: Map[String, Array[String]],
                    categoryList: mutable.MutableList[String]): Unit = {
 
     for (indus: String <- categoryKeywords.keys) {
