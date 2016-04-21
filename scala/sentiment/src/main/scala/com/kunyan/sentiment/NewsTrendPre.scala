@@ -23,7 +23,7 @@ object NewsTrendPre {
   def main(args: Array[String]) {
 
     val conf = new SparkConf()
-      .setAppName("News_trend_pre")
+      .setAppName("NewsTrendPre")
 //      .setMaster("local")
     val sc = new SparkContext(conf)
 
@@ -48,9 +48,9 @@ object NewsTrendPre {
       val newsTime = "News_" + time                           // -------------------------------- news ---------------------------------
 
       // 计算新闻的倾向比例
-      val list0 = count_percents(sc, redis, industryTime, newsTime, hbaseConf, stopWordsBr, args(2), args(3), args(4), args(5), args(6))
-      val list1 = count_percents(sc, redis, stockTime, newsTime, hbaseConf, stopWordsBr, args(2), args(3), args(4), args(5), args(6))
-      val list2 = count_percents(sc, redis, sectionTime, newsTime, hbaseConf, stopWordsBr, args(2), args(3), args(4), args(5), args(6))
+      val list0 = countPercents(sc, redis, industryTime, newsTime, hbaseConf, stopWordsBr, args(2), args(3), args(4), args(5), args(6))
+      val list1 = countPercents(sc, redis, stockTime, newsTime, hbaseConf, stopWordsBr, args(2), args(3), args(4), args(5), args(6))
+      val list2 = countPercents(sc, redis, sectionTime, newsTime, hbaseConf, stopWordsBr, args(2), args(3), args(4), args(5), args(6))
 
       // 写入redis
       RedisUtil.writeToRedis(redis, "industry_sentiment", list0)
@@ -81,8 +81,8 @@ object NewsTrendPre {
     * @param hbaseconf hbase
     * @return 返回（存有类别-比值信息的Map）
     */
-  def count_percents(sc:SparkContext, redis:Jedis, classifyTable:String, newsTable:String, hbaseconf:Configuration, stopWordsBr:Broadcast[Array[String]],
-                     dicUser:String, dicPosi:String, dicNega:String, dicN:String, modelPath:String):mutable.Map[String, String] = {
+  def countPercents(sc:SparkContext, redis:Jedis, classifyTable:String, newsTable:String, hbaseconf:Configuration, stopWordsBr:Broadcast[Array[String]],
+                    dicUser:String, dicPosi:String, dicNega:String, dicN:String, modelPath:String):mutable.Map[String, String] = {
 
     // 获得所有类别名称
     val s = redis.hkeys(classifyTable)
@@ -149,8 +149,8 @@ object NewsTrendPre {
         }
         // 如果匹配不到正文，利用词典预测标题的情感倾向
         else{
-          val title_cut = SentiRelyDic.cut(sc, newsTitle, dicUser)
-          val value = SentiRelyDic.searchSenti(sc, title_cut, dicPosi, dicNega, dicN)
+          val titleCut = SentiRelyDic.cut(sc, newsTitle, dicUser)
+          val value = SentiRelyDic.searchSenti(sc, titleCut, dicPosi, dicNega, dicN)
           if (value < 0) {
             negaCount = negaCount + 1
           }
