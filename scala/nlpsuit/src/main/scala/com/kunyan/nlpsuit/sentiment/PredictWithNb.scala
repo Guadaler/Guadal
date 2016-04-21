@@ -1,13 +1,12 @@
 package com.kunyan.nlpsuit.sentiment
 
-import java.io.{PrintWriter, File, FileInputStream, ObjectInputStream}
-
+import java.io._
 import com.kunyan.nlpsuit.util.TextPreprocessing
 import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.mllib.classification.NaiveBayesModel
 import org.apache.spark.mllib.feature.{ChiSqSelectorModel, HashingTF, IDFModel}
-import org.apache.spark.{SparkConf, SparkContext}
-
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.spark.mllib.classification.NaiveBayesModel
 import scala.io.Source
 
 /**
@@ -15,13 +14,14 @@ import scala.io.Source
   */
 object PredictWithNb extends App{
 
+
   /**
-    * 初始化读取模型  给出模型路径
- *
-    * @param path  模型路径
-    * @return 模型Map[模型名称，模型]
+    * 初始化读取模型，给出模型路径，用从本地某路径读
+    * @param path 模型路径
+    * @param methodNum 为了与从hdfs读取区分，加入方法编号作标记
+    * @return  模型Map[模型名称，模型]
     */
-  def init(path: String): Map[String, Any] = {
+  def init(path: String,methodNum:Int): Map[String, Any] = {
     val fileList = new File(path)
     val modelList = fileList.listFiles()
     var modelMap:Map[String, Any] = Map()
@@ -34,8 +34,25 @@ object PredictWithNb extends App{
   }
 
   /**
+    * 读取模型，从hdfs上读取
+    * @param modelfileFromHdfs hdfs路径 如hdfs://222.73.57.12:9000/user/F_2_1500
+    * @return 模型Map[模型名称，模型]
+    */
+  def init(modelfileFromHdfs: String): Map[String, Any] = {
+    var modelMap:Map[String, Any] = Map()
+    //读取hdfs上保存的模型
+    val hdfsConf = new Configuration()
+    val fs = FileSystem.get(hdfsConf)
+    val fileList = fs.listStatus(new Path(modelfileFromHdfs)).map(_.getPath.toString)
+    val result = fileList.map(file => {
+      val modelName = file.replaceAll(modelfileFromHdfs, "")
+      val tempModelInput = new ObjectInputStream(fs.open(new Path(file))).readObject()
+      modelMap +=(modelName -> tempModelInput)
+    })
+    modelMap
+  }
+  /**
     *初始化读取模型  调用默认路径的模型
- *
     * @return  模型数组
     */
   def init(): Map[String, Any] = {
