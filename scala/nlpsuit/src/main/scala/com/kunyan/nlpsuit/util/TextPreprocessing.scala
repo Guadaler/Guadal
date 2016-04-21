@@ -1,13 +1,5 @@
 package com.kunyan.nlpsuit.util
 
-import java.io._
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{Path, FileSystem}
-import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.{SparkConf, SparkContext}
-import scala.collection.mutable.ArrayBuffer
-import scala.io.Source
-
 /**
   * Created by QQ on 2016/3/18.
   *
@@ -17,24 +9,6 @@ import org.apache.spark.broadcast.Broadcast
 import scala.collection.mutable.ArrayBuffer
 
 object TextPreprocessing {
-
-//  def copyFile(localPath: String, targetPath: String): Unit = {
-//
-//    val fis = new FileInputStream(localPath)
-//    val bufis = new BufferedInputStream(fis)
-//
-//    val fos = new FileOutputStream(targetPath)
-//    val bufos = new BufferedOutputStream(fos)
-//
-//    var len = bufis.read()
-//    while (len != -1){
-//      bufos.write(len)
-//      len = bufis.read()
-//    }
-//
-//    bufis.close()
-//    bufos.close()
-//  }
 
   /**
     * 格式化文本，转化空白字符为停用词表中的标点符号，同时统一英文字母为小写

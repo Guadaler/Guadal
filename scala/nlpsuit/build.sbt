@@ -1,5 +1,3 @@
-//mainClass in (Compile, packageBin) := Some("com.kunyandata.nlp.classification.TrainingProcess")
-
 name := "Spark_NLP_suit"
 
 version := "0.2"
