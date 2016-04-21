@@ -1,12 +1,10 @@
 package com.kunyan.nlpsuit.sentiment
 
-import java.io.{PrintWriter, File, FileInputStream, ObjectInputStream}
-
+import java.io.{File, FileInputStream, ObjectInputStream, PrintWriter}
 import com.kunyan.nlpsuit.util.TextPreprocessing
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.mllib.classification.NaiveBayesModel
 import org.apache.spark.mllib.feature.{ChiSqSelectorModel, HashingTF, IDFModel}
-import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.io.Source
 

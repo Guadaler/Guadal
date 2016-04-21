@@ -2,8 +2,7 @@ package com.kunyan.sentiment
 
 import java.text.SimpleDateFormat
 import java.util.Date
-
-import com.kunyan.nlpsuit.sentiment.{PredictWithNb, Title_senti_dic}
+import com.kunyandata.nlpsuit.sentiment._
 import com.kunyan.util._
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.broadcast.Broadcast

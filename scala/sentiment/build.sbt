@@ -1,4 +1,4 @@
-mainClass in (Compile, packageBin) := Some("com.kunyandata.nlp.classification.TrainingProcess")
+mainClass in (Compile, packageBin) := Some("com.kunyan.sentiment.NewsTrendPre")
 
 name := "sentiment"
 

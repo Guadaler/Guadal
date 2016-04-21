@@ -5,7 +5,6 @@ package com.kunyan.nlpsuit.classification
   */
 
 import java.io._
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.SparkContext
