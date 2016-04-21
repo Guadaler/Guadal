@@ -1,6 +1,7 @@
 package com.kunyan.nlpsuit.classification
 
-import scala.collection.{mutable, Map}
+import scala.collection.mutable.ArrayBuffer
+import scala.collection.{Map, mutable}
 
 /**
   * Created by QQ on 2016/2/18.
@@ -9,14 +10,37 @@ import scala.collection.{mutable, Map}
 object Regular {
 
   /**
+    * 股票和概念板块的分类，基于词典。
+    *
+    * @param wordSegNoStop 分词后的文本
+    * @param categoryKeywords 类别词典，主要是股票和板块词典
+    * @return 板块或者行业名称组成的字符串,逗号分割
+    */
+  def grep(wordSegNoStop: Array[String], categoryKeywords: Map[String, Array[String]]): String = {
+
+    val categoryList = ArrayBuffer[String]()
+    for (cate: String <- categoryKeywords.keys) {
+      var i_control = true
+      for (keyword: String <- categoryKeywords(cate) if i_control) {
+        val exists = wordSegNoStop.contains(keyword)
+        if (exists) {
+          categoryList.append(cate)
+          i_control = false
+        }
+      }
+    }
+    categoryList.mkString(",")
+  }
+
+  /**
     * 规则分类过程
     * @param textString 标题字符串
     * @param categoryKeywords 类别字典，（股票、行业或者概念板块）
-    * @param categoryList 所属类别List
+    * @return 板块或者行业名称组成的字符串,逗号分割
     */
-  def grep(textString: String, categoryKeywords: Map[String, Array[String]],
-                   categoryList: mutable.MutableList[String]): Unit = {
+  def grep(textString: String, categoryKeywords: Map[String, Array[String]]): String = {
 
+    val categoryList = ArrayBuffer[String]()
     for (indus: String <- categoryKeywords.keys) {
       var i_control = true
       for (keyword: String <- categoryKeywords(indus) if i_control) {
@@ -27,6 +51,7 @@ object Regular {
         }
       }
     }
+    categoryList.mkString(",")
   }
 
   /**

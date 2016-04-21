@@ -12,7 +12,6 @@ import org.apache.spark.SparkContext
 import org.apache.spark.mllib.feature._
 import org.apache.spark.mllib.classification.NaiveBayesModel
 import org.apache.spark.mllib.linalg.Vector
-
 import scala.collection.Map
 import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
@@ -115,30 +114,6 @@ object Bayes {
           .transform(sectionModels("概念板块")("tfModel").asInstanceOf[HashingTF]
             .transform(wordSegNoStop))))
     getTopLabels(prediction).mkString(",")
-  }
-
-
-  /**
-    * 股票和概念板块的分类，基于词典。
-    *
-    * @param wordSegNoStop 分词后的文本
-    * @param categoryKeywords 类别词典，主要是股票和板块词典
-    * @return 板块或者行业名称组成的字符串,逗号分割
-    */
-  def catePredict(wordSegNoStop: Array[String], categoryKeywords: Map[String, Array[String]]): String = {
-
-    val categoryList = ArrayBuffer[String]()
-    for (cate: String <- categoryKeywords.keys) {
-      var i_control = true
-      for (keyword: String <- categoryKeywords(cate) if i_control) {
-        val exists = wordSegNoStop.contains(keyword)
-        if (exists) {
-          categoryList.append(cate)
-          i_control = false
-        }
-      }
-    }
-    categoryList.mkString(",")
   }
 
   def getTopLabels(prediction: Vector): Array[String] = {
