@@ -5,7 +5,6 @@ import java.io._
 import com.kunyan.nlpsuit.util.TextPreprocessing
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
-import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.mllib.classification.NaiveBayesModel
 import org.apache.spark.mllib.feature.{ChiSqSelectorModel, HashingTF, IDFModel}
 
@@ -56,30 +55,12 @@ object PredictWithNb extends App{
     modelMap
   }
 
-//  def init(sc: SparkContext, modelfileFromHdfs: String): Map[String, Any] = {
-//    var modelMap:Map[String, Any] = Map()
-//
-//    val filelsit=sc.textFile(modelfileFromHdfs)
-//
-//
-//    //读取hdfs上保存的模型
-////    val hdfsConf = new Configuration()
-////    val fs = FileSystem.get(hdfsConf)
-//    val fileList = fs.listStatus(new Path(modelfileFromHdfs)).map(_.getPath.toString)
-//    val result = fileList.map(file => {
-//      val modelName = file.replaceAll(modelfileFromHdfs, "")
-//      val tempModelInput = new ObjectInputStream(fs.open(new Path(file))).readObject()
-//      modelMap +=(modelName -> tempModelInput)
-//    })
-//    modelMap
-//  }
   /**
     *初始化读取模型  调用默认路径的模型
  *
     * @return  模型数组
     */
   def init(): Map[String, Any] = {
-//    val path = "text_classification/1.1/Spark_NLP_suit/src/main/resources/sentimodels"  //模型路径  三分类模型
     val path = "src/main/resources/sentimodels/F_2_1500"  //模型路径  二分类（负类和其他）
     val fileList = new File(path)
     val modelList = fileList.listFiles()
@@ -97,12 +78,12 @@ object PredictWithNb extends App{
  *
     * @param content  待预测文章
     * @param models  模型Map[模型名称，模型]，由init初始化得到
-    * @param stopWordsBr 停用词
+    * @param stopWordsArr 停用词
     * @param typ 分词模式  0 和1
     * @return  返回情感label编号
     */
-  def predict(content: String, models: Map[String, Any], stopWordsBr: Broadcast[Array[String]],typ: Int): Double = {
-    val wordSegNoStop = TextPreprocessing.process(content, stopWordsBr,typ)
+  def predict(content: String, models: Map[String, Any], stopWordsArr: Array[String],typ: Int): Double = {
+    val wordSegNoStop = TextPreprocessing.process(content, stopWordsArr,typ)
     val prediction = models("nbModel").asInstanceOf[NaiveBayesModel]
       .predict(models("chiSqSelectorModel").asInstanceOf[ChiSqSelectorModel]
         .transform(models("idfModel").asInstanceOf[IDFModel]
@@ -116,11 +97,11 @@ object PredictWithNb extends App{
  *
     * @param content  待预测文章
     * @param models  模型Map[模型名称，模型]，由init初始化得到
-    * @param stopWordsBr 停用词
+    * @param stopWordsArr 停用词
     * @return  返回情感label编号
     */
-  def predict(content: String, models: Map[String, Any], stopWordsBr: Broadcast[Array[String]]): Double = {
-    val wordSegNoStop = TextPreprocessing.process(content, stopWordsBr)
+  def predict(content: String, models: Map[String, Any], stopWordsArr:Array[String]): Double = {
+    val wordSegNoStop = TextPreprocessing.process(content, stopWordsArr)
     val prediction = models("nbModel").asInstanceOf[NaiveBayesModel]
       .predict(models("chiSqSelectorModel").asInstanceOf[ChiSqSelectorModel]
         .transform(models("idfModel").asInstanceOf[IDFModel]
@@ -134,20 +115,20 @@ object PredictWithNb extends App{
  *
     * @param content 文章内容
     * @param model 模型
-    * @param stopWordsBr 停用词
+    * @param stopWordsArr 停用词
     * @return  情感label
     * @author zhangxin
     */
-  def predictWithSigle(content:String,model:Map[String, Any],stopWordsBr: Broadcast[Array[String]],typ:Int): String ={
-    val temp = predict(content,model, stopWordsBr,typ: Int)
+  def predictWithSigle(content:String,model:Map[String, Any],stopWordsArr:Array[String],typ:Int): String ={
+    val temp = predict(content,model, stopWordsArr,typ: Int)
     val result=replaceLabel(temp)
     result
   }
   /**
     * 用ansj分词
     */
-  def predictWithSigle(content:String,model:Map[String, Any],stopWordsBr: Broadcast[Array[String]]): String ={
-    val temp = predict(content,model, stopWordsBr)
+  def predictWithSigle(content:String,model:Map[String, Any],stopWordsArr:Array[String]): String ={
+    val temp = predict(content,model, stopWordsArr)
     val result=replaceLabel(temp)
     result
   }
@@ -157,14 +138,14 @@ object PredictWithNb extends App{
  *
     * @param content  文章内容
     * @param arr  二级模型数组
-    * @param stopWordsBr  停用词表
+    * @param stopWordsArr  停用词表
     * @return 情感label
     * @author zhangxin
     */
-  def predictWithFS(content:String,arr:Array[Map[String, Any]],stopWordsBr: Broadcast[Array[String]],typ: Int): String ={
-    var temp = predict(content,arr(0), stopWordsBr,typ: Int)
+  def predictWithFS(content:String,arr:Array[Map[String, Any]],stopWordsArr:Array[String],typ: Int): String ={
+    var temp = predict(content,arr(0), stopWordsArr,typ: Int)
     if (temp == 4.0) {
-      temp = predict(content,arr(1), stopWordsBr,typ: Int)
+      temp = predict(content,arr(1), stopWordsArr,typ: Int)
     }
     val result=replaceLabel(temp)
     result
@@ -183,10 +164,10 @@ object PredictWithNb extends App{
     * @param filepath  批量预测文章路径
     * @param outpath  输出预测结果
     * @param arr  二级模型数组
-    * @param stopWordsBr  停用词表
+    * @param stopWordsArr  停用词表
     * @author zhangxin
     */
-  def predictManyWithFS(filepath:String,outpath:String,arr:Array[Map[String, Any]],stopWordsBr: Broadcast[Array[String]],typ: Int): Unit ={
+  def predictManyWithFS(filepath:String,outpath:String,arr:Array[Map[String, Any]],stopWordsArr:Array[String],typ: Int): Unit ={
     val wr=new PrintWriter(outpath,"utf-8")
     val files=new File(filepath).listFiles()
     for(file <-files) {
@@ -195,9 +176,9 @@ object PredictWithNb extends App{
       for (line <- Source.fromFile(file).getLines()) {
         contentstr += line
       }
-      var temp = predict(contentstr,arr(0), stopWordsBr,typ: Int)
+      var temp = predict(contentstr,arr(0), stopWordsArr,typ: Int)
       if (temp == 4.0) {
-        temp = predict(contentstr,arr(1), stopWordsBr,typ: Int)
+        temp = predict(contentstr,arr(1), stopWordsArr,typ: Int)
       }
       val result=replaceLabel(temp)
       wr.write("【" + result + "】" + title + "\n")
