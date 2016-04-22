@@ -2,7 +2,7 @@ package com.kunyan.sentiment
 
 import org.ansj.library.UserDefineLibrary
 import org.ansj.splitWord.analysis.ToAnalysis
-import org.apache.spark.{SparkContext, SparkConf}
+import org.apache.spark.SparkContext
 
 /**
   * Created by Administrator on 2016/4/21.
