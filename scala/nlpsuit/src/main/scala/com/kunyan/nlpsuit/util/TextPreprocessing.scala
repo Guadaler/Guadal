@@ -1,13 +1,5 @@
 package com.kunyan.nlpsuit.util
 
-import java.io._
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{Path, FileSystem}
-import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.{SparkConf, SparkContext}
-import scala.collection.mutable.ArrayBuffer
-import scala.io.Source
-
 /**
   * Created by QQ on 2016/3/18.
   *
@@ -17,24 +9,6 @@ import org.apache.spark.broadcast.Broadcast
 import scala.collection.mutable.ArrayBuffer
 
 object TextPreprocessing {
-
-//  def copyFile(localPath: String, targetPath: String): Unit = {
-//
-//    val fis = new FileInputStream(localPath)
-//    val bufis = new BufferedInputStream(fis)
-//
-//    val fos = new FileOutputStream(targetPath)
-//    val bufos = new BufferedOutputStream(fos)
-//
-//    var len = bufis.read()
-//    while (len != -1){
-//      bufos.write(len)
-//      len = bufis.read()
-//    }
-//
-//    bufis.close()
-//    bufos.close()
-//  }
 
   /**
     * 格式化文本，转化空白字符为停用词表中的标点符号，同时统一英文字母为小写
@@ -98,11 +72,11 @@ object TextPreprocessing {
     * 调用WordSeq里面的函数实现字符串的分词和去停,并封装成方法
     *
     * @param content 需要处理的字符串
-    * @param stopWordsBr 停用词
+    * @param stopWords 停用词
     * @param kunyanSegTyp 分词模式选择，0为调用本地分词工具（只支持linux下运行），1为远程调用，过长的文章可能报错。
     * @return 返回分词去停后的结果
     */
-  def process(content: String, stopWordsBr: Broadcast[Array[String]], kunyanSegTyp: Int): Array[String] = {
+  def process(content: String, stopWords: Array[String], kunyanSegTyp: Int): Array[String] = {
 
     // 格式化文本
     val formatedContent = formatText(content)
@@ -112,7 +86,7 @@ object TextPreprocessing {
     val resultWords = WordSeg.getWords(splitWords)
     // 实现去停用词
     if (resultWords == null) null
-    else removeStopWords(resultWords, stopWordsBr.value)
+    else removeStopWords(resultWords, stopWords)
   }
 
   /**

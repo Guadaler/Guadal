@@ -92,7 +92,7 @@ object Title_senti_dic {
     var n = 0
 
     // 匹配每一个词
-    for (i <- Range(0,title_cut.length)) {
+    for (i <- title_cut.indices) {
       val t_c = title_cut(i)
       // 匹配正向情感词词典
       if(dict_p.contains(t_c)){
