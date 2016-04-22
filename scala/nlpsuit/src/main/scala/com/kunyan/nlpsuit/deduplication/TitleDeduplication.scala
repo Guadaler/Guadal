@@ -1,7 +1,7 @@
 package com.kunyan.nlpsuit.deduplication
 
-import scala.collection.mutable.ArrayBuffer
 import com.kunyan.nlpsuit.util.TextPreprocessing
+import scala.collection.mutable.ArrayBuffer
 
 /**
   * Created by QQ on 2016/2/18.
