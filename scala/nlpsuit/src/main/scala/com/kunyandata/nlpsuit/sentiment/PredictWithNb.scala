@@ -1,8 +1,8 @@
-package com.kunyan.nlpsuit.sentiment
+package com.kunyandata.nlpsuit.sentiment
 
 import java.io._
 
-import com.kunyan.nlpsuit.util.TextPreprocessing
+import com.kunyandata.nlpsuit.util.TextPreprocessing
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.mllib.classification.NaiveBayesModel

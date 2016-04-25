@@ -1,4 +1,4 @@
-package com.kunyan.nlpsuit.util
+package com.kunyandata.nlpsuit.util
 
 /**
   * Created by QQ on 2016/3/18.
@@ -9,7 +9,7 @@ import scala.collection.mutable.ArrayBuffer
 
 object TextPreprocessing {
 
-  var kunyanPath: String = "/home/mlearning/bin/"
+  private var kunyanPath: String = "/home/mlearning/bin/"
 
   /**
     * 设置坤雁分词器的路径
@@ -21,7 +21,8 @@ object TextPreprocessing {
   }
 
   def getKunyanPath: String = {
-    this.kunyanPath
+    val result = this.kunyanPath
+    result
   }
   /**
     * 格式化文本，转化空白字符为停用词表中的标点符号，同时统一英文字母为小写

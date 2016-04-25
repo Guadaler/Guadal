@@ -5,7 +5,7 @@
 
 import java.util.Date
 
-import com.kunyan.nlpsuit.deduplication.TitleDeduplication
+import com.kunyandata.nlpsuit.deduplication.TitleDeduplication
 import org.apache.spark.{SparkConf, SparkContext}
 
 /**

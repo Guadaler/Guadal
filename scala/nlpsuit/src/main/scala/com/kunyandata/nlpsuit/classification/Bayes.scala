@@ -1,4 +1,4 @@
-package com.kunyan.nlpsuit.classification
+package com.kunyandata.nlpsuit.classification
 
 /**
   * Created by QQ on 2016/2/18.
@@ -6,16 +6,21 @@ package com.kunyan.nlpsuit.classification
 
 import java.io._
 
-import org.apache.spark.SparkContext
+import com.kunyandata.nlpsuit.util.{TextPreprocessing, WordSeg}
 import org.apache.spark.mllib.feature._
 import org.apache.spark.mllib.classification.NaiveBayesModel
 import org.apache.spark.mllib.linalg.Vector
+
 import scala.collection.Map
 import scala.io.Source
 
 
 object Bayes {
 
+  def main(args: Array[String]) {
+    println(System.getProperty("java.library.path"))
+    println(WordSeg.splitWord("你好吗", TextPreprocessing.getKunyanPath, WordSeg.LOCAL))
+  }
 //  /**
 //    * 初始化模型，将本地序列化的模型都反序列化到内存中。
 //    *
@@ -49,10 +54,12 @@ object Bayes {
     //读取本地保存的模型
     val indusList = new File(path).listFiles().map(_.getName)
     val result = indusList.map(cateName => {
-      val fileList = new File(path + "/" + cateName).listFiles().map(_.getName)
+      val tmpModelsPath = path + "/" + cateName
+      val fileList = new File(tmpModelsPath).listFiles().map(_.getName)
       val resultTemp = fileList.map(file => {
         val category = file.replaceAll(".models", "")
-        val temp = new ObjectInputStream(new FileInputStream(path + file)).readObject()
+        val tmpModelPath = tmpModelsPath + "/" + file
+        val temp = new ObjectInputStream(new FileInputStream(tmpModelPath)).readObject()
         val modelMap = temp.asInstanceOf[Map[String, Serializable]]
         (category, modelMap)
       }).toMap

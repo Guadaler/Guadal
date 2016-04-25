@@ -1,4 +1,4 @@
-package com.kunyan.nlpsuit.sentiment
+package com.kunyandata.nlpsuit.sentiment
 
 import org.ansj.library.UserDefineLibrary
 import org.ansj.splitWord.analysis.ToAnalysis

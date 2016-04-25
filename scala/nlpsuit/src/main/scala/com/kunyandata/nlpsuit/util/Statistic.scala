@@ -1,4 +1,4 @@
-package com.kunyan.nlpsuit.util
+package com.kunyandata.nlpsuit.util
 
 /**
   * Created by QQ on 2016/4/4.

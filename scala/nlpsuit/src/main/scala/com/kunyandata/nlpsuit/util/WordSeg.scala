@@ -1,4 +1,4 @@
-package com.kunyan.nlpsuit.util
+package com.kunyandata.nlpsuit.util
 
 /**
   * Created by QQ on 2016/2/18.
@@ -34,7 +34,7 @@ object WordSeg {
   def splitWord(content: String, path:String, source: Int): String = {
 
     source match {
-      case LOCAL =>
+      case 0 =>
         val wordSeg = new WordSeg
 
         try {
@@ -48,10 +48,9 @@ object WordSeg {
             "Cannot load com.kunyandata.nlpsuit.util.WordSeg library:\n " + e.toString
         }
 
-      case REMOTE =>
+      case 1 =>
         sendPost(content)
     }
-
   }
 
   /**

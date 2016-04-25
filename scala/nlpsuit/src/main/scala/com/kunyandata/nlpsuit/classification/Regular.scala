@@ -1,6 +1,6 @@
-package com.kunyan.nlpsuit.classification
+package com.kunyandata.nlpsuit.classification
 
-import com.kunyan.nlpsuit.util.TextPreprocessing
+import com.kunyandata.nlpsuit.util.TextPreprocessing
 import org.apache.spark.broadcast.Broadcast
 
 import scala.collection.mutable.ArrayBuffer
