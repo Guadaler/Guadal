@@ -6,8 +6,6 @@ package com.kunyan.nlpsuit.classification
 
 import java.io._
 
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.SparkContext
 import org.apache.spark.mllib.feature._
 import org.apache.spark.mllib.classification.NaiveBayesModel
@@ -18,27 +16,27 @@ import scala.io.Source
 
 object Bayes {
 
-  /**
-    * 初始化模型，将本地序列化的模型都反序列化到内存中。
-    *
-    * @param path 保存模型的路径
-    * @return 返回一个嵌套Map，第一层key是类别名称，第二层key是模型名称。
-    */
-  def initModel(defaultFS: String, path: String): Map[String, Map[String, Serializable]] = {
-
-    //读取hdfs上保存的模型
-    val hdfsConf = new Configuration()
-    hdfsConf.set("fs.defaultFS", defaultFS)
-    val fs = FileSystem.get(hdfsConf)
-    val fileList = fs.listStatus(new Path(path)).map(_.getPath.toString)
-    val result = fileList.map(file => {
-      val category = file.replaceAll(".models", "").replaceAll(defaultFS, "").replaceAll(path, "")
-      val temp = new ObjectInputStream(fs.open(new Path(file))).readObject()
-      val modelMap = temp.asInstanceOf[Map[String, Serializable]]
-      (category, modelMap)
-    }).toMap
-    result
-  }
+//  /**
+//    * 初始化模型，将本地序列化的模型都反序列化到内存中。
+//    *
+//    * @param path 保存模型的路径
+//    * @return 返回一个嵌套Map，第一层key是类别名称，第二层key是模型名称。
+//    */
+//  def initModel(defaultFS: String, path: String): Map[String, Map[String, Serializable]] = {
+//
+//    //读取hdfs上保存的模型
+//    val hdfsConf = new Configuration()
+//    hdfsConf.set("fs.defaultFS", defaultFS)
+//    val fs = FileSystem.get(hdfsConf)
+//    val fileList = fs.listStatus(new Path(path)).map(_.getPath.toString)
+//    val result = fileList.map(file => {
+//      val category = file.replaceAll(".models", "").replaceAll(defaultFS, "").replaceAll(path, "")
+//      val temp = new ObjectInputStream(fs.open(new Path(file))).readObject()
+//      val modelMap = temp.asInstanceOf[Map[String, Serializable]]
+//      (category, modelMap)
+//    }).toMap
+//    result
+//  }
 
   /**
     * 初始化模型，将本地序列化的模型都反序列化到内存中。
@@ -46,17 +44,40 @@ object Bayes {
     * @param path 保存模型的local路径
     * @return 返回一个嵌套Map，第一层key是类别名称，第二层key是模型名称。
     */
-  def initIndusModel(path: String): Map[String, Map[String, Serializable]] = {
+  def initModels(path: String): Map[String, Map[String, Map[String, Serializable]]] = {
 
     //读取本地保存的模型
-    val fileList = new File(path).listFiles().map(_.getName)
-    val result = fileList.map(file => {
-      val category = file.replaceAll(".models", "")
-      val temp = new ObjectInputStream(new FileInputStream(path + file)).readObject()
-      val modelMap = temp.asInstanceOf[Map[String, Serializable]]
-      (category, modelMap)
+    val indusList = new File(path).listFiles().map(_.getName)
+    val result = indusList.map(cateName => {
+      val fileList = new File(path + "/" + cateName).listFiles().map(_.getName)
+      val resultTemp = fileList.map(file => {
+        val category = file.replaceAll(".models", "")
+        val temp = new ObjectInputStream(new FileInputStream(path + file)).readObject()
+        val modelMap = temp.asInstanceOf[Map[String, Serializable]]
+        (category, modelMap)
+      }).toMap
+      (cateName, resultTemp)
     }).toMap
     result
+  }
+
+  /**
+    * 获取本地路径下的分类实体词典
+    *
+    * @param path 存放分类实体词典的路径
+    * @return 返回一个嵌套map
+    */
+  def initGrepDicts(path: String): Map[String, Map[String, Array[String]]] = {
+
+    val stockDict = Source.fromFile(path + "/stock_words.words").getLines().toArray.map(line => {
+      val Array(stockCode, words) = line.split("\t")
+      (stockCode, words.split(","))
+    }).toMap
+    val sectionDict = Source.fromFile(path + "/section_words.words").getLines().toArray.map(line => {
+      val Array(stockCode, words) = line.split("\t")
+      (stockCode, words.split(","))
+    }).toMap
+    Map("stockDict" -> stockDict, "setcionDict" -> sectionDict)
   }
 
   /**
@@ -69,16 +90,16 @@ object Bayes {
     Source.fromFile(path).getLines().toArray
   }
 
-  /**
-    * 获取停用词（hfds）
-    *
-    * @param sc SparkContext
-    * @param path hdfs uri
-    * @return 返回一个Array[String]的停用词表
-    */
-  def getStopWords(sc: SparkContext, path: String): Array[String] = {
-    sc.textFile(path).collect()
-  }
+//  /**
+//    * 获取停用词（hfds）
+//    *
+//    * @param sc SparkContext
+//    * @param path hdfs uri
+//    * @return 返回一个Array[String]的停用词表
+//    */
+//  def getStopWords(sc: SparkContext, path: String): Array[String] = {
+//    sc.textFile(path).collect()
+//  }
 
   /**
     * 行业类别预测
@@ -113,6 +134,27 @@ object Bayes {
           .transform(sectionModels("概念板块")("tfModel").asInstanceOf[HashingTF]
             .transform(wordSegNoStop))))
     getTopLabels(prediction).mkString(",")
+  }
+
+  /**
+    * 预测，并返回一个tuple,其中包括3个大类的分类结果。
+    *
+    * @param wordSegNoStop 分词之后的结果，为一个字符串数组
+    * @param models 初始化之后的模型
+    * @return 返回一个tuple，里面为3个字符串，分别代表股票、行业、概念板块的分类信息
+    */
+  def predict(wordSegNoStop: Array[String],
+              models: Map[String, Map[String, Map[String, Serializable]]],
+              classifyDicts: Map[String, Map[String, Array[String]]]): (String, String, String) = {
+    val mlresult = models.map(model => {
+      val resultTmp = indusPredict(wordSegNoStop, model._2)
+      (model._1, resultTmp)
+    })
+    val grepResult = classifyDicts.map(dict =>{
+      val resultTmp = Regular.grep(wordSegNoStop, dict._2)
+      (dict._1, resultTmp)
+    })
+    (grepResult("stockDict"), mlresult("indusModels"), grepResult("setcionDict"))
   }
 
   private def getTopLabels(prediction: Vector): Array[String] = {

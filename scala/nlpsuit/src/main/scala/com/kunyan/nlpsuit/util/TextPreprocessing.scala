@@ -12,12 +12,16 @@ object TextPreprocessing {
   var kunyanPath: String = "/home/mlearning/bin/"
 
   /**
-    * 初始化坤雁分词器的路径
-    * 
+    * 设置坤雁分词器的路径
+    *
     * @param kunyanPath 坤雁分词器的路径
     */
-  def initPath(kunyanPath: String) = {
+  def setKunyanPath(kunyanPath: String) = {
     this.kunyanPath = kunyanPath
+  }
+
+  def getKunyanPath: String = {
+    this.kunyanPath
   }
   /**
     * 格式化文本，转化空白字符为停用词表中的标点符号，同时统一英文字母为小写
@@ -82,15 +86,15 @@ object TextPreprocessing {
     *
     * @param content 需要处理的字符串
     * @param stopWords 停用词
-    * @param kunyanSegTyp 分词模式选择，0为调用本地分词工具（只支持linux下运行），1为远程调用，过长的文章可能报错。
+    * @param wordSegTyp 分词模式选择，可选的有WordSeg.kunyan, WordSeg.kunyanRemote
     * @return 返回分词去停后的结果
     */
-  def process(content: String, stopWords: Array[String], kunyanSegTyp: Int): Array[String] = {
+  def process(content: String, stopWords: Array[String], wordSegTyp: Int): Array[String] = {
 
     // 格式化文本
     val formatedContent = formatText(content)
     // 实现分词
-    val splitWords = WordSeg.splitWord(formatedContent, this.kunyanPath, kunyanSegTyp)
+    val splitWords = WordSeg.splitWord(formatedContent, this.kunyanPath, wordSegTyp)
     // 读取分词内容并转化成Array格式
     val resultWords = WordSeg.getWords(splitWords)
     // 实现去停用词

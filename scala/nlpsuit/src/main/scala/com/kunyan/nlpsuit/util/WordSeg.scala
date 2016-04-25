@@ -22,6 +22,9 @@ class WordSeg {
 
 object WordSeg {
 
+  val LOCAL = 0
+  val REMOTE = 1
+
   /**
     *
     * @param content 需要分词的字符串
@@ -31,7 +34,7 @@ object WordSeg {
   def splitWord(content: String, path:String, source: Int): String = {
 
     source match {
-      case 0 =>
+      case LOCAL =>
         val wordSeg = new WordSeg
 
         try {
@@ -45,7 +48,7 @@ object WordSeg {
             "Cannot load com.kunyandata.nlpsuit.util.WordSeg library:\n " + e.toString
         }
 
-      case 1 =>
+      case REMOTE =>
         sendPost(content)
     }
 
@@ -117,6 +120,11 @@ object WordSeg {
     }
   }
 
+  /**
+    *
+    * @param json 坤雁分词的结果
+    * @return 返回一个由词组成的数组
+    */
   def getWords(json: String): Array[String] = {
 
     try{
