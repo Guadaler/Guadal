@@ -16,6 +16,58 @@ import org.apache.spark.{SparkConf, SparkContext}
 
 object HbaseUtil {
 
+//  def main(args: Array[String]) {
+//
+//    val sparkConf = new SparkConf().setMaster("local").setAppName("HbaseUtil")
+//    val sparkContext = new SparkContext(sparkConf)
+//
+//    try{
+//      val hbaseConf = getHbaseConf()
+//      val news = getRDD(sparkContext, hbaseConf)//.cache()
+//
+//      news.take(5).foreach(println)
+//
+//      val newss = news.map( x => {
+//        val s = x.split("\n\t")
+//        println(s(0))
+//        s(0)
+//      })
+//      newss.take(10).foreach(println)
+////      newss.saveAsTextFile("E:\\text\\news_url_20160414.txt")
+//
+//
+////      println(news.count())
+////      val newss = news.filter( x => {
+////        val ss = x.split("\n\t")
+////        ss(0) == "[B@1a4ee87b"
+////      })
+////      val newsss = news.filter( x => {
+////        val ss = x.split("\n\t")
+////        ss(0) == "[B@2263811f"
+////      })
+////      println(newss.count() + "  " + newsss.count())
+//
+//
+////      var content = ""
+////      newss.take(1).foreach( x => {
+////        val ss = x.split("\n\t")
+////        content =ss(2)
+////      })
+////      println(content)
+//
+//
+////      val data = getValue(hbaseConf, "wk_detail", "http://news.hexun.com/2016-03-23/182919956.html", "basic", "content" )
+////      println(data)
+//
+//    }catch {
+//      case e:Exception =>
+//        println(e.getMessage)
+//    } finally {
+//      sparkContext.stop()
+//      //      println("sparkContext stop >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+//    }
+//  }
+
   /**
     * 连接 hbase
     *
@@ -24,8 +76,10 @@ object HbaseUtil {
     */
   def getHbaseConf(): Configuration = {
     val hbaseConf = HBaseConfiguration.create()
-    hbaseConf.set("hbase.rootdir", "hdfs://222.73.34.99/hbase")
-    hbaseConf.set("hbase.zookeeper.quorum", "server0,server1,server2,server3,server4")
+//    hbaseConf.set("hbase.rootdir", "hdfs://222.73.34.99/hbase")
+//    hbaseConf.set("hbase.zookeeper.quorum", "server0,server1,server2,server3,server4")
+    hbaseConf.set("hbase.rootdir", "hdfs://222.73.34.99:9000/hbase")
+    hbaseConf.set("hbase.zookeeper.quorum", "222.73.34.95,222.73.34.96,222.73.34.99")
     hbaseConf
   }
 

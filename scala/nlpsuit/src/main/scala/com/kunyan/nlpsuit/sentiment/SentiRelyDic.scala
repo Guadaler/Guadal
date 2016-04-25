@@ -1,27 +1,29 @@
-package com.kunyan.sentiment
+package com.kunyan.nlpsuit.sentiment
 
+import com.kunyan.nlpsuit.util.{WordSeg, TextPreprocessing}
 import org.ansj.library.UserDefineLibrary
 import org.ansj.splitWord.analysis.ToAnalysis
-import org.apache.spark.{SparkContext, SparkConf}
+import org.apache.spark.SparkContext
+import org.apache.spark.broadcast.Broadcast
 
 /**
-  * Created by Administrator on 2016/4/21.
+  * Created by Liu on 2016/4/15.
   */
 object SentiRelyDic {
 
   /**
     * 分词
     *
+    * @param sc
     * @param sentence 输入的待分词的句子
-    * @param userDic 用户自定义分词词典
+    * @param file 用户自定义分词词典
     * @return 返回（分词结果，存储在字符串数组中）
     * @author liumiao
     */
-  def cut(sentence:String, userDic:Array[String]):Array[String] = {
-
+  def cut(sc:SparkContext, sentence:String, file:String):Array[String] = {
     // RDD形式添加用户词典
-//    val dictionary = sc.textFile(file)
-    userDic.foreach( x => {
+    val dictionary = sc.textFile(file)
+    dictionary.foreach( x => {
       UserDefineLibrary.insertWord(x,"userDefine",100)
     })
     // 分词
@@ -34,6 +36,25 @@ object SentiRelyDic {
     result
   }
 
+  /**
+    * 坤雁分词
+    *
+    * @param sentence 待分析的语句
+    * @param stopWordsBr 停用词典
+    * @param kunyanSegTyp 分词模式
+    * @return 分词结果
+    * @author liumaio
+    */
+  def cutKunyan(sentence:String, stopWordsBr: Broadcast[Array[String]], kunyanSegTyp: Int): Array[String] ={
+    // 格式化文本
+    val formatedSentence = TextPreprocessing.formatText(sentence)
+    // 实现分词
+    val splitWords = WordSeg.splitWord(formatedSentence, kunyanSegTyp)
+    // 读取分词内容并转化成Array格式
+    val resultWords = WordSeg.getWords(splitWords)
+    resultWords
+  }
+  
   /**
     * 否定词对情感值的翻转作用
     *
@@ -75,12 +96,16 @@ object SentiRelyDic {
     *
     * @param titleCut 当前句子的分词结果
     * @return 返回（句子的情感倾向，+1表示正向，-1表示负向，0表示中性）
-    * @param dicP 正向情感词词典
-    * @param dicN 负向情感词词典
-    * @param dicF 否定副词词典
+    * @param file1 正向情感词词典
+    * @param file2 负向情感词词典
+    * @param file3 否定副词词典
     * @author liumiao
     */
-  def searchSenti(titleCut:Array[String], dicP:Array[String], dicN:Array[String], dicF:Array[String]): String={
+  def searchSenti(sc:SparkContext, titleCut:Array[String], file1:String, file2:String, file3:String): Int ={
+    // 读入词典
+    val dictP = sc.textFile(file1).collect()
+    val dictN = sc.textFile(file2).collect()
+    val dictF = sc.textFile(file3).collect()
     // 记录正面负面倾向的次数
     var positive = 0
     var negative = 0
@@ -88,8 +113,8 @@ object SentiRelyDic {
     for (i <- Range(0,titleCut.length)) {
       val tc = titleCut(i)
       // 匹配正向情感词词典
-      if(dicP.contains(tc)){
-        if(countSenti(i, titleCut, dicF)>0){
+      if(dictP.contains(tc)){
+        if(countSenti(i, titleCut, dictF)>0){
           positive += 1
         }
         else{
@@ -97,8 +122,8 @@ object SentiRelyDic {
         }
       }
       // 匹配负向情感词词典
-      else if (dicN.contains(tc)){
-        if(countSenti(i, titleCut, dicF)>0){
+      else if (dictN.contains(tc)){
+        if(countSenti(i, titleCut, dictF)>0){
           negative = negative + 1
         }
         else{
@@ -106,13 +131,13 @@ object SentiRelyDic {
         }
       }
     }
-    // 倾向为负面返回"neg"
+    // 倾向为负面返回-1
     if ( positive < negative){
-      "neg"
+      -1
     }
-    // 倾向为非负面返回"pos"
+    // 倾向为非负面返回1
     else{
-      "pos"
+      1
     }
   }
 

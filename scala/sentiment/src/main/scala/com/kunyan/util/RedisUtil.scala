@@ -15,14 +15,11 @@ object RedisUtil {
   /**
     * 连接 redis
     *
-    * @param sc  SparkContext对象
-    * @param file  redis信息文件
+    * @param info redis信息
     * @return  返回jedis资源
     * @author  liumiao
     */
-  def getRedis(sc:SparkContext, file:String): Jedis ={
-    // get redis info
-    val info = sc.textFile(file).collect()
+  def getRedis(info:Array[String]): Jedis ={
     // set the parameters
     val config: JedisPoolConfig = new JedisPoolConfig
     config.setMaxWaitMillis(10000)
