@@ -75,12 +75,12 @@ object TextPreprocessing {
     * @param kunyanSegTyp 分词模式选择，0为调用本地分词工具（只支持linux下运行），1为远程调用，过长的文章可能报错。
     * @return 返回分词去停后的结果
     */
-  def process(content: String, stopWords: Array[String], kunyanSegTyp: Int): Array[String] = {
+  def process(content: String, stopWords: Array[String], kunyanPath: String, kunyanSegTyp: Int): Array[String] = {
 
     // 格式化文本
     val formatedContent = formatText(content)
     // 实现分词
-    val splitWords = WordSeg.splitWord(formatedContent, kunyanSegTyp)
+    val splitWords = WordSeg.splitWord(formatedContent, kunyanPath, kunyanSegTyp)
     // 读取分词内容并转化成Array格式
     val resultWords = WordSeg.getWords(splitWords)
     // 实现去停用词

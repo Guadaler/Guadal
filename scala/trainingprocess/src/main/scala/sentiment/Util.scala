@@ -22,8 +22,8 @@ object Util {
     * @return  类别
     */
   def getLabel(file:File): String ={
-    val parentPath=file.getParentFile()
-    val label=parentPath.getName()
+    val parentPath=file.getParentFile
+    val label=parentPath.getName
     label
   }
 
@@ -48,12 +48,12 @@ object Util {
     */
   def replace(title:String):String={
     //    println("字符替换！！")
-    var title2=title.replace("/","每");
-    title2=title2.replace("|","：");
-    title2=title2.replace("：","：");
-    title2=title2.replace("\"","“");
-    title2=title2.replace("?","？");
-    title2;
+    var title2=title.replace("/","每")
+    title2=title2.replace("|","：")
+    title2=title2.replace("：","：")
+    title2=title2.replace("\"","“")
+    title2=title2.replace("?","？")
+    title2
   }
 
   /**
@@ -111,7 +111,7 @@ object Util {
     * @author zhangxin
     */
   def readfile2HashMap(path:String): util.HashMap[File,String]={
-    var file_map =new util.HashMap[File,String]()
+    val file_map = new util.HashMap[File, String]()
     val catDir=new File(path).listFiles()   //获取父目录文件列表
     for(dir <-catDir){
       val files=dir.listFiles()
@@ -136,7 +136,7 @@ object Util {
     * @author zhangxin
     */
   def writefile(outpath:String,content:String): Unit ={
-    var writer=new PrintWriter(new File(outpath),"UTF-8")
+    val writer = new PrintWriter(new File(outpath), "UTF-8")
     writer.write(content)
     writer.flush()
     writer.close()
@@ -149,7 +149,7 @@ object Util {
     * @return  connection
     * @author zhangxin
     */
-  def getConn(): Connection ={
+  def getConn: Connection ={
     val driver = "com.mysql.jdbc.Driver"
     val url = "jdbc:mysql://192.168.1.14:3306/stock"
     val username = "root"
@@ -159,7 +159,7 @@ object Util {
       Class.forName(driver)
       connection = DriverManager.getConnection(url, username, password)
     }catch {
-      case e => e.printStackTrace
+      case e => e.printStackTrace()
     }
     connection
   }
@@ -186,7 +186,7 @@ object Util {
 
     // 连接，“8”表示连接redis中 8 号库
     val pool=new JedisPool(config,redisHost, redisPort, redisTimeout, redisPassword,8)
-    val jedis = pool.getResource()
+    val jedis = pool.getResource
 
     //返回jedis对象
     jedis
@@ -226,8 +226,8 @@ object Util {
     */
   def getTf(item:String, article:util.HashMap[String, Int]):Double ={
     var tf:Double=0.000000
-    val count=article.get(item);  //该词的词频
-    var sum=0;  //该文章所有词数
+    val count=article.get(item)  //该词的词频
+    var sum=0  //该文章所有词数
     val it=article.values().iterator()
     while (it.hasNext){
       val key=it.next()
@@ -248,14 +248,14 @@ object Util {
     * @author zhangxin
     */
   def getIdf(item:String,word_map:util.HashMap[File, util.HashMap[String, Int]]): Double ={
-    var idf:Double=0.000000;
-    var count=0;
-    var it=word_map.keySet().iterator()
+    var idf:Double=0.000000
+    var count=0
+    val it = word_map.keySet().iterator()
     while (it.hasNext){
-      var key=it.next();
-      var onefile=word_map.get(key)
+      val key = it.next()
+      val onefile = word_map.get(key)
       if(onefile.keySet().contains(item)){
-        count +=1;
+        count +=1
       }
     }
     idf=Math.log(word_map.size().toDouble/count.toDouble)
@@ -264,14 +264,14 @@ object Util {
   }
 
   def getIdf2(item:String,word_map:util.HashMap[String, util.HashMap[String, Int]]): Double ={
-    var idf:Double=0.000000;
-    var count=0;
-    var it=word_map.keySet().iterator()
+    var idf:Double=0.000000
+    var count=0
+    val it = word_map.keySet().iterator()
     while (it.hasNext){
-      var key=it.next();
-      var onefile=word_map.get(key)
+      val key = it.next()
+      val onefile = word_map.get(key)
       if(onefile.keySet().contains(item)){
-        count +=1;
+        count +=1
       }
     }
     idf=Math.log(word_map.size().toDouble/count.toDouble)

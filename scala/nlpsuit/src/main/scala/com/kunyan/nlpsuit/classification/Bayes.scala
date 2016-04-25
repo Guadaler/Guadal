@@ -115,7 +115,7 @@ object Bayes {
     getTopLabels(prediction).mkString(",")
   }
 
-  def getTopLabels(prediction: Vector): Array[String] = {
+  private def getTopLabels(prediction: Vector): Array[String] = {
     //
     val temp = prediction.toArray
     //    val result = ArrayBuffer[Int]()
