@@ -15,7 +15,7 @@ import org.apache.http.message.BasicNameValuePair
 import scala.util.parsing.json.JSON
 
 class WordSeg {
-  @native def splitsentence(sentence: String): String
+  @native def splitSentence(sentence: String): String
   @native def start(segAppPath: String): Int
   @native def stop(): Unit
 }
@@ -37,7 +37,7 @@ object WordSeg {
         try {
           System.loadLibrary("WordSeg")
           wordSeg.start(path)
-          val result = toJson(wordSeg.splitsentence(content + "\n"))
+          val result = toJson(wordSeg.splitSentence(content + "\n"))
           wordSeg.stop()
           result
         } catch {
