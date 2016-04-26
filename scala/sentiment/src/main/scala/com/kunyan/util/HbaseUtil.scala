@@ -1,11 +1,16 @@
 package com.kunyan.util
 
+import java.text.SimpleDateFormat
+import java.util.Date
+
 import com.ibm.icu.text.CharsetDetector
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.hbase.client.{Connection, ConnectionFactory, Get, Result}
+import org.apache.hadoop.hbase.client._
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
 import org.apache.hadoop.hbase.mapreduce.TableInputFormat
-import org.apache.hadoop.hbase.util.Bytes
+import org.apache.hadoop.hbase.protobuf.ProtobufUtil
+import org.apache.hadoop.hbase.protobuf.generated.ClientProtos
+import org.apache.hadoop.hbase.util.{Base64, Bytes}
 import org.apache.hadoop.hbase.{HBaseConfiguration, TableName}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
@@ -16,58 +21,6 @@ import org.apache.spark.{SparkConf, SparkContext}
 
 object HbaseUtil {
 
-//  def main(args: Array[String]) {
-//
-//    val sparkConf = new SparkConf().setMaster("local").setAppName("HbaseUtil")
-//    val sparkContext = new SparkContext(sparkConf)
-//
-//    try{
-//      val hbaseConf = getHbaseConf()
-//      val news = getRDD(sparkContext, hbaseConf)//.cache()
-//
-//      news.take(5).foreach(println)
-//
-//      val newss = news.map( x => {
-//        val s = x.split("\n\t")
-//        println(s(0))
-//        s(0)
-//      })
-//      newss.take(10).foreach(println)
-////      newss.saveAsTextFile("E:\\text\\news_url_20160414.txt")
-//
-//
-////      println(news.count())
-////      val newss = news.filter( x => {
-////        val ss = x.split("\n\t")
-////        ss(0) == "[B@1a4ee87b"
-////      })
-////      val newsss = news.filter( x => {
-////        val ss = x.split("\n\t")
-////        ss(0) == "[B@2263811f"
-////      })
-////      println(newss.count() + "  " + newsss.count())
-//
-//
-////      var content = ""
-////      newss.take(1).foreach( x => {
-////        val ss = x.split("\n\t")
-////        content =ss(2)
-////      })
-////      println(content)
-//
-//
-////      val data = getValue(hbaseConf, "wk_detail", "http://news.hexun.com/2016-03-23/182919956.html", "basic", "content" )
-////      println(data)
-//
-//    }catch {
-//      case e:Exception =>
-//        println(e.getMessage)
-//    } finally {
-//      sparkContext.stop()
-//      //      println("sparkContext stop >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-//    }
-//  }
-
   /**
     * 连接 hbase
     *
@@ -76,8 +29,6 @@ object HbaseUtil {
     */
   def getHbaseConf: Configuration = {
     val hbaseConf = HBaseConfiguration.create()
-//    hbaseConf.set("hbase.rootdir", "hdfs://222.73.34.99/hbase")
-//    hbaseConf.set("hbase.zookeeper.quorum", "server0,server1,server2,server3,server4")
     hbaseConf.set("hbase.rootdir", "hdfs://222.73.34.99:9000/hbase")
     hbaseConf.set("hbase.zookeeper.quorum", "222.73.34.95,222.73.34.96,222.73.34.99")
     hbaseConf
@@ -107,6 +58,7 @@ object HbaseUtil {
     //表名
     val tableName = "wk_detail"
     hbaseConf.set(TableInputFormat.INPUT_TABLE, tableName)
+    hbaseConf.set(TableInputFormat.SCAN, setTimeRange)
     //获得RDD
     val hbaseRdd = sc.newAPIHadoopRDD(hbaseConf, classOf[TableInputFormat]
       , classOf[ImmutableBytesWritable], classOf[Result])
@@ -138,24 +90,34 @@ object HbaseUtil {
     */
   def getValue(hConnection:Connection, tablename:String, rowkey:String, family:String, colume:String): String = {
     //tablename：表名
-
     val table = hConnection.getTable(TableName.valueOf(tablename))
-    println("111111")
     //rowkey：hbase的rowkey
     val get = new Get(rowkey.getBytes())
     val result = table.get(get)
     //family：hbase列族  column：hbase列名
     val data = result.getValue(family.getBytes, colume.getBytes)
+    // 返回读出的值
     if(data == null)
       "Null"
     else
       new String(data, judgeCharser(data))
-
   }
 
-  def main(args: Array[String]) {
-    val conf = getHbaseConf
-    val conn = ConnectionFactory.createConnection(conf)
-    println(getValue(conn, "9_detail", "http://finance.eastmoney.com/news/1354,20160426618071059.html", "basic", "content"))
+  def setTimeRange(): String = {
+
+    val scan = new Scan()
+    val date = new Date(new Date().getTime - 24 * 60 * 60 * 1000)
+    val format = new SimpleDateFormat("yyyy-MM-dd HH")
+    val time = format.format(date)
+    val time1 = format.format(new Date().getTime)
+    val startTime = time + "-00-00"
+    val stopTime = time1 + "-00-00"
+    val sdf: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH-mm-ss")
+    val startRow: Long = sdf.parse(startTime).getTime
+    val stopRow: Long = sdf.parse(stopTime).getTime
+
+    scan.setTimeRange(startRow, stopRow)
+    val proto: ClientProtos.Scan = ProtobufUtil.toScan(scan)
+    Base64.encodeBytes(proto.toByteArray)
   }
 }
