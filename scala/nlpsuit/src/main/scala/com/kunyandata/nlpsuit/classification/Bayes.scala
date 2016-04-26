@@ -17,10 +17,6 @@ import scala.io.Source
 
 object Bayes {
 
-  def main(args: Array[String]) {
-    println(System.getProperty("java.library.path"))
-    println(WordSeg.splitWord("你好吗", TextPreprocessing.getKunyanPath, WordSeg.LOCAL))
-  }
 //  /**
 //    * 初始化模型，将本地序列化的模型都反序列化到内存中。
 //    *
