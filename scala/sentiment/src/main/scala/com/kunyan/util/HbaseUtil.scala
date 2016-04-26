@@ -2,7 +2,7 @@ package com.kunyan.util
 
 import com.ibm.icu.text.CharsetDetector
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.hbase.client.{ConnectionFactory, Get, Result}
+import org.apache.hadoop.hbase.client.{Connection, ConnectionFactory, Get, Result}
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
 import org.apache.hadoop.hbase.mapreduce.TableInputFormat
 import org.apache.hadoop.hbase.util.Bytes
@@ -74,7 +74,7 @@ object HbaseUtil {
     * @return 返回hbaseConf资源
     * @author liumaio
     */
-  def getHbaseConf(): Configuration = {
+  def getHbaseConf: Configuration = {
     val hbaseConf = HBaseConfiguration.create()
 //    hbaseConf.set("hbase.rootdir", "hdfs://222.73.34.99/hbase")
 //    hbaseConf.set("hbase.zookeeper.quorum", "server0,server1,server2,server3,server4")
@@ -128,7 +128,7 @@ object HbaseUtil {
   /**
     * 读 hbase 中的表
     *
-    * @param hbaseConf hbase资源
+    * @param hConnection hbase链接
     * @param tablename 需要读取的表名
     * @param rowkey 键值
     * @param family 列簇
@@ -136,10 +136,10 @@ object HbaseUtil {
     * @return value值
     * @author liumiao
     */
-  def getValue(hbaseConf:Configuration, tablename:String, rowkey:String, family:String, colume:String): String = {
+  def getValue(hConnection:Connection, tablename:String, rowkey:String, family:String, colume:String): String = {
     //tablename：表名
-    val table = ConnectionFactory.createConnection(hbaseConf).getTable(TableName.valueOf(tablename))
 
+    val table = hConnection.getTable(TableName.valueOf(tablename))
     //rowkey：hbase的rowkey
     val get = new Get(rowkey.getBytes())
     val result = table.get(get)
@@ -151,6 +151,7 @@ object HbaseUtil {
       "Null"
     else
       new String(data, judgeCharser(data))
+
   }
 
 }

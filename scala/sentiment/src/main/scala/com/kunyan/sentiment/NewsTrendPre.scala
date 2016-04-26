@@ -7,6 +7,7 @@ import com.kunyan.nlpsuit.sentiment.PredictWithNb
 import com.kunyan.util._
 import com.kunyan.util.LoggerUtil
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.hbase.client.{Connection, ConnectionFactory}
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
@@ -26,37 +27,45 @@ object NewsTrendPre {
 
     val conf = new SparkConf()
       .setAppName("NewsTrendPre")
-      .setMaster("local")                        //  ------------------------  打jar包不能指定maaster  ------------------------------
+      .setMaster("local")                        //  ------------------------  打jar包不能指定Maaster  ------------------------------
     val sc = new SparkContext(conf)
+    LoggerUtil.info("sc init success")
 
     try {
       // 连接redis
       val info = sc.textFile(args(0)).collect()
       val redis = RedisUtil.getRedis(info)
+      LoggerUtil.info("redis connet successfully")
 
       // 连接Hbase
-      val hbaseConf = HbaseUtil.getHbaseConf()
+      val hbaseConf = HbaseUtil.getHbaseConf
+      val hConnection = ConnectionFactory.createConnection(hbaseConf)
+      LoggerUtil.info("hbase connet successfully")
 
       // 读取停用词典
       val stopWords = sc.textFile(args(1)).collect()
       val stopWordsBr = sc.broadcast(stopWords)
+      LoggerUtil.info("stopwords read successfully")
 
       // 初始化词典，存入dicBuffer
       val dictUser = sc.textFile(args(2)).collect()
       val dictP = sc.textFile(args(3)).collect()
       val dictN = sc.textFile(args(4)).collect()
       val dictF = sc.textFile(args(5)).collect()
+      LoggerUtil.info("dicts read successfully")
 
       val dicBuffer = new ArrayBuffer[Array[String]]()
       dicBuffer.append(dictUser)
       dicBuffer.append(dictP)
       dicBuffer.append(dictN)
       dicBuffer.append(dictF)
+      LoggerUtil.info("dicts read successfully      22222222")
 
       // 创建表名，根据表名读redis
       val now = new Date()
       val dateFormat = new SimpleDateFormat("yyyyMMdd")
       val time = dateFormat.format(now)
+      LoggerUtil.info("create redis table name successfully")
 
       val industryTime = "Industry_" + time                       // ------------------------------- industry -----------------------------
       val stockTime = "Stock_" + time                             // ------------------------------- stock --------------------------------
@@ -64,24 +73,35 @@ object NewsTrendPre {
       val newsTime = "News_" + time                               // -------------------------------- news ---------------------------------
 
       // 计算新闻的倾向比例，写入redis
-      val list0 = countPercents(redis, industryTime, newsTime, hbaseConf, stopWordsBr, dicBuffer, args(6))
+      val list0 = countPercents(redis, industryTime, newsTime, hConnection, stopWordsBr, dicBuffer, args(6))
+      LoggerUtil.info("predict industry trend successfully")
       RedisUtil.writeToRedis(redis, "industry_sentiment", list0)
-      val list1 = countPercents(redis, stockTime, newsTime, hbaseConf, stopWordsBr, dicBuffer, args(6))
-      RedisUtil.writeToRedis(redis, "stock_sentiment", list1)
-      val list2 = countPercents(redis, sectionTime, newsTime, hbaseConf, stopWordsBr, dicBuffer, args(6))
-      RedisUtil.writeToRedis(redis, "section_sentiment", list2)
+      LoggerUtil.info("write industry trend to redis successfully")
 
-//      val list = countPercentsRDD(sc, redis, industryTime, newsTime, hbaseConf, stopWords, dicBuffer, args(6))
+      val list1 = countPercents(redis, stockTime, newsTime, hConnection, stopWordsBr, dicBuffer, args(6))
+      LoggerUtil.info("predict stock trend successfully")
+      RedisUtil.writeToRedis(redis, "stock_sentiment", list1)
+      LoggerUtil.info("write stock trend to redis successfully")
+
+      val list2 = countPercents(redis, sectionTime, newsTime, hConnection, stopWordsBr, dicBuffer, args(6))
+      LoggerUtil.info("predict section trend successfully")
+      RedisUtil.writeToRedis(redis, "section_sentiment", list2)
+      LoggerUtil.info("write section trend to redis successfully")
+
+      //      val list = countPercentsRDD(sc, redis, industryTime, newsTime, hbaseConf, stopWords, dicBuffer, args(6))
 //      RedisUtil.writeToRedis(redis, "industry_sentiment_RDD", list)
 
+      hConnection.close()
+      LoggerUtil.info("close hbase connection>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+
       redis.close()
-//      LoggerUtil.info("close redis connection>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+      LoggerUtil.info("close redis connection>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
     }catch {
       case e:Exception =>
         LoggerUtil.error(e.getMessage)
     } finally {
       sc.stop()
-//      LoggerUtil.info("sc stop >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+      LoggerUtil.info("sc stop >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
     }
 
   }
@@ -93,10 +113,10 @@ object NewsTrendPre {
     * @param redis Jedis对象
     * @param classifyTable 数据表名称
     * @param newsTable 新闻数据表名称
-    * @param hbaseconf hbase
+    * @param hConnection hbase链接
     * @return 返回（存有类别-比值信息的Map）
     */
-  def countPercents(redis:Jedis, classifyTable:String, newsTable:String, hbaseconf:Configuration, stopWordsBr:Broadcast[Array[String]],
+  def countPercents(redis:Jedis, classifyTable:String, newsTable:String, hConnection: Connection, stopWordsBr:Broadcast[Array[String]],
                     dicBuffer:ArrayBuffer[Array[String]], modelPath:String):mutable.Map[String, String] = {
 
     // 获得所有类别名称
@@ -132,7 +152,7 @@ object NewsTrendPre {
         val newsUrl = newsChange.getString("url")
 
         //用“url”从hbase中读取新闻正文
-        val content = HbaseUtil.getValue(hbaseconf, "wk_detail", newsUrl, "basic", "content")
+        val content = HbaseUtil.getValue(hConnection, "wk_detail", newsUrl, "basic", "content")
 
         // 如果匹配到正文，利用模型预测新闻的情感倾向
         if(content != "Null"){
@@ -147,8 +167,7 @@ object NewsTrendPre {
         }
         // 如果匹配不到正文，利用词典预测标题的情感倾向
         else{
-          val titleCut = SentiRelyDic.cut(newsTitle, dicBuffer(0))
-          val value = SentiRelyDic.searchSenti(titleCut, dicBuffer(1), dicBuffer(2), dicBuffer(3))
+          val value = SentiRelyDic.searchSenti(newsTitle, dicBuffer)
           if (value == "neg") {
             negaCount = negaCount + 1
           }

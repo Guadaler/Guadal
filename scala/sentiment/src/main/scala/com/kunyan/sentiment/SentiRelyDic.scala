@@ -4,6 +4,8 @@ import org.ansj.library.UserDefineLibrary
 import org.ansj.splitWord.analysis.ToAnalysis
 import org.apache.spark.{SparkContext, SparkConf}
 
+import scala.collection.mutable.ArrayBuffer
+
 /**
   * Created by Administrator on 2016/4/21.
   */
@@ -17,10 +19,8 @@ object SentiRelyDic {
     * @return 返回（分词结果，存储在字符串数组中）
     * @author liumiao
     */
-  def cut(sentence:String, userDic:Array[String]):Array[String] = {
-
+  private def cut(sentence:String, userDic:Array[String]):Array[String] = {
     // RDD形式添加用户词典
-//    val dictionary = sc.textFile(file)
     userDic.foreach( x => {
       UserDefineLibrary.insertWord(x,"userDefine",100)
     })
@@ -43,7 +43,7 @@ object SentiRelyDic {
     * @return 返回（+1表示不翻转，-1表示翻转）
     * @author liumiao
     */
-  def countSenti(i:Int, sentence:Array[String], dictionary:Array[String]): Int ={
+  private def countSenti(i:Int, sentence:Array[String], dictionary:Array[String]): Int ={
     // 寻找情感词前面的否定词，若有则返回-1
     if (i-1 > 0){
       if (dictionary.contains(sentence(i-1))){
@@ -73,23 +73,23 @@ object SentiRelyDic {
   /**
     * 情感分析
     *
-    * @param titleCut 当前句子的分词结果
+    * @param title 当前句子的分词结果
     * @return 返回（句子的情感倾向，+1表示正向，-1表示负向，0表示中性）
-    * @param dicP 正向情感词词典
-    * @param dicN 负向情感词词典
-    * @param dicF 否定副词词典
+    * @param dicBuffer 词典
     * @author liumiao
     */
-  def searchSenti(titleCut:Array[String], dicP:Array[String], dicN:Array[String], dicF:Array[String]): String={
+  def searchSenti(title:String, dicBuffer:ArrayBuffer[Array[String]]): String={
     // 记录正面负面倾向的次数
     var positive = 0
     var negative = 0
+    // 对标题分词
+    val titleCut = SentiRelyDic.cut(title, dicBuffer(0))
     // 对分词后的每一个词匹配词典
-    for (i <- Range(0,titleCut.length)) {
+    for (i <- titleCut.indices) {
       val tc = titleCut(i)
       // 匹配正向情感词词典
-      if(dicP.contains(tc)){
-        if(countSenti(i, titleCut, dicF)>0){
+      if(dicBuffer(1).contains(tc)){
+        if(countSenti(i, titleCut, dicBuffer(3))>0){
           positive += 1
         }
         else{
@@ -97,8 +97,8 @@ object SentiRelyDic {
         }
       }
       // 匹配负向情感词词典
-      else if (dicN.contains(tc)){
-        if(countSenti(i, titleCut, dicF)>0){
+      else if (dicBuffer(2).contains(tc)){
+        if(countSenti(i, titleCut, dicBuffer(3))>0){
           negative = negative + 1
         }
         else{
