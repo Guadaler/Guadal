@@ -3,7 +3,7 @@ package com.kunyan.util
 import org.apache.spark.SparkContext
 import redis.clients.jedis.{Jedis, JedisPool, JedisPoolConfig}
 
-import scala.collection.mutable.Map
+import scala.collection.mutable
 import scala.util.parsing.json.JSONObject
 
 /**
@@ -15,14 +15,11 @@ object RedisUtil {
   /**
     * 连接 redis
     *
-    * @param sc  SparkContext对象
-    * @param file  redis信息文件
+    * @param info redis信息
     * @return  返回jedis资源
     * @author  liumiao
     */
-  def getRedis(sc:SparkContext, file:String): Jedis ={
-    // get redis info
-    val info = sc.textFile(file).collect()
+  def getRedis(info:Array[String]): Jedis ={
     // set the parameters
     val config: JedisPoolConfig = new JedisPoolConfig
     config.setMaxWaitMillis(10000)
@@ -37,7 +34,7 @@ object RedisUtil {
     val redisDatabase = info(3).toInt
 //   connect
     val pool = new JedisPool(config, redisHost, redisPort, redisTimeout, redisPassword, redisDatabase)
-    val jedis = pool.getResource()
+    val jedis = pool.getResource
 //   close JedisPool
     pool.close()
     jedis
@@ -51,7 +48,7 @@ object RedisUtil {
     * @param result  待存储序列
     * @author  liumiao
     */
-  def writeToRedis(jedis: Jedis, name:String, result:Map[String, String]): Unit ={
+  def writeToRedis(jedis: Jedis, name:String, result:mutable.Map[String, String]): Unit ={
     for(i <- result.keys){
       jedis.hset(name, i, result(i))
     }

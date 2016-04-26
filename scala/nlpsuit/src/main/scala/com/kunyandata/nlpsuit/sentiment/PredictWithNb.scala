@@ -35,33 +35,33 @@ object PredictWithNb extends App{
     modelMap
   }
 
-  /**
-    * 读取模型，从hdfs上读取
- *
-    * @param modelfileFromHdfs hdfs路径 如hdfs://222.73.57.12:9000/user/F_2_1500
-    * @return 模型Map[模型名称，模型]
-    */
-  def init(modelfileFromHdfs: String): Map[String, Any] = {
-    var modelMap:Map[String, Any] = Map()
-    //读取hdfs上保存的模型
-    val hdfsConf = new Configuration()
-    val fs = FileSystem.get(hdfsConf)
-    val fileList = fs.listStatus(new Path(modelfileFromHdfs)).map(_.getPath.toString)
-    val result = fileList.map(file => {
-      val modelName = file.replaceAll(modelfileFromHdfs, "")
-      val tempModelInput = new ObjectInputStream(fs.open(new Path(file))).readObject()
-      modelMap +=(modelName -> tempModelInput)
-    })
-    modelMap
-  }
+//  /**
+//    * 读取模型，从hdfs上读取
+// *
+//    * @param modelfileFromHdfs hdfs路径 如hdfs://222.73.57.12:9000/user/F_2_1500
+//    * @return 模型Map[模型名称，模型]
+//    */
+//  def init(modelfileFromHdfs: String): Map[String, Any] = {
+//    var modelMap:Map[String, Any] = Map()
+//    //读取hdfs上保存的模型
+//    val hdfsConf = new Configuration()
+//    val fs = FileSystem.get(hdfsConf)
+//    val fileList = fs.listStatus(new Path(modelfileFromHdfs)).map(_.getPath.toString)
+//    fileList.foreach(file => {
+//      val modelName = file.replaceAll(modelfileFromHdfs, "")
+//      val tempModelInput = new ObjectInputStream(fs.open(new Path(file))).readObject()
+//      modelMap +=(modelName -> tempModelInput)
+//    })
+//    modelMap
+//  }
 
   /**
-    *初始化读取模型  调用默认路径的模型
- *
-    * @return  模型数组
+    * 初始化模型
+    *
+    * @param path 模型本地保存路径
+    * @return 模型map
     */
-  def init(): Map[String, Any] = {
-    val path = "src/main/resources/sentimodels/F_2_1500"  //模型路径  二分类（负类和其他）
+  def init(path: String): Map[String, Any] = {
     val fileList = new File(path)
     val modelList = fileList.listFiles()
     var modelMap:Map[String, Any] = Map()

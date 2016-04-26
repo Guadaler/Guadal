@@ -1,4 +1,4 @@
-mainClass in (Compile, packageBin) := Some("com.kunyandata.nlp.classification.TrainingProcess")
+mainClass in (Compile, packageBin) := Some("com.kunyan.sentiment.NewsTrendPre")
 
 name := "sentiment"
 
@@ -7,11 +7,15 @@ version := "1.0"
 scalaVersion := "2.10.4"
 
 
-libraryDependencies += "org.scalactic" %% "scalactic" % "2.2.5" % "test"
+resolvers += "Kunyan Repo" at "http://222.73.34.92:8081/nexus/content/groups/public/"
 
-libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.5" % "test"
+libraryDependencies += "com.kunyan" % "nlpsuit" % "0.2.1"
 
-libraryDependencies += "mysql" % "mysql-connector-java" % "3.1.14"
+//libraryDependencies += "org.scalactic" %% "scalactic" % "2.2.5" % "test"
+
+//libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.5" % "test"
+
+//libraryDependencies += "mysql" % "mysql-connector-java" % "3.1.14"
 
 libraryDependencies += "redis.clients" % "jedis" % "2.8.0"
 
@@ -33,13 +37,11 @@ libraryDependencies += "org.apache.spark" % "spark-core_2.10" % "1.5.2"
 
 libraryDependencies += "org.ansj" % "ansj_seg" % "0.9"
 
-libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.5.1"
-
-resolvers += "Kunyan Repo" at "http://222.73.34.92:8081/nexus/content/groups/public/"
-
-libraryDependencies += "com.kunyan" % "nlpsuit" % "0.2"
+//libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.5.1"
 
 assemblyMergeStrategy in assembly := {
+  case PathList("org", "codehaus", xs @ _*) => MergeStrategy.last
+  case PathList("org", "objectweb", xs @ _*) => MergeStrategy.last
   case PathList("javax", "servlet", xs @ _*) => MergeStrategy.last
   case PathList("javax", "activation", xs @ _*) => MergeStrategy.last
   case PathList("javax", "el", xs @ _*) => MergeStrategy.last
