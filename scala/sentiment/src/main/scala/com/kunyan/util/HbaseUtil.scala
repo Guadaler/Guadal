@@ -140,13 +140,12 @@ object HbaseUtil {
     //tablename：表名
 
     val table = hConnection.getTable(TableName.valueOf(tablename))
+    println("111111")
     //rowkey：hbase的rowkey
     val get = new Get(rowkey.getBytes())
     val result = table.get(get)
-
     //family：hbase列族  column：hbase列名
     val data = result.getValue(family.getBytes, colume.getBytes)
-
     if(data == null)
       "Null"
     else
@@ -154,4 +153,9 @@ object HbaseUtil {
 
   }
 
+  def main(args: Array[String]) {
+    val conf = getHbaseConf
+    val conn = ConnectionFactory.createConnection(conf)
+    println(getValue(conn, "9_detail", "http://finance.eastmoney.com/news/1354,20160426618071059.html", "basic", "content"))
+  }
 }

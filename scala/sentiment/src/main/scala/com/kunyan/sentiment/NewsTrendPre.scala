@@ -5,7 +5,6 @@ import java.util.Date
 
 import com.kunyandata.nlpsuit.sentiment.{PredictWithNb, SentiRelyDic}
 import com.kunyan.util._
-import com.kunyan.util.LoggerUtil
 import org.apache.hadoop.hbase.client.{Connection, ConnectionFactory}
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.{SparkConf, SparkContext}
@@ -25,12 +24,16 @@ object NewsTrendPre {
   def main(args: Array[String]) {
 
     val conf = new SparkConf()
-      .setAppName("NewsTrendPre")
-//      .setMaster("local")                        //  ------------------------  打jar包不能指定Maaster  ------------------------------
+      .setAppName("NewsTrendPre1")
+      .setMaster("local")
+      .set("spark.local.ip", "192.168.2.65")
+      .set("spark.driver.host", "192.168.2.65")
+
+    //  ------------------------  打jar包不能指定Maaster  ------------------------------
     val sc = new SparkContext(conf)
 //    LoggerUtil.info("sc init success")
 
-    try {
+//    try {
       // 连接redis
 //      val info = sc.textFile("file:///home/sentiment/conf/redis_info.txt").collect()
       val info = Source.fromFile("/home/sentiment/conf/redis_info.txt").getLines().toArray
@@ -40,13 +43,15 @@ object NewsTrendPre {
       // 连接Hbase
       val hbaseConf = HbaseUtil.getHbaseConf
       val hConnection = ConnectionFactory.createConnection(hbaseConf)
-//      LoggerUtil.info("hbase connet successfully")
+
+    //      LoggerUtil.info("hbase connet successfully")
 
       // 读取停用词典
 //      val stopWords = sc.textFile("file:///home/sentiment/dicts/stop_words_CN").collect()
       val stopWords = Source.fromFile("/home/sentiment/dicts/stop_words_CN").getLines().toArray
       val stopWordsBr = sc.broadcast(stopWords)
-//      LoggerUtil.info("stopwords read successfully")
+
+    //      LoggerUtil.info("stopwords read successfully")
 
       // 初始化词典，存入dicBuffer
 //      val dictUser = sc.textFile("file:///home/sentiment/dicts/user_dic.txt").collect()
@@ -57,14 +62,18 @@ object NewsTrendPre {
       val dictP = Source.fromFile("/home/sentiment/dicts/posi_dic.txt").getLines().toArray
       val dictN = Source.fromFile("/home/sentiment/dicts/nega_dic.txt").getLines().toArray
       val dictF = Source.fromFile("/home/sentiment/dicts/neg_dic.txt").getLines().toArray
-//      LoggerUtil.info("dicts read successfully")
+
+
+    //      LoggerUtil.info("dicts read successfully")
 
       val dicBuffer = new ArrayBuffer[Array[String]]()
       dicBuffer.append(dictUser)
       dicBuffer.append(dictP)
       dicBuffer.append(dictN)
       dicBuffer.append(dictF)
-//      LoggerUtil.info("dicts read successfully      22222222")
+
+
+    //      LoggerUtil.info("dicts read successfully      22222222")
 
       // 创建表名，根据表名读redis
       val now = new Date()
@@ -77,19 +86,25 @@ object NewsTrendPre {
       val sectionTime = "Section_" + time                         // ------------------------------- section -------------------------------
       val newsTime = "News_" + time                               // -------------------------------- news ---------------------------------
 
-      // 计算新闻的倾向比例，写入redis
-      val list0 = countPercents(redis, industryTime, newsTime, hConnection, stopWordsBr, dicBuffer, args(0))
-      LoggerUtil.info("predict industry trend successfully")
+      // 初始化模型
+      val models = PredictWithNb.init("/home/sentiment/models/QQ_3300_1500")
+
+
+
+    // 计算新闻的倾向比例，写入redis
+      val list0 = countPercents(redis, industryTime, newsTime, hConnection, stopWordsBr, dicBuffer,models)
+
+    //      LoggerUtil.info("predict industry trend successfully")
       RedisUtil.writeToRedis(redis, "industry_sentiment", list0)
 //      LoggerUtil.info("write industry trend to redis successfully")
 
-      val list1 = countPercents(redis, stockTime, newsTime, hConnection, stopWordsBr, dicBuffer, args(0))
-      LoggerUtil.info("predict stock trend successfully")
+      val list1 = countPercents(redis, stockTime, newsTime, hConnection, stopWordsBr, dicBuffer, models)
+//      LoggerUtil.info("predict stock trend successfully")
       RedisUtil.writeToRedis(redis, "stock_sentiment", list1)
 //      LoggerUtil.info("write stock trend to redis successfully")
 
-      val list2 = countPercents(redis, sectionTime, newsTime, hConnection, stopWordsBr, dicBuffer, args(0))
-      LoggerUtil.info("predict section trend successfully")
+      val list2 = countPercents(redis, sectionTime, newsTime, hConnection, stopWordsBr, dicBuffer, models)
+//      LoggerUtil.info("predict section trend successfully")
       RedisUtil.writeToRedis(redis, "section_sentiment", list2)
 //      LoggerUtil.info("write section trend to redis successfully")
 
@@ -101,13 +116,13 @@ object NewsTrendPre {
 
       redis.close()
 //      LoggerUtil.info("close redis connection>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-    }catch {
-      case e:Exception =>
-        LoggerUtil.error(e.getMessage)
-    } finally {
+//    }catch {
+//      case e:Exception =>
+//        LoggerUtil.error(e.getMessage)
+//    } finally {
       sc.stop()
 //      LoggerUtil.info("sc stop >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-    }
+//    }
 
   }
 
@@ -122,15 +137,12 @@ object NewsTrendPre {
     * @return 返回（存有类别-比值信息的Map）
     */
   def countPercents(redis:Jedis, classifyTable:String, newsTable:String, hConnection: Connection, stopWordsBr:Broadcast[Array[String]],
-                    dicBuffer:ArrayBuffer[Array[String]], modelPath:String):mutable.Map[String, String] = {
+                    dicBuffer:ArrayBuffer[Array[String]], model: Map[String, Any]):mutable.Map[String, String] = {
 
     // 获得所有类别名称
     val s = redis.hkeys(classifyTable)
     val classify = new  Array[String](s.size())
     s.toArray(classify)
-
-    //初始化分类模型
-    val model = PredictWithNb.init(modelPath)
 
     // 计算结果存储变量
     val result = mutable.Map[String, String]()
@@ -161,8 +173,10 @@ object NewsTrendPre {
 
         // 如果匹配到正文，利用模型预测新闻的情感倾向
         if(content != "Null"){
-//          content = newsTitle + content
+
+          //          content = newsTitle + content
           val value = PredictWithNb.predictWithSigle(content, model, stopWordsBr.value)
+
           if (value == "neg"){
             negaCount = negaCount + 1
           }

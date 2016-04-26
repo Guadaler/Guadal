@@ -5,8 +5,6 @@ package com.kunyandata.nlpsuit.classification
   */
 
 import java.io._
-
-import com.kunyandata.nlpsuit.util.{TextPreprocessing, WordSeg}
 import org.apache.spark.mllib.feature._
 import org.apache.spark.mllib.classification.NaiveBayesModel
 import org.apache.spark.mllib.linalg.Vector

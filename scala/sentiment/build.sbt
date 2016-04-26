@@ -21,8 +21,6 @@ libraryDependencies += "redis.clients" % "jedis" % "2.8.0"
 
 libraryDependencies += "org.json" % "json" % "20160212"
 
-libraryDependencies += "org.apache.commons" % "commons-pool2" % "2.3"
-
 libraryDependencies += "org.apache.hbase" % "hbase-client" % "1.1.2"
 
 libraryDependencies += "org.apache.hbase" % "hbase-common" % "1.1.2"

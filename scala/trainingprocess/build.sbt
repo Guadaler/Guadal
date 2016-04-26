@@ -18,8 +18,6 @@ libraryDependencies += "redis.clients" % "jedis" % "2.8.0"
 
 libraryDependencies += "org.json" % "json" % "20160212"
 
-libraryDependencies += "org.apache.commons" % "commons-pool2" % "2.3"
-
 libraryDependencies += "org.apache.hbase" % "hbase-client" % "1.1.2"
 
 libraryDependencies += "org.apache.hbase" % "hbase-common" % "1.1.2"
@@ -38,7 +36,7 @@ libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.5.1"
 
 resolvers += "Kunyan Repo" at "http://222.73.34.92:8081/nexus/content/groups/public/"
 
-//libraryDependencies += "com.kunyan" % "nlpsuit" % "0.2.1"
+libraryDependencies += "com.kunyan" % "nlpsuit" % "0.2.1"
 
 assemblyMergeStrategy in assembly := {
   case PathList("javax", "servlet", xs @ _*) => MergeStrategy.last

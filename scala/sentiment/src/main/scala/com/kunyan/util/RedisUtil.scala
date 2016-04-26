@@ -19,7 +19,7 @@ object RedisUtil {
     * @return  返回jedis资源
     * @author  liumiao
     */
-  def getRedis(info:Array[String]): Jedis ={
+  def getRedis(info: Array[String]): Jedis ={
     // set the parameters
     val config: JedisPoolConfig = new JedisPoolConfig
     config.setMaxWaitMillis(10000)
