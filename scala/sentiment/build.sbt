@@ -9,13 +9,7 @@ scalaVersion := "2.10.4"
 
 resolvers += "Kunyan Repo" at "http://222.73.34.92:8081/nexus/content/groups/public/"
 
-libraryDependencies += "com.kunyan" % "nlpsuit" % "0.2.1"
-
-//libraryDependencies += "org.scalactic" %% "scalactic" % "2.2.5" % "test"
-
-//libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.5" % "test"
-
-//libraryDependencies += "mysql" % "mysql-connector-java" % "3.1.14"
+libraryDependencies += "com.kunyan" % "nlpsuit" % "0.2.1.debug"
 
 libraryDependencies += "redis.clients" % "jedis" % "2.8.0"
 

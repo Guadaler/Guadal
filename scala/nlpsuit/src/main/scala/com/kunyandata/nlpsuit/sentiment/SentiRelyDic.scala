@@ -74,21 +74,21 @@ object SentiRelyDic {
     *
     * @param title 当前句子的分词结果
     * @return 返回（句子的情感倾向，+1表示正向，-1表示负向，0表示中性）
-    * @param dicBuffer 词典
+    * @param dicMap 词典
     * @author liumiao
     */
-  def searchSenti(title:String, dicBuffer:ArrayBuffer[Array[String]]): String={
+  def searchSenti(title:String, dicMap:Map[String, Array[String]]): String={
     // 记录正面负面倾向的次数
     var positive = 0
     var negative = 0
     // 对标题分词
-    val titleCut = SentiRelyDic.cut(title, dicBuffer(0))
+    val titleCut = SentiRelyDic.cut(title, dicMap("userDict"))
     // 对分词后的每一个词匹配词典
     for (i <- titleCut.indices) {
       val tc = titleCut(i)
       // 匹配正向情感词词典
-      if(dicBuffer(1).contains(tc)){
-        if(countSenti(i, titleCut, dicBuffer(3))>0){
+      if(dicMap("dictP").contains(tc)){
+        if(countSenti(i, titleCut, dicMap("dictF"))>0){
           positive += 1
         }
         else{
@@ -96,8 +96,8 @@ object SentiRelyDic {
         }
       }
       // 匹配负向情感词词典
-      else if (dicBuffer(2).contains(tc)){
-        if(countSenti(i, titleCut, dicBuffer(3))>0){
+      else if (dicMap("dictN").contains(tc)){
+        if(countSenti(i, titleCut, dicMap("dictF"))>0){
           negative = negative + 1
         }
         else{
