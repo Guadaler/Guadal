@@ -3,18 +3,18 @@ package com.kunyan.sentiment
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import com.kunyan.nlpsuit.sentiment.PredictWithNb
+import com.kunyandata.nlpsuit.sentiment.{PredictWithNb, SentiRelyDic}
 import com.kunyan.util._
-//import com.kunyan.util.LoggerUtil
+import com.kunyan.util.LoggerUtil
 import org.apache.hadoop.hbase.client.{Connection, ConnectionFactory}
-import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 import org.json.JSONObject
-import redis.clients.jedis.{Tuple, Jedis}
-
+import redis.clients.jedis.{Jedis, Tuple}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scala.io.Source
+
 
 /**
   * Created by Liu on 2016/4/13.
@@ -22,43 +22,48 @@ import scala.collection.mutable.ArrayBuffer
 
 object NewsTrendPre {
 
+  def getDicts(sentimentConf: SentimentConf): Map[String, Array[String]] = {
+    // 读取停用词典
+    val stopWords = Source.fromFile(sentimentConf.getValue("dicts", "stopWordsPath")).getLines().toArray
+
+    // 初始化词典，存入dicBuffer
+    val dictUser = Source.fromFile(sentimentConf.getValue("dicts", "userDictPath")).getLines().toArray
+    val dictP = Source.fromFile(sentimentConf.getValue("dicts", "posDictPath")).getLines().toArray
+    val dictN = Source.fromFile(sentimentConf.getValue("dicts", "pasDictPath")).getLines().toArray
+    val dictF = Source.fromFile(sentimentConf.getValue("dicts", "negDictPath")).getLines().toArray
+    Map("stopWords" -> stopWords, "dictUser" -> dictUser,
+      "dictP" -> dictP, "dictN" -> dictN, "dictF" -> dictF)
+  }
+
   def main(args: Array[String]) {
 
     val conf = new SparkConf()
       .setAppName("NewsTrendPre")
-      .setMaster("local")                        //  ------------------------  打jar包不能指定Maaster  ------------------------------
+      .setMaster("local")
+      .set("spark.local.ip", "192.168.2.65")
+      .set("spark.driver.host", "192.168.2.65")//  ------------------------  打jar包不能指定Maaster  ------------------------------
     val sc = new SparkContext(conf)
-//    LoggerUtil.warn("sc init success")
+    LoggerUtil.warn("sc init successfully")
+
+    // 获取配置信息
+    val configInfo = new SentimentConf()
+    configInfo.initConfig(args(0))
 
     // 连接redis
-    val redis = RedisUtil.getRedis
+    val redis = RedisUtil.getRedis(configInfo)
 //    LoggerUtil.warn("redis connet successfully")
 
     // 连接Hbase
-    val hbaseConf = HbaseUtil.getHbaseConf
+    val hbaseConf = HbaseUtil.getHbaseConf(configInfo)
     val hConnection = ConnectionFactory.createConnection(hbaseConf)
 //    LoggerUtil.warn("hbase connet successfully")
 
-    // 读取停用词典
-    val stopWords = sc.textFile(args(0)).collect()
-
-    // 初始化词典，存入dicBuffer
-    val dictUser = sc.textFile(args(1)).collect()
-    val dictP = sc.textFile(args(2)).collect()
-    val dictN = sc.textFile(args(3)).collect()
-    val dictF = sc.textFile(args(4)).collect()
-
-    val dicBuffer = new ArrayBuffer[Array[String]]()
-    dicBuffer.append(dictUser)
-    dicBuffer.append(dictP)
-    dicBuffer.append(dictN)
-    dicBuffer.append(dictF)
-
-    dicBuffer.append(stopWords)
+    // 获取词典
+    val cosDicts = getDicts(configInfo)
 //    LoggerUtil.warn("dicts read successfully")
 
     //初始化分类模型
-    val model = PredictWithNb.init(args(5))
+    val model = PredictWithNb.init(configInfo.getValue("models", "sentModelsPath"))
 
     // 创建表名，根据表名读redis
     val now = new Date()
@@ -105,7 +110,6 @@ object NewsTrendPre {
 
   }
 
-
   /**
     * 根据分类信息计算情感倾向的比例
     *
@@ -128,7 +132,7 @@ object NewsTrendPre {
         val categories = hasUrl(url, redisAllNewsMap)
         if (categories != "there is no cate") {
           // 预测正文的情感倾向
-          val result = PredictWithNb.predictWithSigle(content, modelBr.value, stopWordsBr)    // 之后改成stopWords类型Array[String]  ------------------------------
+          val result = PredictWithNb.predictWithSigle(content, modelBr.value, stopWordsBr.value)    // 之后改成stopWords类型Array[String]  ------------------------------
           //caregories是一个Tuple（），即一条新闻可能属于多个分类
           (url, categories, result)
         }
@@ -207,7 +211,7 @@ object NewsTrendPre {
   /**
     * 读取redis的新闻信息
     *
-    * @param redis
+    * @param redis redis 链接信息
     * @param categoryTable 类别表名
     * @param newsTable  新闻表名
     * @return 新闻信息，返回Map[类别名称，Array[（url, title),(url, title),…]}
