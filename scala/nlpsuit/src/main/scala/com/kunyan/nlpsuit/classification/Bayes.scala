@@ -12,6 +12,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.mllib.feature._
 import org.apache.spark.mllib.classification.NaiveBayesModel
 import org.apache.spark.mllib.linalg.Vector
+import scala.collection.Map
 import scala.io.Source
 
 
@@ -115,16 +116,16 @@ object Bayes {
   }
 
   def getTopLabels(prediction: Vector): Array[String] = {
-//
+    //
     val temp = prediction.toArray
-//    val result = ArrayBuffer[Int]()
-//    temp.foreach(number => {
-//      number
-//    })
-//    result.append(prediction.argmax)
-//
-//    val range = prediction.toArray.max - prediction.toArray.min
-//    prediction.
+    //    val result = ArrayBuffer[Int]()
+    //    temp.foreach(number => {
+    //      number
+    //    })
+    //    result.append(prediction.argmax)
+    //
+    //    val range = prediction.toArray.max - prediction.toArray.min
+    //    prediction.
 
     null
   }

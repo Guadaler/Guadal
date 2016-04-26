@@ -5,7 +5,6 @@ import org.ansj.domain.Term
 import org.ansj.library.UserDefineLibrary
 import org.ansj.splitWord.analysis.{NlpAnalysis, ToAnalysis}
 import org.apache.spark.{SparkConf, SparkContext}
-
 import scala.collection.JavaConversions._
 
 /**

@@ -2,7 +2,7 @@ package com.kunyan.sentiment
 
 import org.ansj.library.UserDefineLibrary
 import org.ansj.splitWord.analysis.ToAnalysis
-import org.apache.spark.{SparkContext, SparkConf}
+import org.apache.spark.SparkContext
 
 import scala.collection.mutable.ArrayBuffer
 
