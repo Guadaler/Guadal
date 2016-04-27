@@ -5,7 +5,7 @@ import java.util.Date
 
 import com.kunyan.nlpsuit.sentiment.PredictWithNb
 import com.kunyan.util._
-//import com.kunyan.util.LoggerUtil
+import com.kunyan.util.LoggerUtil
 import org.apache.hadoop.hbase.client.{Connection, ConnectionFactory}
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
@@ -26,39 +26,36 @@ object NewsTrendPre {
 
     val conf = new SparkConf()
       .setAppName("NewsTrendPre")
-      .setMaster("local")                        //  ------------------------  打jar包不能指定Maaster  ------------------------------
+//      .setMaster("local")                        //  ------------------------  打jar包不能指定Maaster  ------------------------------
     val sc = new SparkContext(conf)
-//    LoggerUtil.warn("sc init success")
+    LoggerUtil.warn("sc init success")
 
     // 连接redis
     val redis = RedisUtil.getRedis
-//    LoggerUtil.warn("redis connet successfully")
 
     // 连接Hbase
     val hbaseConf = HbaseUtil.getHbaseConf
-    val hConnection = ConnectionFactory.createConnection(hbaseConf)
-//    LoggerUtil.warn("hbase connet successfully")
 
-    // 读取停用词典
-    val stopWords = sc.textFile(args(0)).collect()
+    // 读取用户自定义词典，添加到分词系统
+    val dictUser = sc.textFile(args(0)).collect()
+    SentiRelyDic.addUserDic(dictUser)
 
     // 初始化词典，存入dicBuffer
-    val dictUser = sc.textFile(args(1)).collect()
-    val dictP = sc.textFile(args(2)).collect()
-    val dictN = sc.textFile(args(3)).collect()
-    val dictF = sc.textFile(args(4)).collect()
+    val dictP = sc.textFile(args(1)).collect()
+    val dictN = sc.textFile(args(2)).collect()
+    val dictF = sc.textFile(args(3)).collect()
+    val stopWords = sc.textFile(args(4)).collect()
 
-    val dicBuffer = new ArrayBuffer[Array[String]]()
-    dicBuffer.append(dictUser)
-    dicBuffer.append(dictP)
-    dicBuffer.append(dictN)
-    dicBuffer.append(dictF)
-
-    dicBuffer.append(stopWords)
-//    LoggerUtil.warn("dicts read successfully")
+    val dicMap = mutable.Map[String, Array[String]]()
+    dicMap += ("dicPosi" -> dictP)
+    dicMap += ("dicNega" -> dictN)
+    dicMap += ("dicF" -> dictF)
+    dicMap += ("dicStop" -> stopWords)
+    LoggerUtil.warn("dicts read successfully")
 
     //初始化分类模型
     val model = PredictWithNb.init(args(5))
+    LoggerUtil.warn("model init successfully")
 
     // 创建表名，根据表名读redis
     val now = new Date()
@@ -69,39 +66,35 @@ object NewsTrendPre {
     val stockTime = "Stock_" + time                             // ------------------------------- stock --------------------------------
     val sectionTime = "Section_" + time                         // ------------------------------- section -------------------------------
     val newsTime = "News_" + time                               // -------------------------------- news ---------------------------------
-//    LoggerUtil.warn("create redis table name successfully")
 
     // 获得redis中所有类别的新闻，存储为Map[类别名称，Array[（url, title),(url, title),…]}
     val redisAllNewsMapIndustry = getAllCateNews(redis, industryTime, newsTime)
     val redisAllNewsMapStock = getAllCateNews(redis, stockTime, newsTime)
     val redisAllNewsMapSection = getAllCateNews(redis, sectionTime, newsTime)
     redis.close()
-//    LoggerUtil.info("close redis connection>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-
+    LoggerUtil.warn("get redis news successfully")
 
     // 获得hbase中所有的新闻，存储为RDD[String]
     val hbaseAllNews = HbaseUtil.getRDD(sc, hbaseConf).cache()
-
+    LoggerUtil.warn("get hbase news successfully")
 
     // 计算新闻的倾向比例，写入redis
-    val list1 = countPercentsRDD(sc, redisAllNewsMapIndustry, hbaseAllNews, dicBuffer, model)
-    val list2 = countPercentsRDD(sc, redisAllNewsMapStock, hbaseAllNews, dicBuffer, model)
-    val list3 = countPercentsRDD(sc, redisAllNewsMapSection, hbaseAllNews, dicBuffer, model)
-//    LoggerUtil.info("predict industry trend successfully")
+    val list1 = countPercentsRDD(sc, redisAllNewsMapIndustry, hbaseAllNews, dicMap, model)
+    val list2 = countPercentsRDD(sc, redisAllNewsMapStock, hbaseAllNews, dicMap, model)
+    val list3 = countPercentsRDD(sc, redisAllNewsMapSection, hbaseAllNews, dicMap, model)
+    LoggerUtil.warn("predict trend successfully")
 
     //存储到redis
-    if (!redis.isConnected){
-      val redis = RedisUtil.getRedis
-      RedisUtil.writeToRedis(redis, "industry_sentiment", list1)
-      RedisUtil.writeToRedis(redis, "stock_sentiment", list2)
-      RedisUtil.writeToRedis(redis, "section_sentiment", list3)
-      redis.close()
-    }
+    val redis2 = RedisUtil.getRedis
+    RedisUtil.writeToRedis(redis2, "industry_sentiment", list1)
+    RedisUtil.writeToRedis(redis2, "stock_sentiment", list2)
+    RedisUtil.writeToRedis(redis2, "section_sentiment", list3)
+    LoggerUtil.warn("write to redis successfully")
 
-    hConnection.close()
-//      LoggerUtil.info("close hbase connection>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+    redis2.close()
+    LoggerUtil.warn("close redis connection>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
     sc.stop()
-//    LoggerUtil.info("sc stop>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+    LoggerUtil.warn("sc stop>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
   }
 
@@ -109,24 +102,24 @@ object NewsTrendPre {
   /**
     * 根据分类信息计算情感倾向的比例
     *
-    * @param dicBuffer 词典
+    * @param dicMap 词典
     * @param model 分类模型
     * @return 返回（存有类别-比值信息的Map）
     * @author liumiao
     */
   def countPercentsRDD(sc:SparkContext, redisAllNewsMap:Map[String, Array[(String, String)]], hbaseAllNewsRDD:RDD[String],
-                       dicBuffer:ArrayBuffer[Array[String]], model:Map[String, Any]):mutable.Map[String, String] = {
+                       dicMap:mutable.Map[String, Array[String]], model:Map[String, Any]):mutable.Map[String, String] = {
 
     //广播分类模型和停用词表
     val modelBr = sc.broadcast(model)
-    val stopWordsBr = sc.broadcast(dicBuffer(4))
+    val stopWordsBr = sc.broadcast(dicMap("dicStop"))
 
     // 对于url能够在Hbase中匹配到正文的新闻，利用分类模型预测其正文的情感倾向
     val hbaseRedisSentiment = hbaseAllNewsRDD.map(everyNews => {
       if (everyNews.split("\n\t").length == 3){
         val Array(url, title, content) = everyNews.split("\n\t")
         val categories = hasUrl(url, redisAllNewsMap)
-        if (categories != "there is no cate") {
+        if (categories != "there is no this url") {
           // 预测正文的情感倾向
           val result = PredictWithNb.predictWithSigle(content, modelBr.value, stopWordsBr)    // 之后改成stopWords类型Array[String]  ------------------------------
           //caregories是一个Tuple（），即一条新闻可能属于多个分类
@@ -150,7 +143,7 @@ object NewsTrendPre {
         // tuple  (url, title)
         if (!intersetUrl.contains(tuple._1)) {
           // 预测标题的情感倾向
-          val resultTitle = SentiRelyDic.searchSenti(tuple._2, dicBuffer)
+          val resultTitle = SentiRelyDic.searchSenti(tuple._2, dicMap)
           // 返回标题的情感倾向分析结果
           resultTitle
         }
@@ -199,7 +192,7 @@ object NewsTrendPre {
     })
     // 返回String
     if (result.isEmpty){
-      "there is no cate"
+      "there is no this url"
     } else result.mkString(",")
   }
 

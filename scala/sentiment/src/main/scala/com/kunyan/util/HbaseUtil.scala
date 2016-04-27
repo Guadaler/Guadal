@@ -29,8 +29,13 @@ object HbaseUtil {
     */
   def getHbaseConf: Configuration = {
     val hbaseConf = HBaseConfiguration.create()
-    hbaseConf.set("hbase.rootdir", "hdfs://222.73.34.99:9000/hbase")
-    hbaseConf.set("hbase.zookeeper.quorum", "222.73.34.95,222.73.34.96,222.73.34.99")
+
+    hbaseConf.set("hbase.rootdir", "hdfs://222.73.57.12/hbase")
+    hbaseConf.set("hbase.zookeeper.quorum", "222.73.57.12,222.73.57.3,222.73.57.7")
+
+//    hbaseConf.set("hbase.rootdir", "hdfs://222.73.34.99:9000/hbase")
+//    hbaseConf.set("hbase.zookeeper.quorum", "222.73.34.95,222.73.34.96,222.73.34.99")
+
     hbaseConf
   }
 
@@ -103,7 +108,7 @@ object HbaseUtil {
       new String(data, judgeCharser(data))
   }
 
-  def setTimeRange(): String = {
+  private def setTimeRange(): String = {
 
     val scan = new Scan()
     val date = new Date(new Date().getTime - 24 * 60 * 60 * 1000)
