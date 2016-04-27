@@ -39,9 +39,9 @@ object NewsTrendPre {
 
     val conf = new SparkConf()
       .setAppName("NewsTrendPreTest")
-      .setMaster("local")
-      .set("spark.local.ip", "192.168.2.65")
-      .set("spark.driver.host", "192.168.2.65")//  ------------------------  打jar包不能指定Maaster  ------------------------------
+//      .setMaster("local")
+//      .set("spark.local.ip", "192.168.2.65")
+//      .set("spark.driver.host", "192.168.2.65")//  ------------------------  打jar包不能指定Maaster  ------------------------------
     val sc = new SparkContext(conf)
     LoggerUtil.warn("sc init successfully")
 
@@ -98,10 +98,9 @@ object NewsTrendPre {
       RedisUtil.writeToRedis(redis, "stock_sentiment", list2)
       RedisUtil.writeToRedis(redis, "section_sentiment", list3)
       redis.close()
-    }
+      LoggerUtil.warn("close redis connection>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
-    redis.close()
-    LoggerUtil.warn("close redis connection>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+    }
     sc.stop()
     LoggerUtil.warn("sc stop>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
@@ -134,7 +133,7 @@ object NewsTrendPre {
           (url, categories, result)
         }
       }
-    }).filter(_ !=()).map(_.asInstanceOf[(String, String, String)]).cache()
+    }).filter(_ !=()).map(_.asInstanceOf[(String, String, String)])
     LoggerUtil.warn("hbaseRedisSentiment process success")
 
 

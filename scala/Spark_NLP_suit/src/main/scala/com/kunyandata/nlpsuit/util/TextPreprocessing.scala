@@ -9,6 +9,11 @@ import scala.collection.mutable.ArrayBuffer
 
 object TextPreprocessing {
 
+  def main(args: Array[String]) {
+    println(WordSeg.splitWord("我爱北京天安门，天安门上台养生", 0))
+  }
+
+
   private var kunyanPath: String = "/home/mlearning/bin/"
 
   /**
@@ -95,7 +100,7 @@ object TextPreprocessing {
     // 格式化文本
     val formatedContent = formatText(content)
     // 实现分词
-    val splitWords = WordSeg.splitWord(formatedContent, this.kunyanPath, wordSegTyp)
+    val splitWords = WordSeg.splitWord(formatedContent, wordSegTyp)
     // 读取分词内容并转化成Array格式
     val resultWords = WordSeg.getWords(splitWords)
     // 实现去停用词
