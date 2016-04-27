@@ -39,9 +39,9 @@ object NewsTrendPre {
 
     val conf = new SparkConf()
       .setAppName("NewsTrendPreTest")
-//      .setMaster("local")
-//      .set("spark.local.ip", "192.168.2.65")
-//      .set("spark.driver.host", "192.168.2.65")//  ------------------------  打jar包不能指定Maaster  ------------------------------
+      .setMaster("local")
+      .set("spark.local.ip", "192.168.2.65")
+      .set("spark.driver.host", "192.168.2.65")//  ------------------------  打jar包不能指定Maaster  ------------------------------
     val sc = new SparkContext(conf)
     LoggerUtil.warn("sc init successfully")
 
@@ -98,7 +98,7 @@ object NewsTrendPre {
     }
 
     hConnection.close()
-//      LoggerUtil.info("close hbase connection>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+    LoggerUtil.info("close hbase connection>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
     sc.stop()
 //    LoggerUtil.info("sc stop>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
