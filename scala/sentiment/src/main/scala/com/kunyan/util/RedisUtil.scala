@@ -23,12 +23,23 @@ object RedisUtil {
     config.setMaxIdle(10)
     config.setMaxTotal(1024)
     config.setTestOnBorrow(true)
+
     // 设置 redis 的 Host、port、password 和 database 等参数
+
+    // 测试 --------------------------------------------------------------------------
     val redisHost = "222.73.57.12"
     val redisPort = 6379
     val redisTimeout = 30000
     val redisPassword = "kunyan"
     val redisDatabase = 0
+
+    // 正式 --------------------------------------------------------------------------
+//    val redisHost = "222.73.34.96"
+//    val redisPort = 6390
+//    val redisTimeout = 30000
+//    val redisPassword = "7ifW4i@M"
+//    val redisDatabase = 0
+
     // 链接数据库
     val pool = new JedisPool(config, redisHost, redisPort, redisTimeout, redisPassword, redisDatabase)
     val redis = pool.getResource

@@ -30,9 +30,11 @@ object HBaseUtil {
   def getHbaseConf: Configuration = {
     val hbaseConf = HBaseConfiguration.create()
 
+    // 测试集群 ---------------------------------------------------------------------------------------
     hbaseConf.set("hbase.rootdir", "hdfs://222.73.57.12/hbase")
     hbaseConf.set("hbase.zookeeper.quorum", "222.73.57.12,222.73.57.3,222.73.57.7")
 
+    // 正式集群 ---------------------------------------------------------------------------------------
 //    hbaseConf.set("hbase.rootdir", "hdfs://222.73.34.99:9000/hbase")
 //    hbaseConf.set("hbase.zookeeper.quorum", "222.73.34.95,222.73.34.96,222.73.34.99")
 

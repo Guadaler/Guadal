@@ -112,7 +112,7 @@ object NewsTrendPre {
     val modelBr = sc.broadcast(model)
     val stopWordsBr = sc.broadcast(dicMap("dicStop"))
 
-    // 对于url能够在hBase中匹配到正文的新闻，利用分类模型预测其正文的情感倾向
+    // 对于url能够在Hbase中匹配到正文的新闻，利用分类模型预测其正文的情感倾向
     val hbaseRedisSentiment = hbaseAllNewsRDD.map(everyNews => {
       if (everyNews.split("\n\t").length == 3){
         val Array(url, title, content) = everyNews.split("\n\t")
