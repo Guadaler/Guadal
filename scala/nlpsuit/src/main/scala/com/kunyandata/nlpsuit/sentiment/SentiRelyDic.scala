@@ -3,34 +3,38 @@ package com.kunyandata.nlpsuit.sentiment
 import org.ansj.library.UserDefineLibrary
 import org.ansj.splitWord.analysis.ToAnalysis
 
-import scala.collection.mutable.ArrayBuffer
-
 /**
   * Created by Administrator on 2016/4/21.
   */
 object SentiRelyDic {
 
   /**
-    * 分词
+    * 添加用户词典
     *
-    * @param sentence 输入的待分词的句子
     * @param userDic 用户自定义分词词典
-    * @return 返回（分词结果，存储在字符串数组中）
     * @author liumiao
-    */
-  private def cut(sentence:String, userDic:Array[String]):Array[String] = {
+   */
+  def addUserDic(userDic:Array[String]): Unit ={
     // RDD形式添加用户词典
     userDic.foreach( x => {
       UserDefineLibrary.insertWord(x,"userDefine",100)
     })
+  }
+
+  /**
+    * 分词
+    *
+    * @param sentence 输入的待分词的句子
+    * @return 返回（分词结果，存储在字符串数组中）
+    * @author liumiao
+    */
+  private def cut(sentence:String):Array[String] = {
     // 分词
     val sentenceCut = ToAnalysis.parse(sentence)
     // 过滤词性标注
     val words = for(i <- Range(0,sentenceCut.size())) yield sentenceCut.get(i).getName
-    val result = new Array[String](sentenceCut.size())
     // 将 Vector 转换为 Array
-    words.copyToArray(result)
-    result
+    words.toArray
   }
 
   /**
@@ -82,7 +86,7 @@ object SentiRelyDic {
     var positive = 0
     var negative = 0
     // 对标题分词
-    val titleCut = SentiRelyDic.cut(title, dicMap("userDict"))
+    val titleCut = SentiRelyDic.cut(title)
     // 对分词后的每一个词匹配词典
     for (i <- titleCut.indices) {
       val tc = titleCut(i)

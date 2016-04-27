@@ -25,6 +25,10 @@ object WordSeg {
   val LOCAL = 0
   val REMOTE = 1
 
+  def main(args: Array[String]) {
+    println(splitWord("我爱北京天安门，天安门上台养生", "/home/mlearning/bin/", this.LOCAL))
+  }
+
   /**
     *
     * @param content 需要分词的字符串

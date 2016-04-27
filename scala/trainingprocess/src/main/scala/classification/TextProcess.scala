@@ -1,7 +1,7 @@
 package classification
 
 import org.apache.spark.{SparkConf, SparkContext}
-import com.kunyan.nlpsuit.util.TextPreprocessing
+import com.kunyandata.nlpsuit.util.TextPreprocessing
 
 /**
   * Created by root on 4/19/16.

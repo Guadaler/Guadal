@@ -58,8 +58,11 @@ object NewsTrendPre {
     // 获取词典
     val cosDicts = getDicts(configInfo)
 
+    // 添加自定义词典到ansj分词器中
+    SentiRelyDic.addUserDic(cosDicts("userDict"))
+
     //初始化分类模型
-    val model = PredictWithNb.init(configInfo.getValue("models", "sentModelsPath"))
+    val models = PredictWithNb.init(configInfo.getValue("models", "sentModelsPath"))
 
     // 创建表名，根据表名读redis
     val now = new Date()
@@ -76,16 +79,16 @@ object NewsTrendPre {
     val redisAllNewsMapStock = getAllCateNews(redis, stockTime, newsTime)
     val redisAllNewsMapSection = getAllCateNews(redis, sectionTime, newsTime)
     redis.close()
+    LoggerUtil.warn("get redis news successfully")
 
     // 获得hbase中所有的新闻，存储为RDD[String]
     val hbaseAllNews = HbaseUtil.getRDD(sc, hbaseConf).cache()
     LoggerUtil.warn("get hbase news successfully")
 
-
     // 计算新闻的倾向比例，写入redis
-    val list1 = countPercentsRDD(sc, redisAllNewsMapIndustry, hbaseAllNews, cosDicts, model)
-    val list2 = countPercentsRDD(sc, redisAllNewsMapStock, hbaseAllNews, cosDicts, model)
-    val list3 = countPercentsRDD(sc, redisAllNewsMapSection, hbaseAllNews, cosDicts, model)
+    val list1 = countPercentsRDD(sc, redisAllNewsMapIndustry, hbaseAllNews, cosDicts, models)
+    val list2 = countPercentsRDD(sc, redisAllNewsMapStock, hbaseAllNews, cosDicts, models)
+    val list3 = countPercentsRDD(sc, redisAllNewsMapSection, hbaseAllNews, cosDicts, models)
 //    LoggerUtil.info("predict industry trend successfully")
 
     //存储到redis
@@ -97,10 +100,10 @@ object NewsTrendPre {
       redis.close()
     }
 
-    hConnection.close()
-    LoggerUtil.info("close hbase connection>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+    redis.close()
+    LoggerUtil.warn("close redis connection>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
     sc.stop()
-//    LoggerUtil.info("sc stop>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+    LoggerUtil.warn("sc stop>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
   }
 
@@ -124,7 +127,7 @@ object NewsTrendPre {
       if (everyNews.split("\n\t").length == 3){
         val Array(url, title, content) = everyNews.split("\n\t")
         val categories = hasUrl(url, redisAllNewsMap)
-        if (categories != "there is no cate") {
+        if (categories != "there is no this url") {
           // 预测正文的情感倾向
           val result = PredictWithNb.predictWithSigle(content, modelBr.value, stopWordsBr.value)    // 之后改成stopWords类型Array[String]  ------------------------------
           //caregories是一个Tuple（），即一条新闻可能属于多个分类
@@ -132,7 +135,7 @@ object NewsTrendPre {
         }
       }
     }).filter(_ !=()).map(_.asInstanceOf[(String, String, String)]).cache()
-    LoggerUtil.warn("hbaseRedisSentiment successfully")
+    LoggerUtil.warn("hbaseRedisSentiment process success")
 
 
     // 抽取类别和情感倾向分析结果，返回Array[String, String]
@@ -199,7 +202,7 @@ object NewsTrendPre {
     })
     // 返回String
     if (result.isEmpty){
-      "there is no cate"
+      "there is no this url"
     } else result.mkString(",")
   }
 

@@ -57,7 +57,7 @@ object HbaseUtil {
     //表名
     val tableName = "wk_detail"
     hbaseConf.set(TableInputFormat.INPUT_TABLE, tableName)
-    hbaseConf.set(TableInputFormat.SCAN, setTimeRange)
+    hbaseConf.set(TableInputFormat.SCAN, setTimeRange())
     //获得RDD
     val hbaseRdd = sc.newAPIHadoopRDD(hbaseConf, classOf[TableInputFormat]
       , classOf[ImmutableBytesWritable], classOf[Result])
@@ -71,7 +71,7 @@ object HbaseUtil {
       val formatb = judgeCharser(b)
       val formatc = judgeCharser(c)
       new String(a, formata) + "\n\t" + new String(b, formatb) + "\n\t" + new String(c, formatc)
-    })
+    }).cache()
     //返回RDD
     news
   }
@@ -102,7 +102,7 @@ object HbaseUtil {
       new String(data, judgeCharser(data))
   }
 
-  def setTimeRange(): String = {
+  private def setTimeRange(): String = {
 
     val scan = new Scan()
     val date = new Date(new Date().getTime - 24 * 60 * 60 * 1000)

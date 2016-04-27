@@ -13,7 +13,7 @@ object BayesPredict {
   def main(args: Array[String]) {
     val conf = new SparkConf().setAppName("BayesPredictTest")
       .setMaster("local")
-      .set("spark.local.ip", "192.168.2.65")
+//      .set("spark.local.ip", "192.168.2.65")
       .set("spark.driver.host", "192.168.2.65")
 //      .setMaster("spark://222.73.57.12:7077")
 //      .set("spark.local.ip","222.73.57.12")

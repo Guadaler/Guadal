@@ -4,7 +4,7 @@ import java.io.{File, PrintWriter}
 import java.sql.{Connection, DriverManager}
 import java.util
 
-import com.kunyan.nlpsuit.util.{AnsjAnalyzer, TextPreprocessing}
+import com.kunyandata.nlpsuit.util.{AnsjAnalyzer, TextPreprocessing}
 import org.apache.spark.broadcast.Broadcast
 import redis.clients.jedis.{Jedis, JedisPool, JedisPoolConfig}
 
