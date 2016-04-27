@@ -1,10 +1,7 @@
 package com.kunyan.util
 
-import org.apache.spark.SparkContext
 import redis.clients.jedis.{Jedis, JedisPool, JedisPoolConfig}
-
 import scala.collection.mutable
-import scala.collection.mutable.Map
 import scala.util.parsing.json.JSONObject
 
 /**
@@ -16,7 +13,7 @@ object RedisUtil {
   /**
     * 连接 redis
     *
-    * @return  返回jedis资源
+    * @return  返回redis资源
     * @author  liumiao
     */
   def getRedis : Jedis ={
@@ -34,24 +31,24 @@ object RedisUtil {
     val redisDatabase = 0
     // 链接数据库
     val pool = new JedisPool(config, redisHost, redisPort, redisTimeout, redisPassword, redisDatabase)
-    val jedis = pool.getResource
-    //  关闭 JedisPool
+    val redis = pool.getResource
+    //  关闭 Pool
     pool.close()
     // 返回redis资源
-    jedis
+    redis
   }
 
   /**
     * 写redis
     *
-    * @param jedis  jedis资源
+    * @param redis  redis资源
     * @param name  存储的表名
     * @param result  待存储序列
     * @author  liumiao
     */
-  def writeToRedis(jedis: Jedis, name:String, result:mutable.Map[String, String]): Unit ={
+  def writeToRedis(redis: Jedis, name:String, result:mutable.Map[String, String]): Unit ={
     for(i <- result){
-      jedis.hset(name, i._1, i._2)
+      redis.hset(name, i._1, i._2)
     }
   }
 
@@ -69,9 +66,9 @@ object RedisUtil {
     var infoMap:Predef.Map[String, Float] = Predef.Map()
     infoMap += ("negative_percent" -> negative/sum)
     infoMap += ("positive_percent" -> positive/sum)
-    val jsoninfo = JSONObject(infoMap).toString()
+    val jsonInfo = JSONObject(infoMap).toString()
     println(classify +" " + infoMap("negative_percent") + " " + infoMap("positive_percent"))
-    jsoninfo
+    jsonInfo
   }
 
 }

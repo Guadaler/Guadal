@@ -13,18 +13,18 @@ import org.apache.hadoop.hbase.protobuf.generated.ClientProtos
 import org.apache.hadoop.hbase.util.{Base64, Bytes}
 import org.apache.hadoop.hbase.{HBaseConfiguration, TableName}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.SparkContext
 
 /**
   * Created by Liu on 2016/4/13.
   */
 
-object HbaseUtil {
+object HBaseUtil {
 
   /**
     * 连接 hbase
     *
-    * @return 返回hbaseConf资源
+    * @return 返回hBaseConf资源
     * @author liumaio
     */
   def getHbaseConf: Configuration = {
@@ -45,7 +45,7 @@ object HbaseUtil {
     * @param html 地址编码
     * @return
     */
-  def judgeCharser(html: Array[Byte]): String = {
+  def judgeChaser(html: Array[Byte]): String = {
     val icu4j = new CharsetDetector()
     icu4j.setText(html)
     val encoding = icu4j.detect()
@@ -55,59 +55,64 @@ object HbaseUtil {
   /**
     * 读取内容信息
     *
-    * @param sc
-    * @param hbaseConf hbase资源
+    * @param sc SparkContext
+    * @param hBaseConf hBase资源
     * @return RDD
     */
-  def getRDD(sc:SparkContext, hbaseConf:Configuration): RDD[String] ={
+  def getRDD(sc:SparkContext, hBaseConf:Configuration): RDD[String] ={
     //表名
     val tableName = "wk_detail"
-    hbaseConf.set(TableInputFormat.INPUT_TABLE, tableName)
-    hbaseConf.set(TableInputFormat.SCAN, setTimeRange)
+    hBaseConf.set(TableInputFormat.INPUT_TABLE, tableName)
+    hBaseConf.set(TableInputFormat.SCAN, setTimeRange())
     //获得RDD
-    val hbaseRdd = sc.newAPIHadoopRDD(hbaseConf, classOf[TableInputFormat]
+    val hBaseRdd = sc.newAPIHadoopRDD(hBaseConf, classOf[TableInputFormat]
       , classOf[ImmutableBytesWritable], classOf[Result])
     //获得url、title、content列
-    val news = hbaseRdd.map( x => {
+    val news = hBaseRdd.map( x => {
       val a = x._2.getValue(Bytes.toBytes("basic"), Bytes.toBytes("url"))
       val b = x._2.getValue(Bytes.toBytes("basic"), Bytes.toBytes("title"))
       val c = x._2.getValue(Bytes.toBytes("basic"), Bytes.toBytes("content"))
       //编码转换
-      val formata = judgeCharser(a)
-      val formatb = judgeCharser(b)
-      val formatc = judgeCharser(c)
-      new String(a, formata) + "\n\t" + new String(b, formatb) + "\n\t" + new String(c, formatc)
+      val formatA = judgeChaser(a)
+      val formatB = judgeChaser(b)
+      val formatC = judgeChaser(c)
+      new String(a, formatA) + "\n\t" + new String(b, formatB) + "\n\t" + new String(c, formatC)
     })
     //返回RDD
     news
   }
 
   /**
-    * 读 hbase 中的表
+    * 读 hBase 中的表
     *
-    * @param hConnection hbase链接
-    * @param tablename 需要读取的表名
-    * @param rowkey 键值
+    * @param hConnection hBase链接
+    * @param tableName 需要读取的表名
+    * @param rowKey 键值
     * @param family 列簇
-    * @param colume 列名
+    * @param column 列名
     * @return value值
     * @author liumiao
     */
-  def getValue(hConnection:Connection, tablename:String, rowkey:String, family:String, colume:String): String = {
-    //tablename：表名
-    val table = hConnection.getTable(TableName.valueOf(tablename))
-    //rowkey：hbase的rowkey
-    val get = new Get(rowkey.getBytes())
+  def getValue(hConnection:Connection, tableName:String, rowKey:String, family:String, column:String): String = {
+    //tableName：表名
+    val table = hConnection.getTable(TableName.valueOf(tableName))
+    //rowKey：hBase的rowKey
+    val get = new Get(rowKey.getBytes())
     val result = table.get(get)
-    //family：hbase列族  column：hbase列名
-    val data = result.getValue(family.getBytes, colume.getBytes)
+    //family：hBase列族  column：hBase列名
+    val data = result.getValue(family.getBytes, column.getBytes)
     // 返回读出的值
     if(data == null)
       "Null"
     else
-      new String(data, judgeCharser(data))
+      new String(data, judgeChaser(data))
   }
 
+  /**
+    * 设置时间范围
+    *
+    * @return 时间范围
+    */
   private def setTimeRange(): String = {
 
     val scan = new Scan()

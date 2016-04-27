@@ -6,12 +6,10 @@ import java.util.Date
 import com.kunyan.nlpsuit.sentiment.PredictWithNb
 import com.kunyan.util._
 import com.kunyan.util.LoggerUtil
-import org.apache.hadoop.hbase.client.{Connection, ConnectionFactory}
-import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 import org.json.JSONObject
-import redis.clients.jedis.{Tuple, Jedis}
+import redis.clients.jedis.Jedis
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -26,7 +24,7 @@ object NewsTrendPre {
 
     val conf = new SparkConf()
       .setAppName("NewsTrendPre")
-//      .setMaster("local")                        //  ------------------------  打jar包不能指定Maaster  ------------------------------
+      .setMaster("local")                        //  ------------------------  打jar包不能指定Maaster  ------------------------------
     val sc = new SparkContext(conf)
     LoggerUtil.warn("sc init success")
 
@@ -34,7 +32,7 @@ object NewsTrendPre {
     val redis = RedisUtil.getRedis
 
     // 连接Hbase
-    val hbaseConf = HbaseUtil.getHbaseConf
+    val hbaseConf = HBaseUtil.getHbaseConf
 
     // 读取用户自定义词典，添加到分词系统
     val dictUser = sc.textFile(args(0)).collect()
@@ -75,7 +73,7 @@ object NewsTrendPre {
     LoggerUtil.warn("get redis news successfully")
 
     // 获得hbase中所有的新闻，存储为RDD[String]
-    val hbaseAllNews = HbaseUtil.getRDD(sc, hbaseConf).cache()
+    val hbaseAllNews = HBaseUtil.getRDD(sc, hbaseConf).cache()
     LoggerUtil.warn("get hbase news successfully")
 
     // 计算新闻的倾向比例，写入redis
@@ -114,7 +112,7 @@ object NewsTrendPre {
     val modelBr = sc.broadcast(model)
     val stopWordsBr = sc.broadcast(dicMap("dicStop"))
 
-    // 对于url能够在Hbase中匹配到正文的新闻，利用分类模型预测其正文的情感倾向
+    // 对于url能够在hBase中匹配到正文的新闻，利用分类模型预测其正文的情感倾向
     val hbaseRedisSentiment = hbaseAllNewsRDD.map(everyNews => {
       if (everyNews.split("\n\t").length == 3){
         val Array(url, title, content) = everyNews.split("\n\t")
@@ -122,7 +120,7 @@ object NewsTrendPre {
         if (categories != "there is no this url") {
           // 预测正文的情感倾向
           val result = PredictWithNb.predictWithSigle(content, modelBr.value, stopWordsBr)    // 之后改成stopWords类型Array[String]  ------------------------------
-          //caregories是一个Tuple（），即一条新闻可能属于多个分类
+          //categories是一个Tuple（），即一条新闻可能属于多个分类
           (url, categories, result)
         }
       }
@@ -134,14 +132,14 @@ object NewsTrendPre {
     }).collect()
 
     //抽取所有交叉的url,返回Array[String]
-    val intersetUrl = hbaseRedisSentiment.map(_._1).collect()
+    val intersectUrl = hbaseRedisSentiment.map(_._1).collect()
 
     // 对于redis中与hbase不交叉的新闻，利用标题计算其情感倾向
     val result = sc.parallelize(redisAllNewsMap.toSeq).map(redisNew => {
       // redisNew (类别, Array[(url, title),(url, title),……])
       val resultCate = redisNew._2.map(tuple => {
         // tuple  (url, title)
-        if (!intersetUrl.contains(tuple._1)) {
+        if (!intersectUrl.contains(tuple._1)) {
           // 预测标题的情感倾向
           val resultTitle = SentiRelyDic.searchSenti(tuple._2, dicMap)
           // 返回标题的情感倾向分析结果
@@ -161,7 +159,7 @@ object NewsTrendPre {
       (redisNew._1, Array(pNeg, 1 - pNeg).mkString(","))
     }).collect()
 
-//    result.foreach(println)
+    result.foreach(println)
 
     // 将Array转换为Map
     val resultMap = mutable.Map[String, String]()
@@ -200,7 +198,7 @@ object NewsTrendPre {
   /**
     * 读取redis的新闻信息
     *
-    * @param redis
+    * @param redis redis资源
     * @param categoryTable 类别表名
     * @param newsTable  新闻表名
     * @return 新闻信息，返回Map[类别名称，Array[（url, title),(url, title),…]}

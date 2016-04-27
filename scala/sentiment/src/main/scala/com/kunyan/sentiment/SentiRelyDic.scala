@@ -1,12 +1,8 @@
 package com.kunyan.sentiment
 
-import com.kunyan.util.LoggerUtil
 import org.ansj.library.UserDefineLibrary
 import org.ansj.splitWord.analysis.ToAnalysis
-import org.apache.spark.SparkContext
-
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 
 /**
   * Created by Administrator on 2016/4/21.
@@ -22,7 +18,7 @@ object SentiRelyDic {
   def addUserDic(userDic:Array[String]): Unit ={
     // RDD形式添加用户词典
     userDic.foreach( x => {
-      UserDefineLibrary.insertWord(x,"userDefine",100)
+      UserDefineLibrary.insertWord(x, "userDefine", 100)
     })
   }
 
@@ -38,10 +34,8 @@ object SentiRelyDic {
     val sentenceCut = ToAnalysis.parse(sentence)
     // 过滤词性标注
     val words = for(i <- Range(0,sentenceCut.size())) yield sentenceCut.get(i).getName
-    val result = new Array[String](sentenceCut.size())
     // 将 Vector 转换为 Array
-    words.copyToArray(result)
-    result
+    words.toArray
   }
 
   /**
