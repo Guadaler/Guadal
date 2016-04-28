@@ -47,7 +47,7 @@ object RedisUtil {
     * @param result  待存储序列
     * @author  liumiao
     */
-  def writeToRedis(jedis: Jedis, name:String, result:mutable.Map[String, String]): Unit ={
+  def writeToRedis(jedis: Jedis, name:String, result:Map[String, String]): Unit ={
     for(i <- result){
       jedis.hset(name, i._1, i._2)
     }
