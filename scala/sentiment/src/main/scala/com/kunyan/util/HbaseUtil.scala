@@ -12,7 +12,7 @@ import org.apache.hadoop.hbase.protobuf.generated.ClientProtos
 import org.apache.hadoop.hbase.util.{Base64, Bytes}
 import org.apache.hadoop.hbase.{HBaseConfiguration, TableName}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.SparkContext
 
 /**
   * Created by Liu on 2016/4/13.
@@ -30,6 +30,8 @@ object HbaseUtil {
     val hbaseConf = HBaseConfiguration.create()
     hbaseConf.set("hbase.rootdir", sentimentConf.getValue("hbase", "rootDir"))
     hbaseConf.set("hbase.zookeeper.quorum", sentimentConf.getValue("hbase", "ip"))
+//    hbaseConf.set("hbase.rootdir", "hdfs://222.73.57.12:9000/hbase")
+//    hbaseConf.set("hbase.zookeeper.quorum", "222.73.34.95,222.73.34.96,222.73.34.98")
     hbaseConf
   }
 
@@ -49,7 +51,7 @@ object HbaseUtil {
   /**
     * 读取内容信息
     *
-    * @param sc
+    * @param sc SparkContext
     * @param hbaseConf hbase资源
     * @return RDD
     */

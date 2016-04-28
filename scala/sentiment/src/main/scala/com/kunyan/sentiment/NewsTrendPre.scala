@@ -37,16 +37,18 @@ object NewsTrendPre {
   def main(args: Array[String]) {
 
     val conf = new SparkConf()
-      .setAppName("NewsTrendPreTest")
-//      .setMaster("local")
+      .setAppName("NewsTrendPre2321")
+      .setMaster("local")
 //      .set("spark.local.ip", "192.168.2.65")
-//      .set("spark.driver.host", "192.168.2.65")//  ------------------------  打jar包不能指定Maaster  ------------------------------
+      .set("spark.driver.host", "192.168.2.65")//  ------------------------  打jar包不能指定Maaster  ------------------------------
     val sc = new SparkContext(conf)
     LoggerUtil.warn("sc init successfully")
 
     // 获取配置信息
     val configInfo = new SentimentConf()
     configInfo.initConfig(args(0))
+    println(configInfo)
+    println(configInfo.getValue("hbase", "ip"))
 
     // 连接redis
     val redisInput = RedisUtil.getRedis(configInfo)
@@ -83,7 +85,6 @@ object NewsTrendPre {
 
     // 获得hbase中所有的新闻，存储为RDD[String]
     val hbaseAllNews = HbaseUtil.getRDD(sc, hbaseConf).cache()
-    LoggerUtil.warn("get hbase news successfully")
 
     // 计算新闻的倾向比例，写入redis
     val list1 = countPercentsRDD(sc, redisAllNewsMapIndustry, hbaseAllNews, stopWordsBr, modelsBr)
