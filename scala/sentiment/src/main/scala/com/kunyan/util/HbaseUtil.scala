@@ -31,27 +31,14 @@ object HBaseUtil {
     val hbaseConf = HBaseConfiguration.create()
 
     // 测试集群 ---------------------------------------------------------------------------------------
-    hbaseConf.set("hbase.rootdir", "hdfs://222.73.57.12/hbase")
-    hbaseConf.set("hbase.zookeeper.quorum", "222.73.57.12,222.73.57.3,222.73.57.7")
+//    hbaseConf.set("hbase.rootdir", "hdfs://222.73.57.12/hbase")
+//    hbaseConf.set("hbase.zookeeper.quorum", "222.73.57.12,222.73.57.3,222.73.57.7")
 
     // 正式集群 ---------------------------------------------------------------------------------------
-//    hbaseConf.set("hbase.rootdir", "hdfs://222.73.34.99:9000/hbase")
-//    hbaseConf.set("hbase.zookeeper.quorum", "222.73.34.95,222.73.34.96,222.73.34.99")
+    hbaseConf.set("hbase.rootdir", "hdfs://222.73.34.99:9000/hbase")
+    hbaseConf.set("hbase.zookeeper.quorum", "222.73.34.95,222.73.34.96,222.73.34.99")
 
     hbaseConf
-  }
-
-  /**
-    * 识别字符编码
-    *
-    * @param html 地址编码
-    * @return
-    */
-  def judgeChaser(html: Array[Byte]): String = {
-    val icu4j = new CharsetDetector()
-    icu4j.setText(html)
-    val encoding = icu4j.detect()
-    encoding.getName
   }
 
   /**
@@ -84,31 +71,20 @@ object HBaseUtil {
     news
   }
 
+
   /**
-    * 读 hBase 中的表
+    * 识别字符编码
     *
-    * @param hConnection hBase链接
-    * @param tableName 需要读取的表名
-    * @param rowKey 键值
-    * @param family 列簇
-    * @param column 列名
-    * @return value值
-    * @author liumiao
+    * @param html 地址编码
+    * @return
     */
-  def getValue(hConnection:Connection, tableName:String, rowKey:String, family:String, column:String): String = {
-    //tableName：表名
-    val table = hConnection.getTable(TableName.valueOf(tableName))
-    //rowKey：hBase的rowKey
-    val get = new Get(rowKey.getBytes())
-    val result = table.get(get)
-    //family：hBase列族  column：hBase列名
-    val data = result.getValue(family.getBytes, column.getBytes)
-    // 返回读出的值
-    if(data == null)
-      "Null"
-    else
-      new String(data, judgeChaser(data))
+  private def judgeChaser(html: Array[Byte]): String = {
+    val icu4j = new CharsetDetector()
+    icu4j.setText(html)
+    val encoding = icu4j.detect()
+    encoding.getName
   }
+
 
   /**
     * 设置时间范围
@@ -132,4 +108,5 @@ object HBaseUtil {
     val proto: ClientProtos.Scan = ProtobufUtil.toScan(scan)
     Base64.encodeBytes(proto.toByteArray)
   }
+
 }

@@ -6,6 +6,7 @@ import java.util.Date
 import com.kunyan.nlpsuit.sentiment.PredictWithNb
 import com.kunyan.util._
 import com.kunyan.util.LoggerUtil
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 import org.json.JSONObject
@@ -28,10 +29,8 @@ object NewsTrendPre {
     val sc = new SparkContext(conf)
     LoggerUtil.warn("sc init success")
 
-    // 连接redis
+    // 连接 redis 和 Hbase
     val redis = RedisUtil.getRedis
-
-    // 连接Hbase
     val hbaseConf = HBaseUtil.getHbaseConf
 
     // 读取用户自定义词典，添加到分词系统
@@ -74,7 +73,29 @@ object NewsTrendPre {
 
     // 获得hbase中所有的新闻，存储为RDD[String]
     val hbaseAllNews = HBaseUtil.getRDD(sc, hbaseConf).cache()
-    LoggerUtil.warn("get hbase news successfully")
+    LoggerUtil.warn("read hbase news RDD successfully")
+
+//    val modelBr = sc.broadcast(model)
+//    val stopWordsBr = sc.broadcast(dicMap("dicStop"))
+//    val hbaseRedisSentiment = getIntersectResult(hbaseAllNews, redisAllNewsMapIndustry, modelBr.value, stopWordsBr)
+//    LoggerUtil.warn("get intersect news result successfully")
+//
+//    println(hbaseRedisSentiment.count())
+//
+//    //抽取所有交叉的url,返回Array[String]
+//    val intersectUrl = hbaseRedisSentiment.map(_._1).collect()
+//    println(intersectUrl.length)
+//
+//    // 抽取类别和情感倾向分析结果，返回Array[String, String]
+//    val hbaseRedisResult = hbaseRedisSentiment.map(line => {
+//      (line._2, line._3)
+//    }).collect()
+//    println(hbaseRedisResult.length)
+//
+//    val redisNewsMap = sc.parallelize(redisAllNewsMapIndustry.toSeq)
+//    val result = getUnintersectResult(redisNewsMap, hbaseRedisResult, intersectUrl, dicMap)
+//    LoggerUtil.warn("get unintersect news result successfully")
+
 
     // 计算新闻的倾向比例，写入redis
     val list1 = countPercentsRDD(sc, redisAllNewsMapIndustry, hbaseAllNews, dicMap, model)
@@ -91,10 +112,70 @@ object NewsTrendPre {
 
     redis2.close()
     LoggerUtil.warn("close redis connection>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+
     sc.stop()
     LoggerUtil.warn("sc stop>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
   }
+
+  /**
+    *
+    */
+  private def getIntersectResult(hbaseAllNewsRDD:RDD[String], redisAllNewsMap:Map[String, Array[(String, String)]], modelBr:Map[String, Any],
+                                 stopWordsBr:Broadcast[Array[String]]): RDD[(String, String, String)] = {
+
+    // 对于url能够在Hbase中匹配到正文的新闻，利用分类模型预测其正文的情感倾向
+    val hbaseRedisSentiment = hbaseAllNewsRDD.map(everyNews => {
+      if (everyNews.split("\n\t").length == 3){
+        val Array(url, title, content) = everyNews.split("\n\t")
+        val categories = hasUrl(url, redisAllNewsMap)
+        if (categories != "there is no this url") {
+          // 预测正文的情感倾向
+          val result = PredictWithNb.predictWithSigle(content, modelBr, stopWordsBr)    // 之后改成stopWords类型Array[String]  ------------------------------
+          //categories是一个Tuple（），即一条新闻可能属于多个分类
+          (url, categories, result)
+        }
+      }
+    }).filter(_ !=()).map(_.asInstanceOf[(String, String, String)]).cache()
+
+    hbaseRedisSentiment
+  }
+
+
+  /**
+    *
+    */
+  private def getUnintersectResult(redisAllNewsMap:RDD[(String, Array[(String, String)])], hbaseRedisResult:Array[(String,String)],
+                                   intersectUrl:Array[String], dicMap:mutable.Map[String, Array[String]]): Array[(String, Array[String])] ={
+    // 对于redis中与hbase不交叉的新闻，利用标题计算其情感倾向
+    val result = redisAllNewsMap.map(redisNew => {
+      // redisNew (类别, Array[(url, title),(url, title),……])
+      val resultCate = redisNew._2.map(tuple => {
+        // tuple  (url, title)
+        if (!intersectUrl.contains(tuple._1)) {
+          // 预测标题的情感倾向
+          val resultTitle = SentiRelyDic.searchSenti(tuple._2, dicMap)
+          // 返回标题的情感倾向分析结果
+          resultTitle
+        }
+      }).filter(_ !=()).map(_.asInstanceOf[String]).toBuffer
+
+      // 将正文预测结果和标题预测结果 根据类别合并
+      hbaseRedisResult.foreach(item => {
+        if (item._1.split(",").contains(redisNew._1)) {
+          resultCate.append(item._2)
+        }
+      })
+
+      (redisNew._1, resultCate.toArray)
+
+    }).collect()
+
+    result
+  }
+
+
+
 
 
   /**
@@ -169,6 +250,7 @@ object NewsTrendPre {
 
     resultMap
   }
+
 
 
   /**

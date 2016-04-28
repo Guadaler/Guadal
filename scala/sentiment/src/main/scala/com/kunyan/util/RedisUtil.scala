@@ -16,7 +16,7 @@ object RedisUtil {
     * @return  返回redis资源
     * @author  liumiao
     */
-  def getRedis : Jedis ={
+  def getRedis: Jedis ={
     // 设置参数
     val config: JedisPoolConfig = new JedisPoolConfig
     config.setMaxWaitMillis(10000)
@@ -61,25 +61,6 @@ object RedisUtil {
     for(i <- result){
       redis.hset(name, i._1, i._2)
     }
-  }
-
-  /**
-    * 将存储信息转换为json字符串
-    *
-    * @param classify  类别信息
-    * @param negative  负向新闻条数
-    * @param positive  正向和中性新闻条数
-    * @param sum  当前类别新闻总条数
-    * @return  json字符串
-    * @author  liumiao
-    */
-  def toJSON(classify:String, negative:Int, positive:Int, sum:Float):String = {
-    var infoMap:Predef.Map[String, Float] = Predef.Map()
-    infoMap += ("negative_percent" -> negative/sum)
-    infoMap += ("positive_percent" -> positive/sum)
-    val jsonInfo = JSONObject(infoMap).toString()
-    println(classify +" " + infoMap("negative_percent") + " " + infoMap("positive_percent"))
-    jsonInfo
   }
 
 }
