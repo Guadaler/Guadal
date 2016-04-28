@@ -82,7 +82,7 @@ object SentiRelyDic {
     * @param dicMap 词典
     * @author liumiao
     */
-  def searchSenti(title:String, dicMap:mutable.Map[String, Array[String]]): String={
+  def searchSenti(title:String, dicMap:Map[String, Array[String]]): String={
     // 记录正面负面倾向的次数
     var positive = 0
     var negative = 0

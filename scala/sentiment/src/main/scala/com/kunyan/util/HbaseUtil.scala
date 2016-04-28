@@ -27,7 +27,7 @@ object HBaseUtil {
     * @return 返回hBaseConf资源
     * @author liumaio
     */
-  def getHbaseConf: Configuration = {
+  def getHbaseConf(sentimentConf: SentimentConf): Configuration = {
     val hbaseConf = HBaseConfiguration.create()
 
     // 测试集群 ---------------------------------------------------------------------------------------
@@ -38,39 +38,10 @@ object HBaseUtil {
     hbaseConf.set("hbase.rootdir", "hdfs://222.73.34.99:9000/hbase")
     hbaseConf.set("hbase.zookeeper.quorum", "222.73.34.95,222.73.34.96,222.73.34.99")
 
+    hbaseConf.set("hbase.rootdir", sentimentConf.getValue("hbase", "rootDir"))
+    hbaseConf.set("hbase.zookeeper.quorum", sentimentConf.getValue("hbase", "ip"))
     hbaseConf
   }
-
-  /**
-    * 读取内容信息
-    *
-    * @param sc SparkContext
-    * @param hBaseConf hBase资源
-    * @return RDD
-    */
-  def getRDD(sc:SparkContext, hBaseConf:Configuration): RDD[String] ={
-    //表名
-    val tableName = "wk_detail"
-    hBaseConf.set(TableInputFormat.INPUT_TABLE, tableName)
-    hBaseConf.set(TableInputFormat.SCAN, setTimeRange())
-    //获得RDD
-    val hBaseRdd = sc.newAPIHadoopRDD(hBaseConf, classOf[TableInputFormat]
-      , classOf[ImmutableBytesWritable], classOf[Result])
-    //获得url、title、content列
-    val news = hBaseRdd.map( x => {
-      val a = x._2.getValue(Bytes.toBytes("basic"), Bytes.toBytes("url"))
-      val b = x._2.getValue(Bytes.toBytes("basic"), Bytes.toBytes("title"))
-      val c = x._2.getValue(Bytes.toBytes("basic"), Bytes.toBytes("content"))
-      //编码转换
-      val formatA = judgeChaser(a)
-      val formatB = judgeChaser(b)
-      val formatC = judgeChaser(c)
-      new String(a, formatA) + "\n\t" + new String(b, formatB) + "\n\t" + new String(c, formatC)
-    })
-    //返回RDD
-    news
-  }
-
 
   /**
     * 识别字符编码
@@ -78,11 +49,67 @@ object HBaseUtil {
     * @param html 地址编码
     * @return
     */
-  private def judgeChaser(html: Array[Byte]): String = {
+  def judgeCharser(html: Array[Byte]): String = {
     val icu4j = new CharsetDetector()
     icu4j.setText(html)
     val encoding = icu4j.detect()
     encoding.getName
+  }
+
+  /**
+    * 读取内容信息
+    *
+    * @param sc SparkContext
+    * @param hbaseConf hBase资源
+    * @return RDD
+    */
+  def getRDD(sc:SparkContext, hbaseConf:Configuration): RDD[String] ={
+    //表名
+    val tableName = "wk_detail"
+    hbaseConf.set(TableInputFormat.INPUT_TABLE, tableName)
+    hbaseConf.set(TableInputFormat.SCAN, setTimeRange())
+    //获得RDD
+    val hbaseRdd = sc.newAPIHadoopRDD(hbaseConf, classOf[TableInputFormat]
+      , classOf[ImmutableBytesWritable], classOf[Result])
+    //获得url、title、content列
+    val news = hbaseRdd.map( x => {
+      val a = x._2.getValue(Bytes.toBytes("basic"), Bytes.toBytes("url"))
+      val b = x._2.getValue(Bytes.toBytes("basic"), Bytes.toBytes("title"))
+      val c = x._2.getValue(Bytes.toBytes("basic"), Bytes.toBytes("content"))
+      //编码转换
+      val formata = judgeCharser(a)
+      val formatb = judgeCharser(b)
+      val formatc = judgeCharser(c)
+      new String(a, formata) + "\n\t" + new String(b, formatb) + "\n\t" + new String(c, formatc)
+    }).cache()
+    //返回RDD
+    news
+  }
+
+  /**
+    * 读 hbase 中的表
+    *
+    * @param hConnection hbase链接
+    * @param tablename 需要读取的表名
+    * @param rowkey 键值
+    * @param family 列簇
+    * @param colume 列名
+    * @return value值
+    * @author liumiao
+    */
+  def getValue(hConnection:Connection, tablename:String, rowkey:String, family:String, colume:String): String = {
+    //tablename：表名
+    val table = hConnection.getTable(TableName.valueOf(tablename))
+    //rowkey：hbase的rowkey
+    val get = new Get(rowkey.getBytes())
+    val result = table.get(get)
+    //family：hbase列族  column：hbase列名
+    val data = result.getValue(family.getBytes, colume.getBytes)
+    // 返回读出的值
+    if(data == null)
+      "Null"
+    else
+      new String(data, judgeCharser(data))
   }
 
 
@@ -108,5 +135,4 @@ object HBaseUtil {
     val proto: ClientProtos.Scan = ProtobufUtil.toScan(scan)
     Base64.encodeBytes(proto.toByteArray)
   }
-
 }
