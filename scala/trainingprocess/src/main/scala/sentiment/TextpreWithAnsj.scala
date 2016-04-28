@@ -4,7 +4,7 @@ import java.io.{File, PrintWriter}
 import java.util
 
 import org.apache.spark.SparkContext
-import com.kunyan.nlpsuit.util.{TextPreprocessing, AnsjAnalyzer}
+import com.kunyandata.nlpsuit.util.{TextPreprocessing, AnsjAnalyzer}
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 

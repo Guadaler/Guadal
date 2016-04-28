@@ -2,7 +2,6 @@ package com.kunyan.util
 
 import java.text.SimpleDateFormat
 import java.util.Date
-
 import com.ibm.icu.text.CharsetDetector
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hbase.client._
@@ -27,15 +26,10 @@ object HbaseUtil {
     * @return 返回hbaseConf资源
     * @author liumaio
     */
-  def getHbaseConf: Configuration = {
+  def getHbaseConf(sentimentConf: SentimentConf): Configuration = {
     val hbaseConf = HBaseConfiguration.create()
-
-    hbaseConf.set("hbase.rootdir", "hdfs://222.73.57.12/hbase")
-    hbaseConf.set("hbase.zookeeper.quorum", "222.73.57.12,222.73.57.3,222.73.57.7")
-
-//    hbaseConf.set("hbase.rootdir", "hdfs://222.73.34.99:9000/hbase")
-//    hbaseConf.set("hbase.zookeeper.quorum", "222.73.34.95,222.73.34.96,222.73.34.99")
-
+    hbaseConf.set("hbase.rootdir", sentimentConf.getValue("hbase", "rootDir"))
+    hbaseConf.set("hbase.zookeeper.quorum", sentimentConf.getValue("hbase", "ip"))
     hbaseConf
   }
 
@@ -63,7 +57,7 @@ object HbaseUtil {
     //表名
     val tableName = "wk_detail"
     hbaseConf.set(TableInputFormat.INPUT_TABLE, tableName)
-    hbaseConf.set(TableInputFormat.SCAN, setTimeRange)
+    hbaseConf.set(TableInputFormat.SCAN, setTimeRange())
     //获得RDD
     val hbaseRdd = sc.newAPIHadoopRDD(hbaseConf, classOf[TableInputFormat]
       , classOf[ImmutableBytesWritable], classOf[Result])
@@ -77,7 +71,7 @@ object HbaseUtil {
       val formatb = judgeCharser(b)
       val formatc = judgeCharser(c)
       new String(a, formata) + "\n\t" + new String(b, formatb) + "\n\t" + new String(c, formatc)
-    })
+    }).cache()
     //返回RDD
     news
   }

@@ -1,10 +1,8 @@
 package com.kunyan.util
 
-import org.apache.spark.SparkContext
 import redis.clients.jedis.{Jedis, JedisPool, JedisPoolConfig}
 
 import scala.collection.mutable
-import scala.collection.mutable.Map
 import scala.util.parsing.json.JSONObject
 
 /**
@@ -19,7 +17,7 @@ object RedisUtil {
     * @return  返回jedis资源
     * @author  liumiao
     */
-  def getRedis : Jedis ={
+  def getRedis(sentimentConf :SentimentConf) : Jedis ={
     // 设置参数
     val config: JedisPoolConfig = new JedisPoolConfig
     config.setMaxWaitMillis(10000)
@@ -27,13 +25,13 @@ object RedisUtil {
     config.setMaxTotal(1024)
     config.setTestOnBorrow(true)
     // 设置 redis 的 Host、port、password 和 database 等参数
-    val redisHost = "222.73.57.12"
-    val redisPort = 6379
+    val redisHost = sentimentConf.getValue("redis", "ip")
+    val redisPort = sentimentConf.getValue("redis", "port").toInt
     val redisTimeout = 30000
-    val redisPassword = "kunyan"
-    val redisDatabase = 0
+    val redisAuth = sentimentConf.getValue("redis", "auth")
+    val redisDatabase = sentimentConf.getValue("redis", "db").toInt
     // 链接数据库
-    val pool = new JedisPool(config, redisHost, redisPort, redisTimeout, redisPassword, redisDatabase)
+    val pool = new JedisPool(config, redisHost, redisPort, redisTimeout, redisAuth, redisDatabase)
     val jedis = pool.getResource
     //  关闭 JedisPool
     pool.close()
@@ -49,7 +47,7 @@ object RedisUtil {
     * @param result  待存储序列
     * @author  liumiao
     */
-  def writeToRedis(jedis: Jedis, name:String, result:mutable.Map[String, String]): Unit ={
+  def writeToRedis(jedis: Jedis, name:String, result:Map[String, String]): Unit ={
     for(i <- result){
       jedis.hset(name, i._1, i._2)
     }

@@ -1,12 +1,7 @@
-package com.kunyan.sentiment
+package com.kunyandata.nlpsuit.sentiment
 
-import com.kunyan.util.LoggerUtil
 import org.ansj.library.UserDefineLibrary
 import org.ansj.splitWord.analysis.ToAnalysis
-import org.apache.spark.SparkContext
-
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 
 /**
   * Created by Administrator on 2016/4/21.
@@ -38,10 +33,8 @@ object SentiRelyDic {
     val sentenceCut = ToAnalysis.parse(sentence)
     // 过滤词性标注
     val words = for(i <- Range(0,sentenceCut.size())) yield sentenceCut.get(i).getName
-    val result = new Array[String](sentenceCut.size())
     // 将 Vector 转换为 Array
-    words.copyToArray(result)
-    result
+    words.toArray
   }
 
   /**
@@ -88,7 +81,7 @@ object SentiRelyDic {
     * @param dicMap 词典
     * @author liumiao
     */
-  def searchSenti(title:String, dicMap:mutable.Map[String, Array[String]]): String={
+  def searchSenti(title:String, dicMap:Map[String, Array[String]]): String={
     // 记录正面负面倾向的次数
     var positive = 0
     var negative = 0
@@ -98,8 +91,8 @@ object SentiRelyDic {
     for (i <- titleCut.indices) {
       val tc = titleCut(i)
       // 匹配正向情感词词典
-      if(dicMap("dicPosi").contains(tc)){
-        if(countSenti(i, titleCut, dicMap("dicF"))>0){
+      if(dicMap("dictP").contains(tc)){
+        if(countSenti(i, titleCut, dicMap("dictF"))>0){
           positive += 1
         }
         else{
@@ -107,8 +100,8 @@ object SentiRelyDic {
         }
       }
       // 匹配负向情感词词典
-      else if (dicMap("dicNega").contains(tc)){
-        if(countSenti(i, titleCut, dicMap("dicF"))>0){
+      else if (dicMap("dictN").contains(tc)){
+        if(countSenti(i, titleCut, dicMap("dictF"))>0){
           negative = negative + 1
         }
         else{

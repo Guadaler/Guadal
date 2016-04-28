@@ -1,4 +1,4 @@
-package com.kunyan.nlpsuit.util
+package com.kunyandata.nlpsuit.util
 
 /**
   * Created by QQ on 2016/2/18.
@@ -15,20 +15,24 @@ import org.apache.http.message.BasicNameValuePair
 import scala.util.parsing.json.JSON
 
 class WordSeg {
-  @native def splitsentence(sentence: String): String
+  @native def splitsentence(sentence: String): String // 这个函数的大小写切忌不用变动，.so中就是这样写的
   @native def start(segAppPath: String): Int
   @native def stop(): Unit
 }
 
 object WordSeg {
 
+  val LOCAL = 0
+  val REMOTE = 1
+
   /**
     *
     * @param content 需要分词的字符串
+    * @param path 分词程序的启动路径
     * @param source 0:使用本地的so文件, 1:通过http调用分词API
     * @return
     */
-  def splitWord(content: String, source: Int): String = {
+  def splitWord(content: String, path: String, source: Int): String = {
 
     source match {
       case 0 =>
@@ -48,7 +52,6 @@ object WordSeg {
       case 1 =>
         sendPost(content)
     }
-
   }
 
   /**
@@ -117,6 +120,11 @@ object WordSeg {
     }
   }
 
+  /**
+    *
+    * @param json 坤雁分词的结果
+    * @return 返回一个由词组成的数组
+    */
   def getWords(json: String): Array[String] = {
 
     try{

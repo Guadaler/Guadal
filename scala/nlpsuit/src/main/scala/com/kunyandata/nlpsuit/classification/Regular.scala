@@ -1,6 +1,6 @@
-package com.kunyan.nlpsuit.classification
+package com.kunyandata.nlpsuit.classification
 
-import com.kunyan.nlpsuit.util.TextPreprocessing
+import com.kunyandata.nlpsuit.util.TextPreprocessing
 import org.apache.spark.broadcast.Broadcast
 
 import scala.collection.mutable.ArrayBuffer
@@ -15,13 +15,12 @@ object Regular {
   /**
     * 股票和概念板块的分类，基于词典。
     *
-    * @param textString 分词后的文本
+    * @param wordSegNoStop 分词后的文本
     * @param categoryKeywords 类别词典，主要是股票和板块词典
     * @return 板块或者行业名称组成的字符串,逗号分割
     */
-  def grep(textString: String, categoryKeywords: Map[String, Array[String]], stopWords: Array[String]): String = {
+  def grep(wordSegNoStop: Array[String], categoryKeywords: Map[String, Array[String]]): String = {
 
-    val wordSegNoStop = TextPreprocessing.process(textString, stopWords, 0)
     val categoryList = ArrayBuffer[String]()
     for (cate: String <- categoryKeywords.keys) {
       var i_control = true

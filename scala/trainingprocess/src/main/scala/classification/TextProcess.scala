@@ -1,7 +1,7 @@
 package classification
 
 import org.apache.spark.{SparkConf, SparkContext}
-import com.kunyan.nlpsuit.util.TextPreprocessing
+import com.kunyandata.nlpsuit.util.TextPreprocessing
 
 /**
   * Created by root on 4/19/16.
@@ -57,7 +57,7 @@ object TextProcess {
       //      println("current 2: ===============" + System.getProperty("user.dir"))
       if (temp.length == 2){
         //        val segJson = WordSeg.splitWord(temp(1), segAppPath, 0)
-        val segResult = TextPreprocessing.process(temp(1), stopWordsBr)
+        val segResult = TextPreprocessing.process(temp(1), stopWordsBr.value)
         if (segResult != null) temp(0) + "\t" + segResult.mkString(",")
       }
     }).saveAsTextFile("hdfs://222.73.34.92:9000/mlearning/segResult")
