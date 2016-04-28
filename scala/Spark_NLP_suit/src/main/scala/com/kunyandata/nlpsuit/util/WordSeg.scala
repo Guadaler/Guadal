@@ -15,7 +15,7 @@ import org.apache.http.message.BasicNameValuePair
 import scala.util.parsing.json.JSON
 
 class WordSeg {
-  @native def splitSentence(sentence: String): String
+  @native def splitsentence(sentence: String): String // 这个函数的大小写切忌不用变动，.so中就是这样写的
   @native def start(segAppPath: String): Int
   @native def stop(): Unit
 }
@@ -28,10 +28,11 @@ object WordSeg {
   /**
     *
     * @param content 需要分词的字符串
+    * @param path 分词程序的启动路径
     * @param source 0:使用本地的so文件, 1:通过http调用分词API
     * @return
     */
-  def splitWord(content: String, source: Int): String = {
+  def splitWord(content: String, path: String, source: Int): String = {
 
     source match {
       case 0 =>
@@ -40,7 +41,7 @@ object WordSeg {
         try {
           System.loadLibrary("WordSeg")
           wordSeg.start("/home/mlearning/bin/")
-          val result = toJson(wordSeg.splitSentence(content + "\n"))
+          val result = toJson(wordSeg.splitsentence(content + "\n"))
           wordSeg.stop()
           result
         } catch {
