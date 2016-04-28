@@ -96,7 +96,7 @@ object NewsTrendPre {
     RedisUtil.writeToRedis(redisOutput, "industry_sentiment", list1)
     RedisUtil.writeToRedis(redisOutput, "stock_sentiment", list2)
     RedisUtil.writeToRedis(redisOutput, "section_sentiment", list3)
-    redisInput.close()
+    redisOutput.close()
     LoggerUtil.warn("close redis connection>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
     sc.stop()
