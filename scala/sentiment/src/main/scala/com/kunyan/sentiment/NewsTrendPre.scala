@@ -37,18 +37,16 @@ object NewsTrendPre {
   def main(args: Array[String]) {
 
     val conf = new SparkConf()
-      .setAppName("NewsTrendPre2321")
-      .setMaster("local")
+      .setAppName("NewsTrendPre")
+//      .setMaster("local")
 //      .set("spark.local.ip", "192.168.2.65")
-      .set("spark.driver.host", "192.168.2.65")//  ------------------------  打jar包不能指定Maaster  ------------------------------
+//      .set("spark.driver.host", "192.168.2.90")//  ------------------------  打jar包不能指定Maaster  ------------------------------
     val sc = new SparkContext(conf)
     LoggerUtil.warn("sc init successfully")
 
     // 获取配置信息
     val configInfo = new SentimentConf()
     configInfo.initConfig(args(0))
-    println(configInfo)
-    println(configInfo.getValue("hbase", "ip"))
 
     // 连接redis
     val redisInput = RedisUtil.getRedis(configInfo)
@@ -132,7 +130,7 @@ object NewsTrendPre {
     LoggerUtil.warn("hbaseRedisSentiment process success")
 
 
-    // 抽取类别和情感倾向分析结果，返回Array[String, String]
+    // 抽取类别和情感倾向分析结果，返回Array[(String, String)]
     val hbaseRedisResult = hbaseRedisSentiment.map(line => {
       (line._2, line._3)
     }).collect()
