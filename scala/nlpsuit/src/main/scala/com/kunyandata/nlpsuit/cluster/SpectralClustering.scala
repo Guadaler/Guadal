@@ -90,14 +90,11 @@ object SpectralClustering {
 //    L = D - A
     val degreeMatrix = diag(sum(corrMatrixBr.value(*, ::)))
     val laplacianMatrix = degreeMatrix :- corrMatrixBr.value
-    val Eig(a, _, c) = eig(laplacianMatrix)
-    println(a.activeIterator.toArray.toSeq)
+    val Eig(eigenValue, _, eigenVector) = eig(laplacianMatrix)
+    println(eigenValue.activeIterator.toArray.sortBy(_._2))
+    println(eigenValue.activeIterator.toArray.toSeq)
+    println(eigenVector.activeIterator.toArray.toSeq)
 
-    println(c.activeIterator.toArray.toSeq)
-
-
-//    Statistics.
-//    println(docTermMatrix(1, 2715))
 
 
   }
