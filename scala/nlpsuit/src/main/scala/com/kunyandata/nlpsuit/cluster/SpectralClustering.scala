@@ -91,7 +91,7 @@ object SpectralClustering {
     val degreeMatrix = diag(sum(corrMatrixBr.value(*, ::)))
     val laplacianMatrix = degreeMatrix :- corrMatrixBr.value
     val Eig(eigenValue, _, eigenVector) = eig(laplacianMatrix)
-    println(eigenValue.activeIterator.toArray.sortBy(_._2))
+    println(eigenValue.activeIterator.toArray.sortBy(_._2).toSeq)
     println(eigenValue.activeIterator.toArray.toSeq)
     println(eigenVector.activeIterator.toArray.toSeq)
 
