@@ -11,13 +11,12 @@ object SentimentRelyDic {
 
   /**
     * 添加用户词典
- *
+    *
     * @param userDic 用户自定义分词词典
     * @author liumiao
     */
   def addUserDic(userDic: Array[String]): Unit = {
 
-    // RDD形式添加用户词典
     userDic.foreach( x => {
       UserDefineLibrary.insertWord(x, "userDefine", 100)
     })
@@ -26,7 +25,7 @@ object SentimentRelyDic {
 
   /**
     * 分词
- *
+    *
     * @param sentence 输入的待分词的句子
     * @return 分词结果，存储在字符串数组中
     * @author liumiao
@@ -45,7 +44,7 @@ object SentimentRelyDic {
 
   /**
     * 否定词对情感值的翻转
- *
+    *
     * @param i 当前情感词在句子中的位置
     * @param sentence 当前待分析的句子
     * @param dictionary 否定词词典
@@ -57,18 +56,10 @@ object SentimentRelyDic {
     // 寻找情感词前面的否定词，若有则返回-1
     if (i-1 > 0){
 
-      if (dictionary.contains(sentence(i-1))){
-
-        return -1
-
-      }
+      if (dictionary.contains(sentence(i-1)))  return -1
       else if (i-2 > 0){
 
-        if (dictionary.contains(sentence(i-2))){
-
-          return  -1
-
-        }
+        if (dictionary.contains(sentence(i-2))) return  -1
 
       }
 
@@ -77,7 +68,7 @@ object SentimentRelyDic {
     // 寻找情感词后面的否定词，若有则返回-1
     if (i+1 < sentence.length){
 
-      if(dictionary.contains(sentence(i+1))){
+      if(dictionary.contains(sentence(i + 1))) {
 
         return -1
 
@@ -101,7 +92,7 @@ object SentimentRelyDic {
 
   /**
     * 情感分析
- *
+    *
     * @param title 当前句子的分词结果
     * @param dicMap 词典
     * @return 句子的情感倾向，+1表示正向，-1表示负向，0表示中性

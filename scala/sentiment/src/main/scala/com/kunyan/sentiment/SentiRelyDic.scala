@@ -17,8 +17,7 @@ object SentiRelyDic {
    */
   def addUserDic(userDic: Array[String]): Unit = {
 
-    // RDD形式添加用户词典
-    userDic.foreach( x => {
+    userDic.foreach(x => {
       UserDefineLibrary.insertWord(x, "userDefine", 100)
     })
 
@@ -35,7 +34,7 @@ object SentiRelyDic {
     // 分词
     val sentenceCut = ToAnalysis.parse(sentence)
     // 过滤词性标注
-    val words = for(i <- Range(0,sentenceCut.size())) yield sentenceCut.get(i).getName
+    val words = for (i <- Range(0,sentenceCut.size())) yield sentenceCut.get(i).getName
 
     // 将 Vector 转换为 Array
     words.toArray
@@ -53,40 +52,28 @@ object SentiRelyDic {
   private def countSenti(i: Int, sentence: Array[String], dictionary: Array[String]): Int = {
 
     // 寻找情感词前面的否定词，若有则返回-1
-    if (i-1 > 0){
+    if (i-1 > 0) {
 
-      if (dictionary.contains(sentence(i-1))){
-
+      if (dictionary.contains(sentence(i-1))) {
         return -1
+      } else if (i-2 > 0) {
 
-      }
-      else if (i-2 > 0){
-
-        if (dictionary.contains(sentence(i-2))){
-
-          return  -1
-
-        }
+        if (dictionary.contains(sentence(i-2)))
+          return -1
 
       }
 
     }
 
     // 寻找情感词后面的否定词，若有则返回-1
-    if (i+1 < sentence.length){
+    if (i+1 < sentence.length) {
 
-      if(dictionary.contains(sentence(i+1))){
-
+      if (dictionary.contains(sentence(i+1))) {
         return -1
+      } else if (i+2 < sentence.length) {
 
-      }
-      else if(i+2 < sentence.length){
-
-        if (dictionary.contains(sentence(i+2))){
-
+        if (dictionary.contains(sentence(i+2)))
           return -1
-
-        }
 
       }
 
@@ -118,24 +105,20 @@ object SentiRelyDic {
 
       val tc = titleCut(i)
 
-      // 匹配正向情感词词典
-      if(dicMap("dictP").contains(tc)){
+      // 匹配正向情感词词典，若匹配不到，则匹配负向情感词词典
+      if (dicMap("dictP").contains(tc)) {
 
-        if(countSenti(i, titleCut, dicMap("dictF"))>0){
+        if (countSenti(i, titleCut, dicMap("dictF"))>0) {
           positive += 1
-        }
-        else{
+        } else {
           negative += 1
         }
 
-      }
-      // 匹配负向情感词词典
-      else if (dicMap("dictN").contains(tc)){
+      } else if (dicMap("dictN").contains(tc)) {
 
-        if(countSenti(i, titleCut, dicMap("dictF"))>0){
-          negative = negative + 1
-        }
-        else{
+        if (countSenti(i, titleCut, dicMap("dictF"))>0) {
+          negative += 1
+        } else {
           positive += 1
         }
 
@@ -143,17 +126,11 @@ object SentiRelyDic {
 
     }
 
-    // 倾向为负面返回"neg"
-    if ( positive < negative){
-
+    // 倾向为负面返回"neg"，否则返回"pos"
+    if ( positive < negative) {
       "neg"
-
-    }
-    // 倾向为非负面返回"pos"
-    else{
-
+    } else {
       "pos"
-
     }
 
   }

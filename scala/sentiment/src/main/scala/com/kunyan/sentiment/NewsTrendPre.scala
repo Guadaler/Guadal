@@ -121,21 +121,16 @@ object NewsTrendPre {
     // 对于Hbase中的新闻，利用分类模型预测其正文的情感倾向
     val hbaseNewsSentiment = hbaseAllNews.map(everyNews => {
 
-      if (everyNews.split("\n\t").length == 3){
+      if (everyNews.split("\n\t").length == 3) {
 
         val Array(url, title, content) = everyNews.split("\n\t")
         // 预测正文的情感倾向
         val resultContent = PredictWithNb.predictWithSigle(content, modelsbr.value, dicMapBr.value("stopWordsCN"))
 
-        if(resultContent == "neg"){
-
+        if (resultContent == "neg") {
           (url, "0")
-
-        }
-        else{
-
+        } else{
           (url, "1")
-
         }
 
       }
@@ -150,30 +145,22 @@ object NewsTrendPre {
         // 预测标题的情感倾向
         val resultTitle = SentiRelyDic.searchSenti(news._2, dicMapBr.value)
 
-        if(resultTitle == "neg"){
-
+        if (resultTitle == "neg") {
           (news._1, "0")
-
-        }
-        else{
-
+        } else {
           (news._1, "1")
-
         }
 
       }
 
     }).filter(_ !=()).map(_.asInstanceOf[(String, String)]).collect()
-
     LoggerUtil.warn( "un intersect news = " + redisNewsSentiment.length.toString)
 
     // 合并hbase和redis的新闻
     val everyNewsSentiment = hbaseNewsSentiment.toBuffer
-
-    redisNewsSentiment.foreach( result =>{
+    redisNewsSentiment.foreach( result => {
       everyNewsSentiment.append(result)
     })
-
     LoggerUtil.warn("All news = " + everyNewsSentiment.length.toString)
 
     everyNewsSentiment.toMap
@@ -192,7 +179,6 @@ object NewsTrendPre {
                         everyNewsSentiment: Map[String, String]): Map[String, String] = {
 
     val urls = everyNewsSentiment.keys.toSeq
-
     // 对于redis中与hbase不交叉的新闻，利用标题计算其情感倾向
     val result = sc.parallelize(allCateNews.toSeq).map(oneCateNews => {
 
@@ -200,17 +186,13 @@ object NewsTrendPre {
       val resultCate = oneCateNews._2.map(tuple => {
 
         // tuple (url, title)，everyNewsSentiment Map[url, sentiment]
-        if( urls.contains(tuple._1)){
-
+        if (urls.contains(tuple._1))
           everyNewsSentiment(tuple._1)
-
-        }
 
       }).filter(_ !=()).map(_.asInstanceOf[String])
 
       // 根据分类计算负面和非负面的新闻的比例
       val pNeg = 1.0 * resultCate.count(_ == "0") / resultCate.length
-
       (oneCateNews._1, Array(pNeg, 1 - pNeg).mkString(","))
 
     }).collect()
@@ -230,7 +212,6 @@ object NewsTrendPre {
 
     // 读取停用词典
     val stopWords = Source.fromFile(sentimentConf.getValue("dicts", "stopWordsPath")).getLines().toArray
-
     // 初始化词典，存入dicBuffer
     val userDict = Source.fromFile(sentimentConf.getValue("dicts", "userDictPath")).getLines().toArray
     val dictP = Source.fromFile(sentimentConf.getValue("dicts", "posDictPath")).getLines().toArray
@@ -257,7 +238,6 @@ object NewsTrendPre {
       val newsJson = new JSONObject(redis.hget(newsTable, id))
       val title = newsJson.getString("title")
       val url = newsJson.getString("url")
-
       (url, title)
 
     })
@@ -283,17 +263,16 @@ object NewsTrendPre {
     val cateMap = categoryKeys.map(key => {
 
       val newsID = redis.hget(categoryTable, key).split(",")
+
       //根据新闻ID，取出每条新闻的“url”和“title”
       val newsInfo = newsID.map(id => {
 
         val newJson = new JSONObject(redis.hget(newsTable, id))
         val title = newJson.getString("title")
         val url = newJson.getString("url")
-
         (url, title)
 
       })
-
       // 返回类别和该类别下的所有新闻的title和url
       (key, newsInfo)
 

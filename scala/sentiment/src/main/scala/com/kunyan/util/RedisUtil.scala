@@ -34,7 +34,6 @@ object RedisUtil {
     val redis = pool.getResource
     pool.close()
 
-    // 返回redis资源
     redis
 
   }
@@ -48,9 +47,8 @@ object RedisUtil {
     */
   def writeToRedis(redis: Jedis, name: String, result: Map[String, String]): Unit = {
 
-    for(i <- result){
+    for (i <- result)
       redis.hset(name, i._1, i._2)
-    }
 
   }
 

@@ -66,8 +66,7 @@ object HBaseUtil {
     val tableName = "wk_detail"
     hbaseConf.set(TableInputFormat.INPUT_TABLE, tableName)
     hbaseConf.set(TableInputFormat.SCAN, setTimeRange())
-
-    //获得RDD
+    //根据信息获得数据表的RDD
     val hbaseRdd = sc.newAPIHadoopRDD(hbaseConf, classOf[TableInputFormat]
       , classOf[ImmutableBytesWritable], classOf[Result])
 
@@ -77,12 +76,11 @@ object HBaseUtil {
       val a = x._2.getValue(Bytes.toBytes("basic"), Bytes.toBytes("url"))
       val b = x._2.getValue(Bytes.toBytes("basic"), Bytes.toBytes("title"))
       val c = x._2.getValue(Bytes.toBytes("basic"), Bytes.toBytes("content"))
-
       //编码转换
       val aFormat = judgeChaser(a)
       val bFormat = judgeChaser(b)
       val cFormat = judgeChaser(c)
-
+      // 返回一条记录
       new String(a, aFormat) + "\n\t" + new String(b, bFormat) + "\n\t" + new String(c, cFormat)
 
     }).cache()

@@ -87,7 +87,7 @@ object MySQLUtil {
 
     // 数据库信息
     val  MySql = sentimentConf.getValue("mysql", "info")
-    // create scheam
+
     val scheam =
       StructType(
         StructField("url", StringType, nullable = false) ::
