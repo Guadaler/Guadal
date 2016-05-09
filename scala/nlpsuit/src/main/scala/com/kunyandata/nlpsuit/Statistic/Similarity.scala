@@ -14,7 +14,6 @@ object Similarity {
 
   /**
     * 设置小数点后几位，规则为四舍五入
-    *
     * @param num 数字
     * @param scale 需要保留的小数点位数
     * @return 数字
@@ -27,7 +26,6 @@ object Similarity {
   /**
     * 余弦距离计算（在breeze.linalg.function.cosineDistance方法中也实现了余弦距离求解，
     * 不过其确切的为角相似度，值为1 - cosineDistance）
-    *
     * @param x 待对比的向量
     * @param y 待对比的向量
     * @return 返回一个相似度的数值
@@ -39,6 +37,7 @@ object Similarity {
     val normProduct = sqrt(sum(x :* x)) * sqrt(sum(y :* y))
 
     dotProduct/normProduct
+
   }
 
 //  /**
