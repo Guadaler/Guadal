@@ -1,5 +1,7 @@
 mainClass in (Compile, packageBin) := Some("com.kunyan.sentiment.NewsTrendPre")
 
+//mainClass in (Compile, packageBin) := Some("com.kunyan.sentiment.Test")
+
 name := "sentiment"
 
 version := "1.0"
@@ -27,6 +29,8 @@ libraryDependencies += "org.apache.spark" % "spark-mllib_2.10" % "1.5.2"
 libraryDependencies += "org.apache.spark" % "spark-core_2.10" % "1.5.2"
 
 libraryDependencies += "org.ansj" % "ansj_seg" % "0.9"
+
+libraryDependencies += "mysql" % "mysql-connector-java" % "5.1.38"
 
 //libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.5.1"
 
