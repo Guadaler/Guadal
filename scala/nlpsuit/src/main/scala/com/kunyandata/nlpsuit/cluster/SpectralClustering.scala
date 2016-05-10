@@ -22,7 +22,8 @@ object SpectralClustering {
     * @return 返回一个矩阵，行为文档向量，列为词向量
     * @author QQ
     */
-  def createDocTermMatrix(dataRDD: RDD[(Int, Array[String])], wordListBr: Broadcast[Array[String]]): DenseMatrix[Double] = {
+  def createDocTermMatrix(dataRDD: RDD[(Int, Array[String])],
+                          wordListBr: Broadcast[Array[String]]): RDD[(Int, DenseVector[Double])] = {
 
     // 创建值为0，行为文本数量，列为词汇表长度的空矩阵
     val rowNum = dataRDD.count().toInt
@@ -43,12 +44,8 @@ object SpectralClustering {
 
       (docID, tempVector)
 
-    }).collect().foreach(line => {
-      val (docID, wordVector) = (line._1, line._2)
-      docTermMatrix(docID, ::) := wordVector.t // 创建的向量为列向量，需要转化为行向量
     })
 
-    docTermMatrix
   }
 
   /**
@@ -71,12 +68,12 @@ object SpectralClustering {
         Similarity.cosineDistance(wordVector, otherWordVector)
       }).toArray
       val consineDistanceVector = DenseVector(consineDistanceArray)
-      (wordIndex, consineDistanceVector) // 这里的向量为列向量，需要转化为行向量
+      (wordIndex, consineDistanceVector)
     }).collect()
     val corrMatrix = DenseMatrix.zeros[Double](N, N)
     corrRDD.foreach(line => {
       val (wordID, corrVector) = (line._1, line._2)
-      corrMatrix(wordID, ::) := corrVector.t
+      corrMatrix(wordID, ::) := corrVector.t  // 这里的向量为列向量，需要转化为行向量
     })
 
     corrMatrix
@@ -147,7 +144,7 @@ object SpectralClustering {
       .setAppName("SClusterTest")
       .setMaster("local")
 //      .set("spark.local.ip", "192.168.2.65")
-//      .set("spark.driver.host", "192.168.2.90")
+      .set("spark.driver.host", "192.168.2.90")
 
     val sc = new SparkContext(conf)
 
@@ -155,8 +152,8 @@ object SpectralClustering {
     //获取数据
     var id = 0
     val data = sc.parallelize(Source
-//      .fromFile("/home/QQ/mlearning/trainingData/trainingWithIndus/仪电仪表")
-      .fromFile("D:/纺织服装")
+      .fromFile("/home/QQ/Documents/trainingWithIndus/仪电仪表")
+//      .fromFile("D:/纺织服装")
       .getLines().toSeq)
       .map(line => {
       val temp = line.split("\t")
@@ -170,20 +167,16 @@ object SpectralClustering {
     val wordList = data.map(line => line._2).flatMap(_.toSeq).distinct().collect().sorted
     val wordListBr = sc.broadcast(wordList)
     val a = createDocTermMatrix(data, wordListBr)
-    println(a)
     val b = createCorrMatrix(sc, a, wordListBr)
     println(b)
     val c = createLaplacianMatrix(b)
     println(c)
     val d = convertMatrixToRDD(sc, c)
-    val kMeansModel = KMeans.train(d.map(_._2), 200, 2000)
+    val kMeansModel = KMeans.train(d.map(_._2), 250, 2000)
     d.map(line => {
       val words = wordListBr.value.apply(line._1)
       (kMeansModel.predict(line._2), words)
     }).groupByKey().sortByKey().foreach(println)
-
-
-
   }
 
 }
