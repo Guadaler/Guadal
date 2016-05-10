@@ -42,7 +42,7 @@ object SpectralClustering {
       })
 
       (docID, tempVector)
-      
+
     }).collect().foreach(line => {
       val (docID, wordVector) = (line._1, line._2)
       docTermMatrix(docID, ::) := wordVector.t // 创建的向量为列向量，需要转化为行向量
@@ -51,6 +51,14 @@ object SpectralClustering {
     docTermMatrix
   }
 
+  /**
+    * 计算相关矩阵
+    * @param sc SparkContext
+    * @param docTermMatrix 文档词条矩阵
+    * @param wordListBr 基于dataRDD的文档词表的广播变量
+    * @return 返回一个矩阵，行和列均为词与词之间的相似性
+    * @author QQ
+    */
   def createCorrMatrix(sc: SparkContext, docTermMatrix: DenseMatrix[Double],
                        wordListBr: Broadcast[Array[String]]): DenseMatrix[Double] = {
 
@@ -75,6 +83,12 @@ object SpectralClustering {
 
   }
 
+  /**
+    * 计算laplace矩阵
+    * @param corrMatrix 相关矩阵
+    * @return laplace矩阵
+    * @author QQ
+    */
   def createLaplacianMatrix(corrMatrix: DenseMatrix[Double]): DenseMatrix[Double] = {
     val degreeMatrix = diag(sum(corrMatrix(*, ::)))
 
@@ -82,6 +96,13 @@ object SpectralClustering {
 
   }
 
+  /**
+    * 矩阵特征分解
+    * @param laplacianMatrix laplace矩阵
+    * @param k 降维数目
+    * @return 特征分解后组成的矩阵，其中行为词向量，corrMatrix的特征向量的子集（从小到大排序，取前k个）
+    * @author QQ
+    */
   def eigenValueDecomposeToMatrix(laplacianMatrix: DenseMatrix[Double], k: Int): DenseMatrix[Double] = {
 
     val eig.Eig(eigenValue, _ , eigenVectors) = eig(laplacianMatrix)
@@ -101,6 +122,13 @@ object SpectralClustering {
 
   }
 
+  /**
+    * 将矩阵转化为RDD
+    * @param sc SparkContext
+    * @param matrix 矩阵
+    * @return RDD，包含id（此处id为wordlist中的索引）和scala.mllib.linalg.Vector
+    * @author QQ
+    */
   def convertMatrixToRDD(sc:SparkContext, matrix: DenseMatrix[Double]): RDD[(Int, MVector)] = {
     val lapacianRDD = sc.parallelize({
       val temp = Range(0, matrix.rows).map(rowID => {
