@@ -22,29 +22,25 @@ object NewsTrendPre {
 
   def main(args: Array[String]) {
 
-    val conf = new SparkConf()
-      .setAppName("NewsTrendPre")
-
+    val conf = new SparkConf().setAppName("NewsTrendPre")
     val sc = new SparkContext(conf)
     LoggerUtil.warn("sc init successfully")
 
-    // 获取配置信息
+    // 获取配置文件信息
     val configInfo = new SentimentConf()
     configInfo.initConfig(args(0))
 
-    // 连接redis
+    // 连接redis、Hbase、MySql
     val redisInput = RedisUtil.getRedis(configInfo)
-    // 连接Hbase
     val hbaseConf = HBaseUtil.getHbaseConf(configInfo)
-    // 连接MySql
     val sqlContent = new SQLContext(sc)
 
     // 获取词典
-    val cosDicts = getDicts(configInfo)
-    val dicWordsBr = sc.broadcast(cosDicts)
+    val cosDict = getDicts(configInfo)
+    val dicWordsBr = sc.broadcast(cosDict)
 
     // 添加自定义词典到ansj分词器中
-    SentiRelyDic.addUserDic(cosDicts("userDict"))
+    SentiRelyDic.addUserDic(cosDict("userDict"))
 
     //初始化分类模型
     val models = PredictWithNb.init(configInfo.getValue("models", "sentModelsPath"))
@@ -54,7 +50,6 @@ object NewsTrendPre {
     val now = new Date()
     val dateFormat = new SimpleDateFormat("yyyyMMdd")
     val time = dateFormat.format(now)
-
     val industryTime = "Industry_" + time                       // ------------------------------- industry -----------------------------
     val stockTime = "Stock_" + time                             // ------------------------------- stock --------------------------------
     val sectionTime = "Section_" + time                         // ------------------------------- section -------------------------------
@@ -75,33 +70,28 @@ object NewsTrendPre {
     val hbaseAllNews = HBaseUtil.getRDD(sc, hbaseConf).cache()
     LoggerUtil.warn("hbaseAllNews = " + hbaseAllNews.count().toString)
 
-    // 计算每篇新闻的情感倾向，写入MySQL
+    // 计算每篇新闻的情感倾向，并写入MySQL
     val everyNewsSentiment = predictNewsTrend(sc, redisAllNews, hbaseAllNews, dicWordsBr, modelsBr)
     val dateNow = TimeUtil.get_date("yyyy-MM-dd HH:mm:ss")
     val data = sc.parallelize(everyNewsSentiment.toSeq).map(x =>  Row(x._1, dateNow, x._2))
-    LoggerUtil.warn("predict news trend successfully")
-
     MySQLUtil.writeToMyaql(configInfo, sqlContent, "every_news_trend", data)
-    LoggerUtil.warn("write to mysql successfully")
+    LoggerUtil.warn("predict news trend and write to mysql successfully >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
-    // 计算新闻的倾向比例，写入redis
+    // 计算新闻的倾向比例，并写入redis
     val list1 = countCatePercents(sc, allIndustryNews, everyNewsSentiment)
     val list2 = countCatePercents(sc, allStockNews, everyNewsSentiment)
     val list3 = countCatePercents(sc, allSectionNews, everyNewsSentiment)
-    LoggerUtil.warn("computer category percent successfully")
 
-    //存储到redis
     val redisOutput = RedisUtil.getRedis(configInfo)
     RedisUtil.writeToRedis(redisOutput, "industry_sentiment", list1)
     RedisUtil.writeToRedis(redisOutput, "stock_sentiment", list2)
     RedisUtil.writeToRedis(redisOutput, "section_sentiment", list3)
-    LoggerUtil.warn("write to redis successfully")
+    LoggerUtil.warn("computer category percent and write to redis successfully >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
     redisOutput.close()
-    LoggerUtil.warn("close redisOutput connection>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-
+    LoggerUtil.warn("close redisOutput connection >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
     sc.stop()
-    LoggerUtil.warn("sc stop>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+    LoggerUtil.warn("sc stop >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
   }
 
