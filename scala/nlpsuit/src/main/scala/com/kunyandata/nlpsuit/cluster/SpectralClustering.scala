@@ -5,7 +5,7 @@ import com.kunyandata.nlpsuit.Statistic.Similarity
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.mllib.linalg.{Vectors => MVectors}
+import org.apache.spark.mllib.linalg.{Vectors => MVectors, Vector => MVector}
 import org.apache.spark.mllib.clustering.KMeans
 import scala.io.Source
 
@@ -16,90 +16,110 @@ import scala.io.Source
 object SpectralClustering {
 
   /**
-    * 根据语料库，创建相关矩阵
- *
-    * @param sc sparkContext
-    * @param dataRDD 带有文章id的RDD，其中文章id必须从0开始，公差为1的等差递增数列
-    * @return 返回一个n*n的相关矩阵，对内存的消耗大概需要 n*(4*n+4),n为词表长度
+    * 创建文档词条矩阵
+    * @param dataRDD 数据RDD，带有新闻id，其中新闻id必须为从0开始，步长为1的等差数列
+    * @param wordListBr 基于dataRDD的文档词表的广播变量
+    * @return 返回一个矩阵，行为文档向量，列为词向量
+    * @author QQ
     */
-  def createLaplacianMatrix(sc: SparkContext, dataRDD: RDD[(Int, Array[String])], wordListBr: Broadcast[Array[String]]): DenseMatrix[Double] = {
+  def createDocTermMatrix(dataRDD: RDD[(Int, Array[String])], wordListBr: Broadcast[Array[String]]): DenseMatrix[Double] = {
 
-    // 将语料库转为文档词条矩阵
+    // 创建值为0，行为文本数量，列为词汇表长度的空矩阵
     val rowNum = dataRDD.count().toInt
     val colNum = wordListBr.value.length
-    val docTermMatrixBr = sc.broadcast(DenseMatrix.zeros[Double](rowNum, colNum))
-    dataRDD.foreach(line => {
+    val docTermMatrix = DenseMatrix.zeros[Double](rowNum, colNum)
+
+    // 将语料库转为文档词条矩阵
+    dataRDD.map(line => {
+      val (docID, content) = (line._1, line._2)
+      val tempVector = DenseVector.zeros[Double](colNum)
       wordListBr.value.foreach(word => {
 
-        if (line._2.contains(word)) {
-          docTermMatrixBr.value(line._1, wordListBr.value.indexOf(word)) = line._2.count(_ == word)
+        if (content.contains(word)) {
+          tempVector(wordListBr.value.indexOf(word)) = content.count(_ == word)
         }
 
       })
+
+      (docID, tempVector)
+      
+    }).collect().foreach(line => {
+      val (docID, wordVector) = (line._1, line._2)
+      docTermMatrix(docID, ::) := wordVector.t // 创建的向量为列向量，需要转化为行向量
     })
 
-    // 将文档词条矩阵转化为相关矩阵
-    val corrMatrixBr = sc.broadcast(DenseMatrix.zeros[Double](colNum, colNum)) // 相关矩阵的大小为n*n，n为特征长度
-    sc.parallelize(wordListBr.value.indices).foreach(index => {
-      val wordVector = docTermMatrixBr.value(::, index)
-      val cosineDistanceArray = wordListBr.value.indices.map(tempIndex => {
-        val tempWordVector = docTermMatrixBr.value(::, tempIndex)
-        Similarity.cosineDistance(wordVector, tempWordVector)
+    docTermMatrix
+  }
+
+  def createCorrMatrix(sc: SparkContext, docTermMatrix: DenseMatrix[Double],
+                       wordListBr: Broadcast[Array[String]]): DenseMatrix[Double] = {
+
+    val docTermMatrixBr = sc.broadcast(docTermMatrix)
+    val N = wordListBr.value.length
+    val corrRDD = sc.parallelize(wordListBr.value.indices).map(wordIndex => {
+      val wordVector = docTermMatrixBr.value(::, wordIndex)
+      val consineDistanceArray = wordListBr.value.indices.map(otherWordIndex => {
+        val otherWordVector = docTermMatrixBr.value(::, otherWordIndex)
+        Similarity.cosineDistance(wordVector, otherWordVector)
       }).toArray
-      val cosineDistanceVector = DenseVector(cosineDistanceArray)
-      corrMatrixBr.value(index, ::) := cosineDistanceVector.t
+      val consineDistanceVector = DenseVector(consineDistanceArray)
+      (wordIndex, consineDistanceVector) // 这里的向量为列向量，需要转化为行向量
+    }).collect()
+    val corrMatrix = DenseMatrix.zeros[Double](N, N)
+    corrRDD.foreach(line => {
+      val (wordID, corrVector) = (line._1, line._2)
+      corrMatrix(wordID, ::) := corrVector.t
     })
 
-    // 计算degree matrix & laplacian matrix （L = D - A）
-    val degreeMatrix = diag(sum(corrMatrixBr.value(*, ::)))
-
-    degreeMatrix :- corrMatrixBr.value
+    corrMatrix
 
   }
 
-  def train(sc:SparkContext, laplacianMatrix: DenseMatrix[Double], numClusters: Int, numIterations: Int) = {
+  def createLaplacianMatrix(corrMatrix: DenseMatrix[Double]): DenseMatrix[Double] = {
+    val degreeMatrix = diag(sum(corrMatrix(*, ::)))
 
-    // 特征分解
-    val eig.Eig(eigenValue, _, eigenVector) = eig(laplacianMatrix)
+    degreeMatrix :- corrMatrix
 
-    // 从小到大排序，获取前k个特征值对应的特征向量
-    val sortedIndex = eigenValue.activeIterator.toArray.sortBy(_._2).slice(0, numClusters).map(_._1)
+  }
+
+  def eigenValueDecomposeToMatrix(laplacianMatrix: DenseMatrix[Double], k: Int): DenseMatrix[Double] = {
+
+    val eig.Eig(eigenValue, _ , eigenVectors) = eig(laplacianMatrix)
+    val sortedIndex = eigenValue.activeIterator.toArray.sortBy(_._2).slice(0, k).map(_._1)
     var result: DenseMatrix[Double] = null
     sortedIndex.foreach(index => {
 
       if (result == null) {
-        result = eigenVector(::, index).toDenseMatrix.t
+        result = eigenVectors(::, index).toDenseMatrix.t
       } else {
-        result = DenseMatrix.horzcat(result, eigenVector(::, index).toDenseMatrix.t)
+        result = DenseMatrix.horzcat(result, eigenVectors(::, index).toDenseMatrix.t)
       }
 
     })
 
-    // 建立RDD数据集，并哟个kmeans训练
-    val laplacianRDD = sc.parallelize({
-      val tempResult = Range(0, laplacianMatrix.rows).map(index => {
-        (index, MVectors.dense(result(index, ::).t.toArray))
-      })
-      tempResult
-    }).cache()
-
-    val clusters = KMeans.train(laplacianRDD.map(_._2), numClusters, numIterations)
-    laplacianRDD.map(x => {
-      val topic = clusters.predict(x._2)
-      (topic, wordsListBr.value.apply(x._1))
-    }).groupByKey().foreach(println)
-
+    result
 
   }
 
+  def convertMatrixToRDD(sc:SparkContext, matrix: DenseMatrix[Double]): RDD[(Int, MVector)] = {
+    val lapacianRDD = sc.parallelize({
+      val temp = Range(0, matrix.rows).map(rowID => {
+        (rowID, MVectors.dense(matrix(rowID, ::).t.toArray))
+      })
+      temp
+    }).cache()
+
+    lapacianRDD
+
+  }
 
   def main(args: Array[String]) {
 
     val conf = new SparkConf()
       .setAppName("SClusterTest")
       .setMaster("local")
-      .set("spark.local.ip", "192.168.2.65")
-      .set("spark.driver.host", "192.168.2.90")
+//      .set("spark.local.ip", "192.168.2.65")
+//      .set("spark.driver.host", "192.168.2.90")
 
     val sc = new SparkContext(conf)
 
@@ -108,7 +128,7 @@ object SpectralClustering {
     var id = 0
     val data = sc.parallelize(Source
 //      .fromFile("/home/QQ/mlearning/trainingData/trainingWithIndus/仪电仪表")
-      .fromFile("/home/QQ/Documents/trainingWithIndus/仪电仪表")
+      .fromFile("D:/纺织服装")
       .getLines().toSeq)
       .map(line => {
       val temp = line.split("\t")
@@ -119,19 +139,22 @@ object SpectralClustering {
 
 //    val data = sc.parallelize(Seq((0, Array("a", "b", "c", "d")), (1, Array("a", "c", "d", "e")), (2, Array("b", "d", "f", "g", "k")))).cache()
 
-//    +++++++++++++++++++++++++++++++++++++++++++++ 谱聚类过程 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    val wordList = data.map(line => line._2).flatMap(_.toSeq).distinct().collect().sorted
+    val wordListBr = sc.broadcast(wordList)
+    val a = createDocTermMatrix(data, wordListBr)
+    println(a)
+    val b = createCorrMatrix(sc, a, wordListBr)
+    println(b)
+    val c = createLaplacianMatrix(b)
+    println(c)
+    val d = convertMatrixToRDD(sc, c)
+    val kMeansModel = KMeans.train(d.map(_._2), 200, 2000)
+    d.map(line => {
+      val words = wordListBr.value.apply(line._1)
+      (kMeansModel.predict(line._2), words)
+    }).groupByKey().sortByKey().foreach(println)
 
 
-
-
-
-
-
-
-
-
-    // 将breezeDenseMatrix转化为RDD
-//    KMeans.train()
 
   }
 
