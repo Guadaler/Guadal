@@ -8,6 +8,7 @@ import com.kunyan.nlpsuit.util.{AnsjAnalyzer, TextPreprocessing}
 import org.apache.spark.broadcast.Broadcast
 import redis.clients.jedis.{Jedis, JedisPool, JedisPoolConfig}
 
+import scala.collection.mutable.HashMap
 import scala.io.Source
 
 /**
@@ -32,7 +33,7 @@ object Util {
     *
     * @return 返回类别标签map
     */
-  def loadlabel_map(): util.HashMap[String,Int] ={
+  def loadLabel_map(): util.HashMap[String,Int] ={
     val label_map=new util.HashMap[String,Int]
     label_map.put("neg",1)
     label_map.put("neu",2)
@@ -50,9 +51,10 @@ object Util {
     //    println("字符替换！！")
     var title2=title.replace("/","每");
     title2=title2.replace("|","：");
-    title2=title2.replace("：","：");
+    title2=title2.replace(":","：");
     title2=title2.replace("\"","“");
     title2=title2.replace("?","？");
+    title2=title2.replace("*","");
     title2;
   }
 
@@ -88,7 +90,7 @@ object Util {
     * @return  所有文章map[File,content] ： File 文章对象  content 文章内容
     * @author zhangxin
     */
-  def readfile2Map(path:String): Map[File,String]={
+  def readFile2Map(path:String): Map[File,String]={
     var file_map = Map[File,String]()
     val files=new File(path).listFiles()   //获取父目录文件列表
     for(file <-files){
@@ -110,8 +112,8 @@ object Util {
     * @return  新闻Map[File,content]
     * @author zhangxin
     */
-  def readfile2HashMap(path:String): util.HashMap[File,String]={
-    var file_map =new util.HashMap[File,String]()
+  def readFile2HashMap(path:String): util.HashMap[File,String]={
+    val file_map =new util.HashMap[File,String]()
     val catDir=new File(path).listFiles()   //获取父目录文件列表
     for(dir <-catDir){
       val files=dir.listFiles()
@@ -131,12 +133,12 @@ object Util {
   /**
     * 写入文件
     *
-    * @param outpath  写入文件路径
+    * @param outPath  写入文件路径
     * @param content  写入内容
     * @author zhangxin
     */
-  def writefile(outpath:String,content:String): Unit ={
-    var writer=new PrintWriter(new File(outpath),"UTF-8")
+  def writeFile(outPath:String,content:String): Unit ={
+    val writer=new PrintWriter(new File(outPath),"UTF-8")
     writer.write(content)
     writer.flush()
     writer.close()
@@ -209,6 +211,7 @@ object Util {
     Tf_Idf
   }
 
+  //参数用java hashmap
   def getTf_Idf2(item:String, article:util.HashMap[String, Int], word_map:util.HashMap[String, util.HashMap[String, Int]]): Double ={
     val tf=getTf(item:String, article:util.HashMap[String, Int])
     val idf=getIdf2(item:String,word_map:util.HashMap[String, util.HashMap[String, Int]])
@@ -216,6 +219,15 @@ object Util {
     Tf_Idf
   }
 
+  //参数用scala hashmap
+  def getTf_Idf3(item:String, article:HashMap[String, Int], word_map:Array[HashMap[String, Int]]): Double ={
+//    println(item)
+    val tf=getTf3(item, article)
+    val idf=getIdf3(item:String,word_map)
+    val Tf_Idf=tf*idf
+//    println("    |   "+tf+"*"+idf)
+    Tf_Idf
+  }
   /**
     * 计算tf
     *
@@ -226,16 +238,30 @@ object Util {
     */
   def getTf(item:String, article:util.HashMap[String, Int]):Double ={
     var tf:Double=0.000000
-    val count=article.get(item);  //该词的词频
-    var sum=0;  //该文章所有词数
+    val count=article.get(item)  //该词的词频
+    var sum=0  //该文章所有词数
     val it=article.values().iterator()
     while (it.hasNext){
       val key=it.next()
       sum +=key
     }
     if(sum !=0){
-      tf=article.get(item).toDouble/sum.toDouble
+      tf=count.toDouble/sum.toDouble
     }
+    tf
+  }
+
+  def getTf3(item:String, article:HashMap[String, Int]):Double ={
+    var tf:Double=0.000000
+    val count=article(item)  //该词的词频
+    var sum=0  //该文章所有词数
+    article.foreach(line=>{
+      sum +=line._2
+    })
+    if(sum !=0){
+      tf=count.toDouble/sum.toDouble
+    }
+//    println("    |   tf="+count+" / "+sum)
     tf
   }
 
@@ -248,14 +274,14 @@ object Util {
     * @author zhangxin
     */
   def getIdf(item:String,word_map:util.HashMap[File, util.HashMap[String, Int]]): Double ={
-    var idf:Double=0.000000;
-    var count=0;
-    var it=word_map.keySet().iterator()
+    var idf:Double=0.000000
+    var count=0
+    val it=word_map.keySet().iterator()
     while (it.hasNext){
-      var key=it.next();
-      var onefile=word_map.get(key)
-      if(onefile.keySet().contains(item)){
-        count +=1;
+      val key=it.next()
+      val oneFile=word_map.get(key)
+      if(oneFile.keySet().contains(item)){
+        count +=1
       }
     }
     idf=Math.log(word_map.size().toDouble/count.toDouble)
@@ -264,21 +290,47 @@ object Util {
   }
 
   def getIdf2(item:String,word_map:util.HashMap[String, util.HashMap[String, Int]]): Double ={
-    var idf:Double=0.000000;
-    var count=0;
-    var it=word_map.keySet().iterator()
+    var idf:Double=0.000000
+    var count=0
+    val it=word_map.keySet().iterator()
     while (it.hasNext){
-      var key=it.next();
-      var onefile=word_map.get(key)
-      if(onefile.keySet().contains(item)){
-        count +=1;
+      val key=it.next()
+      val oneFile=word_map.get(key)
+      if(oneFile.keySet().contains(item)){
+        count +=1
       }
     }
     idf=Math.log(word_map.size().toDouble/count.toDouble)
-//    println("idf:"+idf+"="+count.toDouble+"  "+word_map.size().toDouble)
     idf
   }
 
+  def getIdf3(item:String,word_map:Array[HashMap[String, Int]]): Double ={
+    var count=0
+    word_map.foreach(file=>{
+      if(file.keySet.contains(item)) count +=1
+    })
+    val idf=Math.log(word_map.size.toDouble/count.toDouble)
+//    println("    |   idf="+word_map.size+" / "+count)
+    idf
+  }
+
+  /**
+    * 对每篇文章进行词频统计
+    * @param file  文章内容分词结果数组（已分词、去停、数组）
+    * @return 单词-词频
+    */
+  def countWord(file:Array[String]):HashMap[String,Int]={
+    var wordmap=new HashMap[String,Int]
+    file.foreach(word=>{
+      if(wordmap.keySet.contains(word)) {
+        val count=wordmap(word)
+        wordmap(word) = count+ 1
+      }else{
+        wordmap +=(word->1)
+      }
+    })
+    wordmap
+  }
   //---------------【文本处理】----------------------------------
   /**
     * 实现字符串的分词和去停,并分装成方法  ，与上面的process()方法相同，只是分词采用ansj
@@ -290,9 +342,9 @@ object Util {
     */
   def process_ansj(content: String, stopWordsBr: Broadcast[Array[String]]): Array[String] = {
     // 格式化文本
-    val formatedContent =TextPreprocessing.formatText(content)
+    val formatContent =TextPreprocessing.formatText(content)
     // 实现分词
-    val resultWords=AnsjAnalyzer.cut(content)
+    val resultWords=AnsjAnalyzer.cut(formatContent)
     // 实现去停用词
     if (resultWords == null) null
     else TextPreprocessing.removeStopWords(resultWords, stopWordsBr.value)

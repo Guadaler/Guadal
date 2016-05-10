@@ -25,7 +25,7 @@ object TextpreWithKunAnal {
     val stopWords = sc.textFile(stopWordsPath).collect()
     var writer=new PrintWriter(new File(outPath),"UTF-8")
     //读取
-    val files =Util.readfile2HashMap(dataPath)
+    val files =Util.readFile2HashMap(dataPath)
     val it=files.keySet.iterator
 
     //计数
@@ -95,7 +95,7 @@ object TextpreWithKunAnal {
     val stopWords = sc.textFile(stopWordsPath).collect()
     var writer=new PrintWriter(new File(outPath),"UTF-8")
     //读取所有文章
-    val files = Util.readfile2HashMap(dataPath)
+    val files = Util.readFile2HashMap(dataPath)
     val it=files.keySet.iterator
 
     //计数
@@ -168,7 +168,7 @@ object TextpreWithKunAnal {
     var writer1=new PrintWriter(new File(outPath_title),"UTF-8")
     var writer2=new PrintWriter(new File(outPath_content),"UTF-8")
     //读取所有文章
-    val files = Util.readfile2HashMap(dataPath)
+    val files = Util.readFile2HashMap(dataPath)
     val it=files.keySet.iterator
 
     //计数
