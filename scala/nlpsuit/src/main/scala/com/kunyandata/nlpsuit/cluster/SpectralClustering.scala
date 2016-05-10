@@ -22,7 +22,7 @@ object SpectralClustering {
     * @return 返回一个矩阵，行为文档向量，列为词向量
     * @author QQ
     */
-  def createDocTermMatrix(dataRDD: RDD[(Int, Array[String])],
+  def createDocTermRDD(dataRDD: RDD[(Int, Array[String])],
                           wordListBr: Broadcast[Array[String]]): RDD[(Int, DenseVector[Double])] = {
 
     // 创建值为0，行为文本数量，列为词汇表长度的空矩阵
@@ -56,7 +56,7 @@ object SpectralClustering {
     * @return 返回一个矩阵，行和列均为词与词之间的相似性
     * @author QQ
     */
-  def createCorrMatrix(sc: SparkContext, docTermMatrix: DenseMatrix[Double],
+  def createCorrRDD(sc: SparkContext, docTermMatrix: DenseMatrix[Double],
                        wordListBr: Broadcast[Array[String]]): DenseMatrix[Double] = {
 
     val docTermMatrixBr = sc.broadcast(docTermMatrix)
@@ -136,6 +136,18 @@ object SpectralClustering {
 
     lapacianRDD
 
+  }
+
+  def convertRDDToMatrix(rdd: RDD[(Int, DenseVector)]): DenseMatrix[Double] = {
+    val rowNum = rdd.count().toInt
+    val colNum = rdd.map(_._2.length).max()
+    val resultMatrix = DenseMatrix.zeros[Double](rowNum, colNum)
+    rdd.collect().foreach(row => {
+      val (rowID, vectors) = (row._1, row._2)
+      resultMatrix(rowID, ::) := vectors
+    })
+
+    resultMatrix
   }
 
   def main(args: Array[String]) {
