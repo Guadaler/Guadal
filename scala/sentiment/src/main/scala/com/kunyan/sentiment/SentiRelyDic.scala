@@ -1,6 +1,5 @@
 package com.kunyan.sentiment
 
-import com.kunyandata.nlpsuit.util.{WordSeg, TextPreprocessing}
 import org.ansj.library.UserDefineLibrary
 import org.ansj.splitWord.analysis.ToAnalysis
 
