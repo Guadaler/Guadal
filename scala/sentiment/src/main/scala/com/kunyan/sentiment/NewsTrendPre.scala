@@ -1,8 +1,5 @@
 package com.kunyan.sentiment
 
-import java.text.SimpleDateFormat
-import java.util.Date
-
 import com.kunyan.util._
 import com.kunyandata.nlpsuit.sentiment.PredictWithNb
 import org.apache.spark.broadcast.Broadcast
@@ -30,48 +27,46 @@ object NewsTrendPre {
     val configInfo = new SentimentConf()
     configInfo.initConfig(args(0))
 
-    // 连接redis、Hbase、MySql
+    // 连接redis、hBase、MySql
     val redisInput = RedisUtil.getRedis(configInfo)
     val hbaseConf = HBaseUtil.getHbaseConf(configInfo)
     val sqlContent = new SQLContext(sc)
 
     // 获取词典
-    val cosDict = getDicts(configInfo)
-    val dicWordsBr = sc.broadcast(cosDict)
+    val dictBr = sc.broadcast(getDicts(configInfo))
 
     // 添加自定义词典到ansj分词器中
-    SentiRelyDic.addUserDic(cosDict("userDict"))
+    SentiRelyDic.addUserDic(dictBr.value("userDict"))
 
-    //初始化分类模型
+    // 初始化分类模型
     val models = PredictWithNb.init(configInfo.getValue("models", "sentModelsPath"))
     val modelsBr = sc.broadcast(models)
 
     // 创建表名，根据表名读redis
-    val now = new Date()
-    val dateFormat = new SimpleDateFormat("yyyyMMdd")
-    val time = dateFormat.format(now)
-    val industryTime = "Industry_" + time                       // ------------------------------- industry -----------------------------
-    val stockTime = "Stock_" + time                             // ------------------------------- stock --------------------------------
-    val sectionTime = "Section_" + time                         // ------------------------------- section -------------------------------
-    val newsTime = "News_" + time                               // -------------------------------- news ---------------------------------
+    val time = TimeUtil.get_date("yyyyMMdd")
+    val industryTable = "Industry_" + time                      
+    val stockTable = "Stock_" + time                             
+    val sectionTable = "Section_" + time                       
+    val newsTable = "News_" + time          
 
     // 读取redis中所有的新闻，存储为Array[(url, title)]
-    val redisAllNews = getAllNews(redisInput, newsTime)
+    val redisAllNews = getAllNews(redisInput, newsTable)
     LoggerUtil.warn("redisAllNews = " + redisAllNews.length.toString)
 
     // 获得redis中所有类别的新闻，存储为Map[类别名称，Array[（url, title),(url, title),…]}
-    val allIndustryNews = getAllCateNews(redisInput, industryTime, newsTime)
-    val allStockNews = getAllCateNews(redisInput, stockTime, newsTime)
-    val allSectionNews = getAllCateNews(redisInput, sectionTime, newsTime)
+    val allIndustryNews = getAllCateNews(redisInput, industryTable, newsTable)
+    val allStockNews = getAllCateNews(redisInput, stockTable, newsTable)
+    val allSectionNews = getAllCateNews(redisInput, sectionTable, newsTable)
     redisInput.close()
     LoggerUtil.warn("close redisInput successfully >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
     // 获得hbase中所有的新闻，存储为RDD[String]
     val hbaseAllNews = HBaseUtil.getRDD(sc, hbaseConf).cache()
+    val hNewsSenti = hBaseNewsTrend(hbaseAllNews, dictBr, modelsBr)
     LoggerUtil.warn("hbaseAllNews = " + hbaseAllNews.count().toString)
 
     // 计算每篇新闻的情感倾向，并写入MySQL
-    val everyNewsSentiment = predictNewsTrend(sc, redisAllNews, hbaseAllNews, dicWordsBr, modelsBr)
+    val everyNewsSentiment = predictNewsTrend(sc, redisAllNews, hNewsSenti, dictBr)
     val dateNow = TimeUtil.get_date("yyyy-MM-dd HH:mm:ss")
     val data = sc.parallelize(everyNewsSentiment.toSeq).map(x =>  Row(x._1, dateNow, x._2))
     MySQLUtil.writeToMyaql(configInfo, sqlContent, "every_news_trend", data)
@@ -96,44 +91,23 @@ object NewsTrendPre {
   }
 
   /**
-    * 计算hbase与redis中所有新闻的情感倾向
+    * 计算hBase与redis中所有新闻的情感倾向
     * @param sc spark程序入口
     * @param redisAllNews redis中所有的新闻
-    * @param hbaseAllNews hbase中所有的新闻
-    * @param dicMapBr 词典
-    * @param modelsbr 分类模型
+    * @param hNewsSentiment hBase中所有的新闻情感倾向
+    * @param dictBr 词典
     * @return 每条新闻的（url，time, sentiment）
     * @author liumiao
     */
-  def predictNewsTrend(sc: SparkContext, redisAllNews: Array[(String, String)], hbaseAllNews: RDD[String],
-                       dicMapBr: Broadcast[Map[String, Array[String]]], modelsbr: Broadcast[Map[String, Any]]): Map[String, String] = {
+  def predictNewsTrend(sc: SparkContext, redisAllNews: Array[(String, String)], hNewsSentiment: Array[(String, String)],
+                       dictBr: Broadcast[Map[String, Array[String]]]): Map[String, String] = {
 
-    // 对于Hbase中的新闻，利用分类模型预测其正文的情感倾向
-    val hbaseNewsSentiment = hbaseAllNews.map(everyNews => {
-
-      if (everyNews.split("\n\t").length == 3) {
-
-        val Array(url, title, content) = everyNews.split("\n\t")
-        // 预测正文的情感倾向
-        val resultContent = PredictWithNb.predictWithSigle(content, modelsbr.value, dicMapBr.value("stopWordsCN"))
-
-        if (resultContent == "neg") {
-          (url, "0")
-        } else{
-          (url, "1")
-        }
-
-      }
-
-    }).filter(_ !=()).map(_.asInstanceOf[(String, String)]).collect()
-
-    // 对于redis中url与hbase不交叉的新闻，根据标题预测情感倾向
+    // 对于redis中url与hBase不交叉的新闻，根据标题预测情感倾向
     val redisNewsSentiment = sc.parallelize(redisAllNews.toSeq).map(news => {
 
-      if (! hbaseNewsSentiment.map(_._1).contains(news._1)) {
+      if (!hNewsSentiment.map(_._1).contains(news._1)) {
 
-        // 预测标题的情感倾向
-        val resultTitle = SentiRelyDic.searchSenti(news._2, dicMapBr.value)
+        val resultTitle = SentiRelyDic.predictSenti(news._2, dictBr.value)
 
         if (resultTitle == "neg") {
           (news._1, "0")
@@ -146,14 +120,46 @@ object NewsTrendPre {
     }).filter(_ !=()).map(_.asInstanceOf[(String, String)]).collect()
     LoggerUtil.warn( "un intersect news = " + redisNewsSentiment.length.toString)
 
-    // 合并hbase和redis的新闻
-    val everyNewsSentiment = hbaseNewsSentiment.toBuffer
+    // 合并hBase和redis的新闻
+    val everyNewsSentiment = hNewsSentiment.toBuffer
     redisNewsSentiment.foreach( result => {
       everyNewsSentiment.append(result)
     })
     LoggerUtil.warn("All news = " + everyNewsSentiment.length.toString)
 
     everyNewsSentiment.toMap
+
+  }
+
+  /**
+    * 预测hBase中所有新闻的情感倾向
+    * @param hBaseAllNews hBase中取出的所有新闻
+    * @param dictBr 词典
+    * @param modelsBr 分类器模型
+    * @return 新闻情感倾向
+    * @author liumiao
+    */
+  private def hBaseNewsTrend(hBaseAllNews: RDD[String], dictBr: Broadcast[Map[String, Array[String]]],
+                             modelsBr: Broadcast[Map[String, Any]]): Array[(String, String)] ={
+
+    val hBaseNewsSenti = hBaseAllNews.map(everyNews => {
+
+      if (everyNews.split("\n\t").length == 3) {
+
+        val arr = everyNews.split("\n\t")
+        val resultContent = PredictWithNb.predictWithSigle(arr(2), modelsBr.value, dictBr.value("stopWordsCN"))
+
+        if (resultContent == "neg") {
+          (arr(0), "0")
+        } else{
+          (arr(0), "1")
+        }
+
+      }
+
+    }).filter(_ !=()).map(_.asInstanceOf[(String, String)]).collect()
+
+    hBaseNewsSenti
 
   }
 
@@ -187,7 +193,6 @@ object NewsTrendPre {
 
     }).collect()
 
-    // 将Array转换为Map
     result.toMap
 
   }
@@ -200,9 +205,8 @@ object NewsTrendPre {
     */
   private def getDicts(sentimentConf: SentimentConf): Map[String, Array[String]] = {
 
-    // 读取停用词典
-    val stopWords = Source.fromFile(sentimentConf.getValue("dicts", "stopWordsPath")).getLines().toArray
     // 初始化词典，存入dicBuffer
+    val stopWords = Source.fromFile(sentimentConf.getValue("dicts", "stopWordsPath")).getLines().toArray
     val userDict = Source.fromFile(sentimentConf.getValue("dicts", "userDictPath")).getLines().toArray
     val dictP = Source.fromFile(sentimentConf.getValue("dicts", "posDictPath")).getLines().toArray
     val dictN = Source.fromFile(sentimentConf.getValue("dicts", "pasDictPath")).getLines().toArray
@@ -211,7 +215,6 @@ object NewsTrendPre {
     Map("stopWordsCN" -> stopWords, "userDict" -> userDict, "dictP" -> dictP, "dictN" -> dictN, "dictF" -> dictF)
 
   }
-
 
   /**
     *  读取所有的新闻 （url, title）
@@ -236,7 +239,6 @@ object NewsTrendPre {
 
   }
 
-
   /**
     * 读取redis的新闻信息
     * @param redis redis 链接信息
@@ -247,14 +249,13 @@ object NewsTrendPre {
     */
   private  def getAllCateNews(redis: Jedis, categoryTable: String, newsTable: String): Map[String, Array[(String, String)]] = {
 
-    // 获得所有类别的名称（即Key值）
+    // 获得所有类别的名称
     val categoryKeys = redis.hkeys(categoryTable).toArray.map(_.asInstanceOf[String])
-    // 根据类别的名称，获得每个类别中所有的新闻ID
+
+    // 获取每个类别中的所有新闻ID，并根据ID读取每条新闻的 title 和 url
     val cateMap = categoryKeys.map(key => {
 
       val newsID = redis.hget(categoryTable, key).split(",")
-
-      //根据新闻ID，取出每条新闻的“url”和“title”
       val newsInfo = newsID.map(id => {
 
         val newJson = new JSONObject(redis.hget(newsTable, id))
@@ -263,12 +264,10 @@ object NewsTrendPre {
         (url, title)
 
       })
-      // 返回类别和该类别下的所有新闻的title和url
-      (key, newsInfo)
+      (key, newsInfo)       // (类别， Array[(url, title),(url, title),…]
 
     }).toMap
 
-    // Map[类别名称，Array[（url, title),(url, title),…]}
     cateMap
 
   }

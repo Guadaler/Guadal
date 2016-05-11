@@ -24,7 +24,7 @@ object HBaseUtil {
   /**
     * 连接 hbase
     * @param sentimentConf 配置文件
-    * @return hBase信息
+    * @return hbase信息
     * @author liumaio
     */
   def getHbaseConf(sentimentConf: SentimentConf): Configuration = {
@@ -62,25 +62,21 @@ object HBaseUtil {
     */
   def getRDD(sc: SparkContext, hbaseConf: Configuration): RDD[String] = {
 
-    //表名
     val tableName = "wk_detail"
     hbaseConf.set(TableInputFormat.INPUT_TABLE, tableName)
     hbaseConf.set(TableInputFormat.SCAN, setTimeRange())
-    //根据信息获得数据表的RDD
+
     val hbaseRdd = sc.newAPIHadoopRDD(hbaseConf, classOf[TableInputFormat]
       , classOf[ImmutableBytesWritable], classOf[Result])
 
-    //获得url、title、content列
     val news = hbaseRdd.map( x => {
 
       val a = x._2.getValue(Bytes.toBytes("basic"), Bytes.toBytes("url"))
       val b = x._2.getValue(Bytes.toBytes("basic"), Bytes.toBytes("title"))
       val c = x._2.getValue(Bytes.toBytes("basic"), Bytes.toBytes("content"))
-      //编码转换
       val aFormat = judgeChaser(a)
       val bFormat = judgeChaser(b)
       val cFormat = judgeChaser(c)
-      // 返回一条记录
       new String(a, aFormat) + "\n\t" + new String(b, bFormat) + "\n\t" + new String(c, cFormat)
 
     }).cache()

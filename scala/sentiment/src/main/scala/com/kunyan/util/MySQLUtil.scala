@@ -85,14 +85,13 @@ object MySQLUtil {
     */
   def writeToMyaql(sentimentConf: SentimentConf, sqlContent: SQLContext, dbName: String, data: RDD[Row]): Unit = {
 
-    // 数据库信息
     val  MySql = sentimentConf.getValue("mysql", "info")
 
     val scheam =
       StructType(
         StructField("url", StringType, nullable = false) ::
-          StructField("time", StringType, nullable = true) ::
-          StructField("sentiment", StringType, nullable = true) :: Nil)
+        StructField("time", StringType, nullable = true) ::
+        StructField("sentiment", StringType, nullable = true) :: Nil)
 
     val properties = new Properties()
     properties.setProperty("driver", "com.mysql.jdbc.Driver")

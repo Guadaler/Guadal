@@ -11,12 +11,12 @@ object SentiRelyDic {
 
   /**
     * 添加用户词典
-    * @param userDic 用户自定义分词词典
+    * @param userDict 用户自定义分词词典
     * @author liumiao
    */
-  def addUserDic(userDic: Array[String]): Unit = {
+  def addUserDic(userDict: Array[String]): Unit = {
 
-    userDic.foreach(x => {
+    userDict.foreach(x => {
       UserDefineLibrary.insertWord(x, "userDefine", 100)
     })
 
@@ -30,25 +30,23 @@ object SentiRelyDic {
     */
   private def cut(sentence: String): Array[String] = {
 
-    // 分词
+    // 利用ansj分词并过滤词性标注
     val sentenceCut = ToAnalysis.parse(sentence)
-    // 过滤词性标注
     val words = for (i <- Range(0,sentenceCut.size())) yield sentenceCut.get(i).getName
 
-    // 将 Vector 转换为 Array
     words.toArray
 
   }
 
   /**
-    * 否定词对情感值的翻转
+    * 寻找否定词
     * @param i 当前情感词在句子中的位置
     * @param sentence 当前待分析的句子
     * @param dictionary 否定词词典
     * @return +1表示不翻转，-1表示翻转
     * @author liumiao
     */
-  private def countSenti(i: Int, sentence: Array[String], dictionary: Array[String]): Int = {
+  private def searchNeg(i: Int, sentence: Array[String], dictionary: Array[String]): Int = {
 
     // 寻找情感词前面的否定词，若有则返回-1
     if (i-1 > 0) {
@@ -90,7 +88,7 @@ object SentiRelyDic {
     * @return 句子的情感倾向，+1表示正向，-1表示负向，0表示中性
     * @author liumiao
     */
-  def searchSenti(title: String, dicMap: Map[String, Array[String]]): String = {
+  def predictSenti(title: String, dicMap: Map[String, Array[String]]): String = {
 
     // 记录正面负面倾向的次数
     var positive = 0
@@ -107,7 +105,7 @@ object SentiRelyDic {
       // 匹配正向情感词词典，若匹配不到，则匹配负向情感词词典
       if (dicMap("dictP").contains(tc)) {
 
-        if (countSenti(i, titleCut, dicMap("dictF"))>0) {
+        if (searchNeg(i, titleCut, dicMap("dictF"))>0) {
           positive += 1
         } else {
           negative += 1
@@ -115,7 +113,7 @@ object SentiRelyDic {
 
       } else if (dicMap("dictN").contains(tc)) {
 
-        if (countSenti(i, titleCut, dicMap("dictF"))>0) {
+        if (searchNeg(i, titleCut, dicMap("dictF"))>0) {
           negative += 1
         } else {
           positive += 1

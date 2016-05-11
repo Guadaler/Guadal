@@ -1,23 +1,22 @@
-package com.kunyan.sentiment
+package com.kunyandata.nlpsuit.sentiment
 
 import org.ansj.library.UserDefineLibrary
 import org.ansj.splitWord.analysis.ToAnalysis
 
 /**
   * Created by liumiao on 2016/4/21.
-  * 基于词典的情感分析工具
+  * 基于词典的情感分析
   */
-object SentimentRelyDic {
+object SentiRelyDic {
 
   /**
     * 添加用户词典
-    *
     * @param userDic 用户自定义分词词典
     * @author liumiao
-    */
+   */
   def addUserDic(userDic: Array[String]): Unit = {
 
-    userDic.foreach( x => {
+    userDic.foreach(x => {
       UserDefineLibrary.insertWord(x, "userDefine", 100)
     })
 
@@ -25,26 +24,23 @@ object SentimentRelyDic {
 
   /**
     * 分词
-    *
     * @param sentence 输入的待分词的句子
     * @return 分词结果，存储在字符串数组中
     * @author liumiao
     */
   private def cut(sentence: String): Array[String] = {
 
-    // 分词
+    // 利用ansj分词
     val sentenceCut = ToAnalysis.parse(sentence)
     // 过滤词性标注
-    val words = for(i <- Range(0,sentenceCut.size())) yield sentenceCut.get(i).getName
+    val words = for (i <- Range(0,sentenceCut.size())) yield sentenceCut.get(i).getName
 
-    // 将 Vector 转换为 Array
     words.toArray
 
   }
 
   /**
     * 否定词对情感值的翻转
-    *
     * @param i 当前情感词在句子中的位置
     * @param sentence 当前待分析的句子
     * @param dictionary 否定词词典
@@ -54,32 +50,28 @@ object SentimentRelyDic {
   private def countSenti(i: Int, sentence: Array[String], dictionary: Array[String]): Int = {
 
     // 寻找情感词前面的否定词，若有则返回-1
-    if (i-1 > 0){
+    if (i-1 > 0) {
 
-      if (dictionary.contains(sentence(i-1)))  return -1
-      else if (i-2 > 0){
+      if (dictionary.contains(sentence(i-1))) {
+        return -1
+      } else if (i-2 > 0) {
 
-        if (dictionary.contains(sentence(i-2))) return  -1
+        if (dictionary.contains(sentence(i-2)))
+          return -1
 
       }
 
     }
 
     // 寻找情感词后面的否定词，若有则返回-1
-    if (i+1 < sentence.length){
+    if (i+1 < sentence.length) {
 
-      if(dictionary.contains(sentence(i + 1))) {
-
+      if (dictionary.contains(sentence(i+1))) {
         return -1
+      } else if (i+2 < sentence.length) {
 
-      }
-      else if(i+2 < sentence.length){
-
-        if (dictionary.contains(sentence(i+2))){
-
+        if (dictionary.contains(sentence(i+2)))
           return -1
-
-        }
 
       }
 
@@ -92,7 +84,6 @@ object SentimentRelyDic {
 
   /**
     * 情感分析
-    *
     * @param title 当前句子的分词结果
     * @param dicMap 词典
     * @return 句子的情感倾向，+1表示正向，-1表示负向，0表示中性
@@ -105,31 +96,27 @@ object SentimentRelyDic {
     var negative = 0
 
     // 对标题分词
-    val titleCut = SentimentRelyDic.cut(title)
+    val titleCut = SentiRelyDic.cut(title)
 
     // 对分词后的每一个词匹配词典
     for (i <- titleCut.indices) {
 
       val tc = titleCut(i)
 
-      // 匹配正向情感词词典
-      if(dicMap("dictP").contains(tc)){
+      // 匹配正向情感词词典，若匹配不到，则匹配负向情感词词典
+      if (dicMap("dictP").contains(tc)) {
 
-        if(countSenti(i, titleCut, dicMap("dictF"))>0){
+        if (countSenti(i, titleCut, dicMap("dictF"))>0) {
           positive += 1
-        }
-        else{
+        } else {
           negative += 1
         }
 
-      }
-      // 匹配负向情感词词典
-      else if (dicMap("dictN").contains(tc)){
+      } else if (dicMap("dictN").contains(tc)) {
 
-        if(countSenti(i, titleCut, dicMap("dictF"))>0){
-          negative = negative + 1
-        }
-        else{
+        if (countSenti(i, titleCut, dicMap("dictF"))>0) {
+          negative += 1
+        } else {
           positive += 1
         }
 
@@ -137,17 +124,11 @@ object SentimentRelyDic {
 
     }
 
-    // 倾向为负面返回"neg"
-    if ( positive < negative){
-
+    // 倾向为负面返回"neg"，否则返回"pos"
+    if ( positive < negative) {
       "neg"
-
-    }
-    // 倾向为非负面返回"pos"
-    else{
-
+    } else {
       "pos"
-
     }
 
   }
