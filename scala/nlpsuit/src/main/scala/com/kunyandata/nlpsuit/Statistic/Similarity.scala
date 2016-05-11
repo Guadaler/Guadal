@@ -40,12 +40,4 @@ object Similarity {
 
   }
 
-//  /**
-//    * 求和
-//    *
-//    * @param xs
-//    * @return
-//    */
-//  def sum(xs: Array[Double]): Double =
-//    if (xs.isEmpty) 0 else xs.head + sum(xs.tail)
 }
