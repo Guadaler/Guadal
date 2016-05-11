@@ -31,7 +31,7 @@ object Similarity {
     * @return 返回一个相似度的数值
     * @author QQ
     */
-  def cosineDistance(x:DenseVector[Double], y:DenseVector[Double]): Double ={
+  def cosineDistance(x: DenseVector[Double], y: DenseVector[Double]): Double ={
 
     val dotProduct = sum(x :* y)
     val normProduct = sqrt(sum(x :* x)) * sqrt(sum(y :* y))

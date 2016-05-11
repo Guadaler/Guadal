@@ -38,7 +38,9 @@ object Bayes {
       }).toMap
       (cateName, resultTemp)
     }).toMap
+
     result
+
   }
 
   /**
@@ -58,7 +60,9 @@ object Bayes {
       val Array(stockCode, words) = line.split("\t")
       (stockCode, words.split(","))
     }).toMap
+
     Map("stockDict" -> stockDict, "setcionDict" -> sectionDict)
+
   }
 
   /**
@@ -69,7 +73,9 @@ object Bayes {
     * @author QQ
     */
   def getStopWords(path: String): Array[String] = {
+
     Source.fromFile(path).getLines().toArray
+
   }
 
   /**
@@ -81,15 +87,21 @@ object Bayes {
     * @author QQ
     */
   def indusPredict(wordSegNoStop: Array[String], indusModels: Map[String, Map[String, Serializable]]): String = {
+
     val classificationResult = indusModels.keys.map(key => {
       val prediction = indusModels(key)("nbModel").asInstanceOf[NaiveBayesModel]
         .predict(indusModels(key)("chiSqSelectorModel").asInstanceOf[ChiSqSelectorModel]
           .transform(indusModels(key)("idfModel").asInstanceOf[IDFModel]
             .transform(indusModels(key)("tfModel").asInstanceOf[HashingTF]
               .transform(wordSegNoStop))))
-      if (prediction == 1.0) key
+
+      if (prediction == 1.0)
+        key
+
     })
+
     classificationResult.filter(_ != ()).mkString(",")
+
   }
 
   /**
@@ -107,7 +119,9 @@ object Bayes {
           .transform(sectionModels("概念板块")("tfModel").asInstanceOf[HashingTF]
             .transform(wordSegNoStop))))
 //    getTopLabels(prediction).mkString(",")
+
     null
+
   }
 
   /**
@@ -129,6 +143,8 @@ object Bayes {
       val resultTmp = Regular.grep(wordSegNoStop, dict._2)
       (dict._1, resultTmp)
     })
+
     (grepResult("stockDict"), mlresult("indusModels"), grepResult("setcionDict"))
+
   }
 }
