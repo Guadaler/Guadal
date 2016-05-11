@@ -2,8 +2,9 @@ package com.kunyandata.nlpsuit.util
 
 /**
   * Created by QQ on 2016/5/11.
+  * 坤雁分词器配置类
   */
-class KunyanConf {
+class KunyanConf extends Serializable {
 
   var port: Int = 0
 
@@ -18,4 +19,5 @@ class KunyanConf {
     this.host = host
     this.port = port
   }
+
 }

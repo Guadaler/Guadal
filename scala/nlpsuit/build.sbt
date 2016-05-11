@@ -1,8 +1,8 @@
-//mainClass in (Compile, packageBin) := Some("com.kunyandata.nlp.classification.TrainingProcess")
+mainClass in (Compile, packageBin) := Some("com.kunyandata.nlpsuit.cluster.SpectralClustering")
 
 name := "nlpsuit"
 
-version := "0.2.4.alpha"
+version := "0.2.4.beta"
 
 scalaVersion := "2.10.4"
 

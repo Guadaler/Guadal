@@ -1,5 +1,7 @@
 package com.kunyandata.nlpsuit.cluster
 
+import java.io.{File, PrintWriter}
+
 import breeze.linalg.{*, DenseMatrix, DenseVector, diag, eig, sum}
 import com.kunyandata.nlpsuit.Statistic.Similarity
 import org.apache.spark.broadcast.Broadcast
@@ -17,6 +19,7 @@ object SpectralClustering {
 
   /**
     * 创建文档词条矩阵
+    *
     * @param dataRDD 数据RDD，带有新闻id，其中新闻id必须为从0开始，步长为1的等差数列
     * @param wordListBr 基于dataRDD的文档词表的广播变量
     * @return 返回一个矩阵，行为文档向量，列为词向量
@@ -50,6 +53,7 @@ object SpectralClustering {
 
   /**
     * 计算相关矩阵
+    *
     * @param sc SparkContext
     * @param docTermRDD 文档词条矩阵
     * @param wordListBr 基于dataRDD的文档词表的广播变量
@@ -57,7 +61,7 @@ object SpectralClustering {
     * @author QQ
     */
   def createCorrRDD(sc: SparkContext, docTermRDD: RDD[DenseVector[Double]],
-                       wordListBr: Broadcast[Array[String]]): RDD[(Int, DenseVector[Double])] = {
+                       wordListBr: Broadcast[Array[String]]): RDD[String] = {
 
     val N = wordListBr.value.length
     val docTermArray = docTermRDD.collect()
@@ -72,7 +76,9 @@ object SpectralClustering {
         Similarity.cosineDistance(wordVector, otherWordVector)
       }).toArray
       val consineDistanceVector = DenseVector(consineDistanceArray)
-      (wordIndex, consineDistanceVector)
+
+      wordIndex + "\t" + consineDistanceVector.toArray.mkString(" ")
+
     })
 
     corrRDD
@@ -82,6 +88,7 @@ object SpectralClustering {
 
   /**
     * 计算laplace矩阵
+    *
     * @param corrMatrix 相关矩阵
     * @return laplace矩阵
     * @author QQ
@@ -95,6 +102,7 @@ object SpectralClustering {
 
   /**
     * 矩阵特征分解
+    *
     * @param laplacianMatrix laplace矩阵
     * @param k 降维数目
     * @return 特征分解后组成的矩阵，其中行为词向量，corrMatrix的特征向量的子集（从小到大排序，取前k个）
@@ -121,6 +129,7 @@ object SpectralClustering {
 
   /**
     * 将矩阵转化为RDD
+    *
     * @param sc SparkContext
     * @param matrix 矩阵
     * @return RDD，包含id（此处id为wordlist中的索引）和scala.mllib.linalg.Vector
@@ -140,6 +149,7 @@ object SpectralClustering {
 
   /**
     * 将RDD转化为矩阵
+    *
     * @param rdd 元素为densevector且所有元素长度一致的rdd
     * @return 返回一个DenseMatrix
     * @author QQ
@@ -161,24 +171,27 @@ object SpectralClustering {
     val conf = new SparkConf()
       .setAppName("SClusterTest")
       .setMaster("local")
-//      .set("spark.local.ip", "192.168.2.65")
-      .set("spark.driver.host", "192.168.2.90")
+//      .set("spark.local.ip", "192.168.2.90")
+//      .set("spark.driver.host", "192.168.2.90")
 
     val sc = new SparkContext(conf)
 
 //    ++++++++++++++++++++++++++++++++++++++ 计算 adjacency matrix ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     //获取数据
-    var id = 0
+    var id = -1
     val data = sc.parallelize(Source
-      .fromFile("/home/QQ/Documents/trainingWithIndus/仪电仪表")
-//      .fromFile("D:/纺织服装")
+//      .fromFile("/home/QQ/Documents/trainingWithIndus/仪电仪表")
+      .fromFile("D:/QQ/Desktop/segTrainingSet")
+//      .fromFile("/home/mlearning/result/segTrainingSet")
       .getLines().toSeq)
       .map(line => {
-      val temp = line.split("\t")
-      val result = (id, temp(1).split(","))
-      id += 1
-      result
-    }).cache()
+        val temp = line.split("\t")
+        if (temp.length == 2) {
+          id += 1
+          val result = (id, temp(1).split(","))
+          result
+        }
+    }).filter(_ != ()).map(_.asInstanceOf[(Int, Array[String])]).cache()
 
 //    val data = sc.parallelize(Seq((0, Array("a", "b", "c", "d")), (1, Array("a", "c", "d", "e")), (2, Array("b", "d", "f", "g", "k")))).cache()
 
@@ -186,6 +199,6 @@ object SpectralClustering {
     val wordListBr = sc.broadcast(wordList)
     val aRDD = createDocTermRDD(data, wordListBr)
     val bRDD = createCorrRDD(sc, aRDD.map(_._2), wordListBr)
-
+    bRDD.saveAsTextFile("hdfs:222.73.57.12:9000//mlearning/result/")
   }
 }
