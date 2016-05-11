@@ -140,8 +140,9 @@ object SpectralClustering {
 
   /**
     * 将RDD转化为矩阵
-    * @param rdd
-    * @return
+    * @param rdd 元素为densevector且所有元素长度一致的rdd
+    * @return 返回一个DenseMatrix
+    * @author QQ
     */
   def convertRDDToMatrix(rdd: RDD[(Int, DenseVector)]): DenseMatrix[Double] = {
     val rowNum = rdd.count().toInt
@@ -185,5 +186,6 @@ object SpectralClustering {
     val wordListBr = sc.broadcast(wordList)
     val aRDD = createDocTermRDD(data, wordListBr)
     val bRDD = createCorrRDD(sc, aRDD.map(_._2), wordListBr)
+
   }
 }
