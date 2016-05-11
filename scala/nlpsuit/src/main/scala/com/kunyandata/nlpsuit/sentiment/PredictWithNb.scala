@@ -2,16 +2,14 @@ package com.kunyandata.nlpsuit.sentiment
 
 import java.io._
 
-import com.kunyandata.nlpsuit.util.TextPreprocessing
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{FileSystem, Path}
+import com.kunyandata.nlpsuit.util.{KunyanConf, TextPreprocessing}
 import org.apache.spark.mllib.classification.NaiveBayesModel
 import org.apache.spark.mllib.feature.{ChiSqSelectorModel, HashingTF, IDFModel}
-
 import scala.io.Source
 
 /**
   * Created by zx on 2016/3/28.
+  * 基于机器学习的情感分析
   */
 object PredictWithNb extends App{
 
@@ -35,26 +33,6 @@ object PredictWithNb extends App{
     modelMap
   }
 
-//  /**
-//    * 读取模型，从hdfs上读取
-// *
-//    * @param modelfileFromHdfs hdfs路径 如hdfs://222.73.57.12:9000/user/F_2_1500
-//    * @return 模型Map[模型名称，模型]
-//    */
-//  def init(modelfileFromHdfs: String): Map[String, Any] = {
-//    var modelMap:Map[String, Any] = Map()
-//    //读取hdfs上保存的模型
-//    val hdfsConf = new Configuration()
-//    val fs = FileSystem.get(hdfsConf)
-//    val fileList = fs.listStatus(new Path(modelfileFromHdfs)).map(_.getPath.toString)
-//    fileList.foreach(file => {
-//      val modelName = file.replaceAll(modelfileFromHdfs, "")
-//      val tempModelInput = new ObjectInputStream(fs.open(new Path(file))).readObject()
-//      modelMap +=(modelName -> tempModelInput)
-//    })
-//    modelMap
-//  }
-
   /**
     * 初始化模型
     *
@@ -62,6 +40,7 @@ object PredictWithNb extends App{
     * @return 模型map
     */
   def init(path: String): Map[String, Any] = {
+
     val fileList = new File(path)
     val modelList = fileList.listFiles()
     var modelMap:Map[String, Any] = Map()
@@ -70,20 +49,22 @@ object PredictWithNb extends App{
       val tempModelInput = new ObjectInputStream(new FileInputStream(cate))
       modelMap += (modelName -> tempModelInput.readObject())
     })
+
     modelMap
+
   }
 
   /**
     * 情感预测   _坤雁分词
- *
     * @param content  待预测文章
     * @param models  模型Map[模型名称，模型]，由init初始化得到
     * @param stopWordsArr 停用词
-    * @param typ 分词模式  0 和1
+    * @param kunyanConf 设置坤雁分词器
     * @return  返回情感label编号
     */
-  def predict(content: String, models: Map[String, Any], stopWordsArr: Array[String],typ: Int): Double = {
-    val wordSegNoStop = TextPreprocessing.process(content, stopWordsArr,typ)
+  def predict(content: String, models: Map[String, Any], stopWordsArr: Array[String],
+              kunyanConf: KunyanConf): Double = {
+    val wordSegNoStop = TextPreprocessing.process(content, stopWordsArr, kunyanConf)
     val prediction = models("nbModel").asInstanceOf[NaiveBayesModel]
       .predict(models("chiSqSelectorModel").asInstanceOf[ChiSqSelectorModel]
         .transform(models("idfModel").asInstanceOf[IDFModel]
@@ -101,13 +82,16 @@ object PredictWithNb extends App{
     * @return  返回情感label编号
     */
   def predict(content: String, models: Map[String, Any], stopWordsArr:Array[String]): Double = {
+
     val wordSegNoStop = TextPreprocessing.process(content, stopWordsArr)
     val prediction = models("nbModel").asInstanceOf[NaiveBayesModel]
       .predict(models("chiSqSelectorModel").asInstanceOf[ChiSqSelectorModel]
         .transform(models("idfModel").asInstanceOf[IDFModel]
           .transform(models("tfModel").asInstanceOf[HashingTF]
             .transform(wordSegNoStop))))
+
     prediction
+
   }
 
   /**
@@ -119,18 +103,25 @@ object PredictWithNb extends App{
     * @return  情感label
     * @author zhangxin
     */
-  def predictWithSigle(content:String,model:Map[String, Any],stopWordsArr:Array[String],typ:Int): String ={
-    val temp = predict(content,model, stopWordsArr,typ: Int)
+  def predictWithSigle(content: String, model: Map[String, Any],
+                       stopWordsArr: Array[String], kunyanConf: KunyanConf): String ={
+
+    val temp = predict(content,model, stopWordsArr,kunyanConf)
     val result=replaceLabel(temp)
+
     result
+
   }
   /**
     * 用ansj分词
     */
   def predictWithSigle(content:String,model:Map[String, Any],stopWordsArr:Array[String]): String ={
+
     val temp = predict(content,model, stopWordsArr)
     val result=replaceLabel(temp)
+
     result
+
   }
 
   /**
@@ -142,20 +133,15 @@ object PredictWithNb extends App{
     * @return 情感label
     * @author zhangxin
     */
-  def predictWithFS(content:String,arr:Array[Map[String, Any]],stopWordsArr:Array[String],typ: Int): String ={
-    var temp = predict(content,arr(0), stopWordsArr,typ: Int)
-    if (temp == 4.0) {
-      temp = predict(content,arr(1), stopWordsArr,typ: Int)
-    }
-    val result=replaceLabel(temp)
-    result
+  def predictWithFS(content:String,arr:Array[Map[String, Any]],stopWordsArr:Array[String],kunyanConf: KunyanConf): String ={
 
-    /*val result=if(predict(content,arr(0), stopWordsBr,typ: Int) ==0.4){
-      replaceLabel(predict(content,arr(0), stopWordsBr,typ: Int))
-    }else{
-      replaceLabel(predict(content,arr(1), stopWordsBr,typ: Int))
-    }
-    result*/
+    var temp = predict(content,arr(0), stopWordsArr,kunyanConf: KunyanConf)
+
+    if (temp == 4.0)
+      temp = predict(content,arr(1), stopWordsArr,kunyanConf: KunyanConf)
+
+    replaceLabel(temp)
+
   }
 
   /**
@@ -167,19 +153,25 @@ object PredictWithNb extends App{
     * @param stopWordsArr  停用词表
     * @author zhangxin
     */
-  def predictManyWithFS(filepath:String,outpath:String,arr:Array[Map[String, Any]],stopWordsArr:Array[String],typ: Int): Unit ={
-    val wr=new PrintWriter(outpath,"utf-8")
-    val files=new File(filepath).listFiles()
-    for(file <-files) {
+  def predictManyWithFS(filepath:String, outpath: String, arr: Array[Map[String, Any]],
+                        stopWordsArr: Array[String], kunyanConf: KunyanConf): Unit ={
+
+    val wr = new PrintWriter(outpath,"utf-8")
+    val files = new File(filepath).listFiles()
+    for(file <- files) {
+
       val title = file.getName.substring(0, file.getName.indexOf(".txt"))
       var contentstr = ""
+
       for (line <- Source.fromFile(file).getLines()) {
         contentstr += line
       }
-      var temp = predict(contentstr,arr(0), stopWordsArr,typ: Int)
-      if (temp == 4.0) {
-        temp = predict(contentstr,arr(1), stopWordsArr,typ: Int)
-      }
+
+      var temp = predict(contentstr,arr(0), stopWordsArr,kunyanConf: KunyanConf)
+
+      if (temp == 4.0)
+        temp = predict(contentstr,arr(1), stopWordsArr,kunyanConf: KunyanConf)
+
       val result=replaceLabel(temp)
       wr.write("【" + result + "】" + title + "\n")
       wr.flush()

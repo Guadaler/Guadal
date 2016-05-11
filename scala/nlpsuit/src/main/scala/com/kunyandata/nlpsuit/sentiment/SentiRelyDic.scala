@@ -4,7 +4,7 @@ import org.ansj.library.UserDefineLibrary
 import org.ansj.splitWord.analysis.ToAnalysis
 
 /**
-  * Created by Administrator on 2016/4/21.
+  * Created by liumiao on 2016/4/21.
   */
 object SentiRelyDic {
 

@@ -144,13 +144,13 @@ object SpectralClustering {
     * @return 返回一个DenseMatrix
     * @author QQ
     */
-  def convertRDDToMatrix(rdd: RDD[(Int, DenseVector)]): DenseMatrix[Double] = {
+  def convertRDDToMatrix(rdd: RDD[(Int, DenseVector[Double])]): DenseMatrix[Double] = {
     val rowNum = rdd.count().toInt
     val colNum = rdd.map(_._2.length).max()
     val resultMatrix = DenseMatrix.zeros[Double](rowNum, colNum)
     rdd.collect().foreach(row => {
       val (rowID, vectors) = (row._1, row._2)
-      resultMatrix(rowID, ::) := vectors
+      resultMatrix(rowID, ::) := vectors.t
     })
 
     resultMatrix
