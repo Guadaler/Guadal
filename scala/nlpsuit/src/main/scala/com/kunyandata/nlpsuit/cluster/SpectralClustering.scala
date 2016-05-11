@@ -181,8 +181,8 @@ object SpectralClustering {
     var id = -1
     val data = sc.parallelize(Source
 //      .fromFile("/home/QQ/Documents/trainingWithIndus/仪电仪表")
-      .fromFile("D:/QQ/Desktop/segTrainingSet")
-//      .fromFile("/home/mlearning/result/segTrainingSet")
+//      .fromFile("D:/QQ/Desktop/segTrainingSet")
+      .fromFile("/home/mlearning/result/segTrainingSet")
       .getLines().toSeq)
       .map(line => {
         val temp = line.split("\t")
