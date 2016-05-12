@@ -20,7 +20,7 @@ object NewsTrendPre {
 
   def main(args: Array[String]) {
 
-    val conf = new SparkConf().setAppName("NewsTrendPre")
+    val conf = new SparkConf().setAppName("NewsTrendPre").setMaster("local")
     val sc = new SparkContext(conf)
     LoggerUtil.warn("sc init successfully")
 
@@ -64,19 +64,23 @@ object NewsTrendPre {
     val allStockNews = getAllCateNews(redisInput, stockTable, newsTable)
     val allSectionNews = getAllCateNews(redisInput, sectionTable, newsTable)
     redisInput.close()
-    LoggerUtil.warn("close redisInput successfully >>>>>>>>>>>>>>>>>")
+    LoggerUtil.warn("close redisInput successfully >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
     // 获得hbase中所有的新闻，存储为RDD[String]
     val hbaseAllNews = HBaseUtil.getRDD(sc, hbaseConf).cache()
+    LoggerUtil.warn("hbaseAllNews = " + hbaseAllNews.count().toString  + ">>>>>>>>>>>>>")
+
     val hNewsSenti = hBaseNewsTrend(hbaseAllNews, dictBr, modelsBr, kunyanConfig)
-    LoggerUtil.warn("hbaseAllNews = " + hbaseAllNews.count().toString  + ">>>>>>>>>>>>>>>>")
+    LoggerUtil.warn("predict hbase news trend  successfully >>>>>>>>>>>>>>>>>>>>>>>")
 
     // 计算每篇新闻的情感倾向，并写入MySQL
     val everyNewsSentiment = predictNewsTrend(sc, redisAllNews, hNewsSenti, dictBr, kunyanConfig)
+    LoggerUtil.warn("predict redis news trend  successfully >>>>>>>>>>>>>>>>>>>>>>>")
+
     val dateNow = TimeUtil.get_date("yyyy-MM-dd HH:mm:ss")
     val data = sc.parallelize(everyNewsSentiment.toSeq).map(x =>  Row(x._1, dateNow, x._2))
     MySQLUtil.writeToMyaql(configInfo, sqlContent, "every_news_trend", data)
-    LoggerUtil.warn("predict news trend and write to mysql successfully >>>>>>>>>>>>>>>")
+    LoggerUtil.warn("predict news trend and write to mysql successfully >>>>>>>>>>>>")
 
     // 计算新闻的倾向比例，并写入redis
     val list1 = countCatePercents(sc, allIndustryNews, everyNewsSentiment)
@@ -87,12 +91,12 @@ object NewsTrendPre {
     RedisUtil.writeToRedis(redisOutput, "industry_sentiment", list1)
     RedisUtil.writeToRedis(redisOutput, "stock_sentiment", list2)
     RedisUtil.writeToRedis(redisOutput, "section_sentiment", list3)
-    LoggerUtil.warn("computer category percent and write to redis successfully >>>>>>>>>>")
+    LoggerUtil.warn("computer category percent and write to redis successfully >>>>>>>")
 
     redisOutput.close()
-    LoggerUtil.warn("close redisOutput connection >>>>>>>>>>>>>>>>>>")
+    LoggerUtil.warn("close redisOutput connection >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
     sc.stop()
-    LoggerUtil.warn("sc stop >>>>>>>>>>>>")
+    LoggerUtil.warn("sc stop >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
   }
 

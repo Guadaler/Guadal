@@ -6,7 +6,7 @@ import org.ansj.splitWord.analysis.ToAnalysis
 
 /**
   * Created by liumiao on 2016/4/21.
-  * 基于词典的情感分析
+  * 基于词典的情感分析类
   */
 object SentiRelyDic {
 
