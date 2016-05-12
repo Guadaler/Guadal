@@ -16,7 +16,6 @@ object TextPreprocessing {
     */
   def formatText(content: String): String = {
 
-
     val step = 65248
     val sbcStart = 65281.toChar
     val sbcEnd = 65374.toChar
@@ -92,7 +91,7 @@ object TextPreprocessing {
   }
 
   /**
-    * 实现字符串的分词和去停,并分装成方法  ，与上面的process()方法相同，只是分词采用ansj
+    * 实现字符串的分词和去停,并分装成方法 ，与上面的process()流程相同，只是分词采用ansj
     * @param content 需要处理的字符串
     * @param stopWords  停用词
     * @return 返回分词去停后的结果
@@ -101,10 +100,10 @@ object TextPreprocessing {
   def process(content: String, stopWords:Array[String]): Array[String] = {
 
     // 格式化文本
-    val formatedContent =TextPreprocessing.formatText(content)
+    val formatedContent = TextPreprocessing.formatText(content)
 
     // 实现分词
-    val resultWords=AnsjAnalyzer.cutNoTag(formatedContent)
+    val resultWords = AnsjAnalyzer.cutNoTag(formatedContent)
 
     // 实现去停用词
     if (resultWords == null)

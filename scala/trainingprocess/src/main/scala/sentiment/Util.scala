@@ -4,7 +4,7 @@ import java.io.{File, PrintWriter}
 import java.sql.{Connection, DriverManager}
 import java.util
 
-import com.kunyandata.nlpsuit.util.{AnsjAnalyzer, TextPreprocessing}
+import com.kunyandata.nlpsuit.util.{KunyanConf, AnsjAnalyzer, TextPreprocessing}
 import org.ansj.domain.Term
 import org.apache.spark.broadcast.Broadcast
 import redis.clients.jedis.{Jedis, JedisPool, JedisPoolConfig}
@@ -467,5 +467,45 @@ object Util {
         wordsDict.put(word,count)
       }
     }
+  }
+
+  /**
+    * 对长文章进行分段“分词+去停+格式化”，再连接成一个字符串返回
+    *
+    * @param content  待处理文章
+    * @param stopWords 停用词表
+    * @return 拼接后结果字符串
+    * @author zhangxin
+    */
+  def bigText(content:String,stopWords:Array[String],kunyanConfig:KunyanConf): String ={
+
+    var result=""
+
+    //处理整数部分，即 0 ~ 1500*（n-1）部分
+    val n=content.length/1500+1
+
+    for(i <- Range(1,n)){
+
+      //截取
+      val content_1=content.substring(1500*(i-1),1500*i+1)
+
+      //分词
+      val tempSeg=TextPreprocessing.process(content_1,stopWords,kunyanConfig)
+
+      if(tempSeg !=null){
+        result += ","+tempSeg.mkString(",")
+      }else{
+        null
+      }
+    }
+
+    //处理剩下的部分
+    val content_2=content.substring(1500*(n-1),content.length)
+    val tempSeg=TextPreprocessing.process(content_2,stopWords,kunyanConfig)
+
+    //将前后两部分结果进行拼接
+    result += ","+tempSeg.mkString(",")
+
+    result
   }
 }

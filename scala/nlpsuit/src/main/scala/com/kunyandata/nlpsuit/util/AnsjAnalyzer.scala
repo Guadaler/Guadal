@@ -21,7 +21,7 @@ object AnsjAnalyzer {
   def init(sc: SparkContext, userDic: Array[String]): Unit = {
 
     if(userDic !=null ){
-      userDic.foreach(addUserDic(_,sc))
+      userDic.foreach(addUserDic(_, sc))
     }
 
   }
@@ -39,9 +39,7 @@ object AnsjAnalyzer {
     val dic = sc.textFile(dicPath).collect()
 
     //添加到ansj中
-    for(x: String <- dic){
-      UserDefineLibrary.insertWord(x, "userDefine", 100)
-    }
+    dic.foreach(UserDefineLibrary.insertWord(_, "userDefine", 100))
 
   }
 
@@ -57,7 +55,7 @@ object AnsjAnalyzer {
     val sent = ToAnalysis.parse(sentence)
 
     //提取分词结果，过滤词性
-    val words = for(i <- Range(0,sent.size())) yield sent.get(i).getName
+    val words = for(i <- Range(0, sent.size())) yield sent.get(i).getName
 
     words.toArray
   }
@@ -74,7 +72,7 @@ object AnsjAnalyzer {
     val sent = NlpAnalysis.parse(sentence)
 
     // 提取分词结果
-    val words= for(i <- Range(0,sent.size())) yield sent.get(i).getFrom
+    val words= for(i <- Range(0, sent.size())) yield sent.get(i).getFrom
 
     words.toArray
   }
