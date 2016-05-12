@@ -18,7 +18,7 @@ libraryDependencies += "org.apache.hbase" % "hbase-client" % "1.1.2"
 
 libraryDependencies += "org.apache.hbase" % "hbase-common" % "1.1.2"
 
-libraryDependencies +="org.apache.hbase" % "hbase-server" % "1.1.2"
+libraryDependencies +="org.apache.hbase" % "hbase-server" % "1.1.2" excludeAll ExclusionRule(organization = "org.mortbay.jetty")
 
 libraryDependencies += "com.ibm.icu" % "icu4j" % "56.1"
 
