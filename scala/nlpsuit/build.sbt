@@ -1,4 +1,4 @@
-mainClass in (Compile, packageBin) := Some("com.kunyandata.nlpsuit.cluster.SpectralClustering")
+//mainClass in (Compile, packageBin) := Some("com.kunyandata.nlpsuit.cluster.SpectralClustering")
 
 name := "nlpsuit"
 
