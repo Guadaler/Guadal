@@ -9,6 +9,7 @@ import breeze.linalg.eig.Eig
 import com.kunyandata.nlpsuit.Statistic.Similarity
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.mllib.linalg.EigenValueDecomposition
 import org.apache.spark.mllib.clustering.KMeans
 import org.apache.spark.mllib.stat.Statistics
 
@@ -91,10 +92,10 @@ object SpectralClustering {
     val degreeMatrix = diag(sum(corrMatrixBr.value(*, ::)))
     val laplacianMatrix = degreeMatrix :- corrMatrixBr.value
     val Eig(a, _, c) = eig(laplacianMatrix)
+
+    println(c(::, 0))
     println(a.activeIterator.toArray.toSeq)
-
     println(c.activeIterator.toArray.toSeq)
-
 
 //    Statistics.
 //    println(docTermMatrix(1, 2715))
