@@ -36,7 +36,7 @@ object CosineComputing {
           val result = (id, temp(1).split(","))
           result
         }
-      }).filter(_ != ()).map(_.asInstanceOf[(Int, Array[String])]).cache()
+      }).filter(_ != ()).map(_.asInstanceOf[(Int, Array[String])])
 
     //    val data = sc.parallelize(Seq((0, Array("a", "b", "c", "d")), (1, Array("a", "c", "d", "e")), (2, Array("b", "d", "f", "g", "k")))).cache()
 
