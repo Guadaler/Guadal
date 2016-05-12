@@ -1,7 +1,5 @@
 package com.kunyandata.nlpsuit.cluster
 
-import java.io.{File, PrintWriter}
-
 import breeze.linalg.{*, DenseMatrix, DenseVector, diag, eig, sum}
 import com.kunyandata.nlpsuit.Statistic.Similarity
 import org.apache.spark.broadcast.Broadcast
@@ -182,7 +180,7 @@ object SpectralClustering {
     val data = sc.parallelize(Source
 //      .fromFile("/home/QQ/Documents/trainingWithIndus/仪电仪表")
 //      .fromFile("D:/QQ/Desktop/segTrainingSet")
-      .fromFile("/home/mlearning/result/segTrainingSet")
+      .fromFile(args(0))
       .getLines().toSeq)
       .map(line => {
         val temp = line.split("\t")
@@ -199,6 +197,6 @@ object SpectralClustering {
     val wordListBr = sc.broadcast(wordList)
     val aRDD = createDocTermRDD(data, wordListBr)
     val bRDD = createCorrRDD(sc, aRDD.map(_._2), wordListBr)
-    bRDD.saveAsTextFile("hdfs:222.73.57.12:9000//mlearning/result/")
+    bRDD.saveAsTextFile(args(1))
   }
 }
