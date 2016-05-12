@@ -22,7 +22,6 @@ object TimeUtil {
     val out = dateFormat.format(timeStamp)
 
     out
-
   }
 
   /**
@@ -38,7 +37,6 @@ object TimeUtil {
     val out = dateFormat.format(now)
 
     out
-
   }
 
 }

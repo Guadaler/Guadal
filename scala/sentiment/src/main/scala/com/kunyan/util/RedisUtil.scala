@@ -35,7 +35,6 @@ object RedisUtil {
     pool.close()
 
     redis
-
   }
 
   /**

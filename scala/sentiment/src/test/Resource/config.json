@@ -6,8 +6,9 @@
         "auth": "kunyan"
     },
     "hbase": {
-        "rootDir": "hdfs://222.73.57.12:9000/hbase",
-        "ip": "222.73.57.3,222.73.57.7"
+
+        "rootDir": "hdfs://222.73.57.12/hbase",
+        "ip": "222.73.57.12,222.73.57.3,222.73.57.7"
     },
     "dicts": {
         "posDictPath": "E:/nlp/scala/sentiment/src/test/Resource/senti_dict/posi_dic.txt",
@@ -21,5 +22,9 @@
     },
     "mysql": {
         "info": "jdbc:mysql://222.73.34.92:3306/sentiment?user=root&password=dataservice2015&useUnicode=true&characterEncoding=utf8"
+    },
+    "kunyan": {
+        "host": "222.73.57.15",
+        "port": "16000"
     }
 }
