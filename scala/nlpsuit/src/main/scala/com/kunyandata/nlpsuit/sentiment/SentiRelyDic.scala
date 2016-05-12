@@ -4,13 +4,12 @@ import org.ansj.library.UserDefineLibrary
 import org.ansj.splitWord.analysis.ToAnalysis
 
 /**
-  * Created by Administrator on 2016/4/21.
+  * Created by liumiao on 2016/4/21.
   */
 object SentiRelyDic {
 
   /**
     * 添加用户词典
-    *
     * @param userDic 用户自定义分词词典
     * @author liumiao
    */
@@ -23,7 +22,6 @@ object SentiRelyDic {
 
   /**
     * 分词
-    *
     * @param sentence 输入的待分词的句子
     * @return 返回（分词结果，存储在字符串数组中）
     * @author liumiao
@@ -33,6 +31,7 @@ object SentiRelyDic {
     val sentenceCut = ToAnalysis.parse(sentence)
     // 过滤词性标注
     val words = for(i <- Range(0,sentenceCut.size())) yield sentenceCut.get(i).getName
+
     // 将 Vector 转换为 Array
     words.toArray
   }
@@ -47,28 +46,45 @@ object SentiRelyDic {
     * @author liumiao
     */
   private def countSenti(i:Int, sentence:Array[String], dictionary:Array[String]): Int ={
+
     // 寻找情感词前面的否定词，若有则返回-1
     if (i-1 > 0){
+
       if (dictionary.contains(sentence(i-1))){
+
         return -1
-      }
-      else if (i-2 > 0){
+
+      } else if (i-2 > 0){
+
         if (dictionary.contains(sentence(i-2))){
+
           return  -1
+
         }
+
       }
+
     }
+
     // 寻找情感词后面的否定词，若有则返回-1
     if (i+1 < sentence.length){
+
       if(dictionary.contains(sentence(i+1))){
+
         return -1
-      }
-      else if(i+2 < sentence.length){
+
+      } else if (i+2 < sentence.length){
+
         if (dictionary.contains(sentence(i+2))){
+
           return -1
+          
         }
+
       }
+
     }
+
     // 匹配不到否定词，则返回1
     1
   }
@@ -82,41 +98,53 @@ object SentiRelyDic {
     * @author liumiao
     */
   def searchSenti(title:String, dicMap:Map[String, Array[String]]): String={
+
     // 记录正面负面倾向的次数
     var positive = 0
     var negative = 0
+
     // 对标题分词
     val titleCut = SentiRelyDic.cut(title)
+
     // 对分词后的每一个词匹配词典
     for (i <- titleCut.indices) {
+
       val tc = titleCut(i)
+
       // 匹配正向情感词词典
       if(dicMap("dictP").contains(tc)){
+
         if(countSenti(i, titleCut, dicMap("dictF"))>0){
+
           positive += 1
-        }
-        else{
+
+        } else {
+
           negative += 1
+
         }
-      }
-      // 匹配负向情感词词典
-      else if (dicMap("dictN").contains(tc)){
+
+      } else if (dicMap("dictN").contains(tc)){
+
         if(countSenti(i, titleCut, dicMap("dictF"))>0){
+
           negative = negative + 1
-        }
-        else{
+
+        } else {
+
           positive += 1
+
         }
+
       }
+
     }
+
     // 倾向为负面返回"neg"
-    if ( positive < negative){
+    if ( positive < negative) {
       "neg"
-    }
-    // 倾向为非负面返回"pos"
-    else{
+    } else {
       "pos"
     }
   }
-
 }
