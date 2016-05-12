@@ -15,6 +15,7 @@ class BetterChiSqSelector(){
   def preFit(data: RDD[LabeledPoint]): Array[(ChiSqTestResult, Int)] = {
     val indices = Statistics.chiSqTest(data)
       .zipWithIndex.sortBy { case (res, _) => -res.statistic }
+
     indices
   }
 
@@ -23,6 +24,7 @@ class BetterChiSqSelector(){
       .take(numTopFeatures)
       .map { case (_, indices) => indices }
       .sorted
+
     new ChiSqSelectorModel(result)
   }
 }

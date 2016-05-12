@@ -3,7 +3,6 @@ package com.kunyandata.nlpsuit.util
 import java.io.{DataInputStream, DataOutputStream}
 import java.net.Socket
 import java.util.Date
-
 import com.kunyandata.nlpsuit.net.Packet
 
 import scala.collection.mutable.ListBuffer
