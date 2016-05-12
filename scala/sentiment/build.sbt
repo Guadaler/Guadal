@@ -1,27 +1,20 @@
 mainClass in (Compile, packageBin) := Some("com.kunyan.sentiment.NewsTrendPre")
 
+//mainClass in (Compile, packageBin) := Some("com.kunyan.sentiment.Test")
+
 name := "sentiment"
 
 version := "1.0"
 
 scalaVersion := "2.10.4"
 
-
 resolvers += "Kunyan Repo" at "http://222.73.34.92:8081/nexus/content/groups/public/"
 
-libraryDependencies += "com.kunyan" % "nlpsuit" % "0.2"
-
-//libraryDependencies += "org.scalactic" %% "scalactic" % "2.2.5" % "test"
-
-//libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.5" % "test"
-
-//libraryDependencies += "mysql" % "mysql-connector-java" % "3.1.14"
+libraryDependencies += "com.kunyan" % "nlpsuit-package" % "0.2.4.beta"
 
 libraryDependencies += "redis.clients" % "jedis" % "2.8.0"
 
 libraryDependencies += "org.json" % "json" % "20160212"
-
-libraryDependencies += "org.apache.commons" % "commons-pool2" % "2.3"
 
 libraryDependencies += "org.apache.hbase" % "hbase-client" % "1.1.2"
 
@@ -36,6 +29,8 @@ libraryDependencies += "org.apache.spark" % "spark-mllib_2.10" % "1.5.2"
 libraryDependencies += "org.apache.spark" % "spark-core_2.10" % "1.5.2"
 
 libraryDependencies += "org.ansj" % "ansj_seg" % "0.9"
+
+libraryDependencies += "mysql" % "mysql-connector-java" % "5.1.38"
 
 //libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.5.1"
 

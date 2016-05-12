@@ -1,4 +1,4 @@
-package com.kunyan.nlpsuit.util
+package com.kunyandata.nlpsuit.util
 
 import java.util
 import org.ansj.domain.Term

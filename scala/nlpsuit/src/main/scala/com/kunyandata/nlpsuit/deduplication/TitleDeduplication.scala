@@ -1,6 +1,7 @@
-package com.kunyan.nlpsuit.deduplication
+package com.kunyandata.nlpsuit.deduplication
 
-import com.kunyan.nlpsuit.util.TextPreprocessing
+import com.kunyandata.nlpsuit.util.TextPreprocessing
+
 import scala.collection.mutable.ArrayBuffer
 
 /**

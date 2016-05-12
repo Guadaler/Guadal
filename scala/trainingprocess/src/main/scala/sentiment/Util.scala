@@ -49,13 +49,13 @@ object Util {
     */
   def replace(title:String):String={
     //    println("字符替换！！")
-    var title2=title.replace("/","每");
-    title2=title2.replace("|","：");
-    title2=title2.replace(":","：");
-    title2=title2.replace("\"","“");
-    title2=title2.replace("?","？");
-    title2=title2.replace("*","");
-    title2;
+    var title2=title.replace("/","每")
+    title2=title2.replace("|","：")
+    title2=title2.replace(":","：")
+    title2=title2.replace("\"","“")
+    title2=title2.replace("?","？")
+    title2=title2.replace("*","")
+    title2
   }
 
   /**
