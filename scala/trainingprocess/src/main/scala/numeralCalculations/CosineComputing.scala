@@ -24,11 +24,7 @@ object CosineComputing {
     //获取数据
     var id = -1
     val data = sc
-      .parallelize(Source
-        //      .fromFile("/home/QQ/Documents/trainingWithIndus/仪电仪表")
-        //      .fromFile("D:/QQ/Desktop/segTrainingSet")
-        .fromFile(args(0))
-        .getLines().toSeq, 16)
+      .textFile(args(1), args(0).toInt)
       .map(line => {
         val temp = line.split("\t")
         if (temp.length == 2) {
@@ -44,7 +40,7 @@ object CosineComputing {
     val wordListBr = sc.broadcast(wordList)
     val aRDD = createDocTermRDD(data, wordListBr)
     val bRDD = createCorrRDD(sc, aRDD.map(_._2), wordListBr)
-    bRDD.saveAsTextFile(args(1))
+    bRDD.saveAsTextFile(args(2))
   }
 
 }
