@@ -87,7 +87,8 @@ object SentiRelyDic {
     * @return 句子的情感倾向，+1表示正向，-1表示负向，0表示中性
     * @author liumiao
     */
-  def predictSenti(title: String, dicMap: Map[String, Array[String]], kunyanConf: KunyanConf): String = {
+  def predictSenti(title: String, dicMap: Map[String, Array[String]],
+                   kunyanConf: KunyanConf): String = {
 
     // 记录正面负面倾向的次数
     var positive = 0
