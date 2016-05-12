@@ -34,7 +34,6 @@ object HBaseUtil {
     hbaseConf.set("hbase.zookeeper.quorum", sentimentConf.getValue("hbase", "ip"))
 
     hbaseConf
-
   }
 
   /**
@@ -50,7 +49,6 @@ object HBaseUtil {
     val encoding = icu4j.detect()
 
     encoding.getName
-
   }
 
   /**
@@ -82,7 +80,6 @@ object HBaseUtil {
     }).cache()
 
     news
-
   }
 
   /**
@@ -107,7 +104,6 @@ object HBaseUtil {
     val proto: ClientProtos.Scan = ProtobufUtil.toScan(scan)
 
     Base64.encodeBytes(proto.toByteArray)
-
   }
 
 }

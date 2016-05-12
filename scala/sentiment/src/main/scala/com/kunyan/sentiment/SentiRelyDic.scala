@@ -1,5 +1,6 @@
 package com.kunyan.sentiment
 
+import com.kunyandata.nlpsuit.util.{KunyanConf, TextPreprocessing}
 import org.ansj.library.UserDefineLibrary
 import org.ansj.splitWord.analysis.ToAnalysis
 
@@ -35,7 +36,6 @@ object SentiRelyDic {
     val words = for (i <- Range(0,sentenceCut.size())) yield sentenceCut.get(i).getName
 
     words.toArray
-
   }
 
   /**
@@ -78,7 +78,6 @@ object SentiRelyDic {
 
     // 匹配不到否定词，则返回1
     1
-
   }
 
   /**
@@ -88,14 +87,15 @@ object SentiRelyDic {
     * @return 句子的情感倾向，+1表示正向，-1表示负向，0表示中性
     * @author liumiao
     */
-  def predictSenti(title: String, dicMap: Map[String, Array[String]]): String = {
+  def predictSenti(title: String, dicMap: Map[String, Array[String]],
+                   kunyanConf: KunyanConf): String = {
 
     // 记录正面负面倾向的次数
     var positive = 0
     var negative = 0
 
     // 对标题分词
-    val titleCut = SentiRelyDic.cut(title)
+    val titleCut = TextPreprocessing.process(title, dicMap("stopWordsCN"), kunyanConf)
 
     // 对分词后的每一个词匹配词典
     for (i <- titleCut.indices) {

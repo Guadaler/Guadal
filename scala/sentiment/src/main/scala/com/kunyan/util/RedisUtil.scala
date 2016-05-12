@@ -35,7 +35,6 @@ object RedisUtil {
     pool.close()
 
     redis
-
   }
 
   /**
@@ -46,10 +45,8 @@ object RedisUtil {
     * @author  liumiao
     */
   def writeToRedis(redis: Jedis, name: String, result: Map[String, String]): Unit = {
-
     for (i <- result)
       redis.hset(name, i._1, i._2)
-
   }
 
 }
