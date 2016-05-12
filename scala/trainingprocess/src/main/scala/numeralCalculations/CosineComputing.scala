@@ -23,14 +23,11 @@ object CosineComputing {
     //    ++++++++++++++++++++++++++++++++++++++ 计算 adjacency matrix ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     //获取数据
     var id = -1
-    val data = sc
-      .textFile(args(1), args(0).toInt)
-      .map(line => {
+    val data = sc.textFile(args(1), args(0).toInt).map(line => {
         val temp = line.split("\t")
         if (temp.length == 2) {
           id += 1
-          val result = (id, temp(1).split(","))
-          result
+          (id, temp(1).split(","))
         }
       }).filter(_ != ()).map(_.asInstanceOf[(Int, Array[String])])
 

@@ -29,7 +29,6 @@ object SpectralClustering {
     // 创建值为0，行为文本数量，列为词汇表长度的空矩阵
     val rowNum = dataRDD.count().toInt
     val colNum = wordListBr.value.length
-    val docTermMatrix = DenseMatrix.zeros[Double](rowNum, colNum)
 
     // 将语料库转为文档词条矩阵
     dataRDD.map(line => {
