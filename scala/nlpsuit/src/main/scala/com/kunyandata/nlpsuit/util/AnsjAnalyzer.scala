@@ -90,6 +90,7 @@ object AnsjAnalyzer extends App{
     val result = new Array[String](sent.size())
     // change Vector to Array
     words.copyToArray(result)
+
     result
   }
 

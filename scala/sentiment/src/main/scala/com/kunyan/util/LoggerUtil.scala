@@ -3,7 +3,8 @@ package com.kunyan.util
 import org.apache.log4j.{PropertyConfigurator, BasicConfigurator, Logger}
 
 /**
-  * Created by Liu on 2016/4/21.
+  * Created by liumiao on 2016/4/21.
+  * 写Log操作
   */
 object LoggerUtil {
 
@@ -17,6 +18,7 @@ object LoggerUtil {
     if (switch)
       e.printStackTrace()
     logger.error(e.printStackTrace())
+
   }
 
   def error(msg: String): Unit = {

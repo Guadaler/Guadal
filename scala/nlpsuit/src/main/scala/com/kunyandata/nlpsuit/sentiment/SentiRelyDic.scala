@@ -4,13 +4,12 @@ import org.ansj.library.UserDefineLibrary
 import org.ansj.splitWord.analysis.ToAnalysis
 
 /**
-  * Created by Administrator on 2016/4/21.
+  * Created by liumiao on 2016/4/21.
   */
 object SentiRelyDic {
 
   /**
     * 添加用户词典
-    *
     * @param userDic 用户自定义分词词典
     * @author liumiao
    */
@@ -23,7 +22,6 @@ object SentiRelyDic {
 
   /**
     * 分词
-    *
     * @param sentence 输入的待分词的句子
     * @return 返回（分词结果，存储在字符串数组中）
     * @author liumiao
@@ -33,6 +31,7 @@ object SentiRelyDic {
     val sentenceCut = ToAnalysis.parse(sentence)
     // 过滤词性标注
     val words = for(i <- Range(0,sentenceCut.size())) yield sentenceCut.get(i).getName
+
     // 将 Vector 转换为 Array
     words.toArray
   }
@@ -87,7 +86,6 @@ object SentiRelyDic {
 
     // 匹配不到否定词，则返回1
     1
-
   }
 
   /**
@@ -147,7 +145,5 @@ object SentiRelyDic {
     } else {
       "pos"
     }
-
   }
-
 }

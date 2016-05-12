@@ -54,6 +54,7 @@ object LabelProcess extends App{
   val newIndusNameArray = newIndusNameToOld.map(line => {
     val temp = line.split("\t")
     val tmp = temp(1).split(",").toSeq
+
     (temp(0), tmp)
   })
 
@@ -68,6 +69,7 @@ object LabelProcess extends App{
         }
       })
     })
+
     (tuple(0), newCate.toSet.toArray)
   })
 

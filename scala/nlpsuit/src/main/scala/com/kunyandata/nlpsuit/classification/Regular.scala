@@ -1,8 +1,5 @@
 package com.kunyandata.nlpsuit.classification
 
-import com.kunyandata.nlpsuit.util.TextPreprocessing
-import org.apache.spark.broadcast.Broadcast
-
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{Map, mutable}
 
@@ -22,16 +19,26 @@ object Regular {
   def grep(wordSegNoStop: Array[String], categoryKeywords: Map[String, Array[String]]): String = {
 
     val categoryList = ArrayBuffer[String]()
+
     for (cate: String <- categoryKeywords.keys) {
+
       var i_control = true
+
       for (keyword: String <- categoryKeywords(cate) if i_control) {
+
         val exists = wordSegNoStop.contains(keyword)
+
         if (exists) {
+
           categoryList.append(cate)
           i_control = false
+
         }
+
       }
+
     }
+
     categoryList.mkString(",")
   }
 
@@ -44,16 +51,26 @@ object Regular {
   private def grep(textString: String, categoryKeywords: Map[String, Array[String]]): String = {
 
     val categoryList = ArrayBuffer[String]()
+
     for (indus: String <- categoryKeywords.keys) {
+
       var i_control = true
+
       for (keyword: String <- categoryKeywords(indus) if i_control) {
+
         val exists = textString.contains(keyword)
+
         if (exists) {
+
           categoryList.+=(indus)
           i_control = false
+
         }
+
       }
+
     }
+
     categoryList.mkString(",")
   }
 
@@ -75,7 +92,6 @@ object Regular {
     val sectionList = grep(textString, sectDict)
     //    股票分类
     val stockList = grep(textString, stockDict)
-
 
     //    返回值的顺序为股票，行业，版块
     (stockList.mkString(","), industryList.mkString(","), sectionList.mkString(","))

@@ -141,14 +141,19 @@ object TrainingProcess {
     args.foreach(line =>{
       val industries = line._2.split(",")
       industries.foreach(indus => {
+
         if (result.keys.toArray.contains(indus)){
           result(indus).append(line._1)
         }else{
+
           result.+=((indus, ArrayBuffer[String]()))
           result(indus).append(line._1)
+
         }
+
       })
     })
+
     result.toMap
   }
 
@@ -163,20 +168,25 @@ object TrainingProcess {
 
     //    val intersectId = idA.toSet & idB.toSet
     val poInst = dataSet.map(line => {
-      if (targetIDList.contains(line._1)) (1.0, line._2)
+
+      if (targetIDList.contains(line._1))
+        (1.0, line._2)
+
     }).filter(_ != ()).map(_.asInstanceOf[(Double, Array[String])]).cache()
     val poInstNum = poInst.count()
 
     val neInst = dataSet.map(line => {
-      if (!targetIDList.contains(line._1)) (0.0, line._2)
+
+      if (!targetIDList.contains(line._1))
+        (0.0, line._2)
+
     }).filter(_ != ()).map(_.asInstanceOf[(Double, Array[String])]).cache()
     val neInstNum = neInst.count()
 
-    if (poInstNum <= neInstNum){
+    if (poInstNum <= neInstNum)
       poInst.++(neInst.sample(withReplacement = false, fraction = poInstNum*1.0/neInstNum, seed = 2016))
-    }else{
+    else
       poInst.++(neInst.sample(withReplacement = true, fraction = poInstNum*1.0/neInstNum, seed = 2016))
-    }
   }
 
   /**
@@ -189,6 +199,7 @@ object TrainingProcess {
     val wordCount = trainingSet.flatMap(training => {
       training._2
     }).collect().toSet.size
+
     wordCount
   }
 
