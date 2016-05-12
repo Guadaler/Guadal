@@ -16,7 +16,6 @@ object PredictWithNb extends App{
 
   /**
     * 初始化读取模型，给出模型路径，用从本地某路径读
- *
     * @param path 模型路径
     * @param methodNum 为了与从hdfs读取区分，加入方法编号作标记
     * @return  模型Map[模型名称，模型]
@@ -30,12 +29,12 @@ object PredictWithNb extends App{
       val tempModelInput = new ObjectInputStream(new FileInputStream(cate)).readObject()
       modelMap += (modelName -> tempModelInput)
     })
+
     modelMap
   }
 
   /**
     * 初始化模型
-    *
     * @param path 模型本地保存路径
     * @return 模型map
     */
@@ -51,11 +50,10 @@ object PredictWithNb extends App{
     })
 
     modelMap
-
   }
 
   /**
-    * 情感预测   _坤雁分词
+    * 情感预测，坤雁分词
     * @param content  待预测文章
     * @param models  模型Map[模型名称，模型]，由init初始化得到
     * @param stopWordsArr 停用词
@@ -70,12 +68,12 @@ object PredictWithNb extends App{
         .transform(models("idfModel").asInstanceOf[IDFModel]
           .transform(models("tfModel").asInstanceOf[HashingTF]
             .transform(wordSegNoStop))))
+
     prediction
   }
 
   /**
-    * 情感预测  _ansj分词器
- *
+    * 情感预测，ansj分词器
     * @param content  待预测文章
     * @param models  模型Map[模型名称，模型]，由init初始化得到
     * @param stopWordsArr 停用词
@@ -91,12 +89,10 @@ object PredictWithNb extends App{
             .transform(wordSegNoStop))))
 
     prediction
-
   }
 
   /**
     * 单模型+单篇文章 +坤雁分词
- *
     * @param content 文章内容
     * @param model 模型
     * @param stopWordsArr 停用词
@@ -110,7 +106,6 @@ object PredictWithNb extends App{
     val result=replaceLabel(temp)
 
     result
-
   }
   /**
     * 用ansj分词
@@ -121,12 +116,10 @@ object PredictWithNb extends App{
     val result=replaceLabel(temp)
 
     result
-
   }
 
   /**
     * 二级模型 +单篇文章
- *
     * @param content  文章内容
     * @param arr  二级模型数组
     * @param stopWordsArr  停用词表
@@ -141,7 +134,6 @@ object PredictWithNb extends App{
       temp = predict(content,arr(1), stopWordsArr,kunyanConf: KunyanConf)
 
     replaceLabel(temp)
-
   }
 
   /**
@@ -193,6 +185,7 @@ object PredictWithNb extends App{
         case 3.0 => "pos"
         case 4.0 => "neu_pos"  //综合类分为pos
       }
+
     result
   }
 }

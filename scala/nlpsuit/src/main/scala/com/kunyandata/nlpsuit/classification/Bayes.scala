@@ -40,7 +40,6 @@ object Bayes {
     }).toMap
 
     result
-
   }
 
   /**
@@ -62,7 +61,6 @@ object Bayes {
     }).toMap
 
     Map("stockDict" -> stockDict, "setcionDict" -> sectionDict)
-
   }
 
   /**
@@ -75,7 +73,6 @@ object Bayes {
   def getStopWords(path: String): Array[String] = {
 
     Source.fromFile(path).getLines().toArray
-
   }
 
   /**
@@ -101,7 +98,6 @@ object Bayes {
     })
 
     classificationResult.filter(_ != ()).mkString(",")
-
   }
 
   /**
@@ -121,7 +117,6 @@ object Bayes {
 //    getTopLabels(prediction).mkString(",")
 
     null
-
   }
 
   /**
@@ -145,6 +140,5 @@ object Bayes {
     })
 
     (grepResult("stockDict"), mlresult("indusModels"), grepResult("setcionDict"))
-
   }
 }

@@ -31,7 +31,6 @@ object TitleDeduplication {
       }
 
       titleList
-
     }
 
   /**
@@ -53,7 +52,6 @@ object TitleDeduplication {
       true
     else
       false
-
   }
 
   /**
@@ -79,6 +77,5 @@ object TitleDeduplication {
     }
 
     false
-
   }
 }

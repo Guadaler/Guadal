@@ -40,7 +40,6 @@ object Regular {
     }
 
     categoryList.mkString(",")
-
   }
 
   /**
@@ -73,7 +72,6 @@ object Regular {
     }
 
     categoryList.mkString(",")
-
   }
 
   /**
@@ -97,6 +95,5 @@ object Regular {
 
     //    返回值的顺序为股票，行业，版块
     (stockList.mkString(","), industryList.mkString(","), sectionList.mkString(","))
-
   }
 }

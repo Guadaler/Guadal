@@ -19,5 +19,4 @@ class KunyanConf extends Serializable {
     this.host = host
     this.port = port
   }
-
 }

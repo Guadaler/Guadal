@@ -37,7 +37,6 @@ object Similarity {
     val normProduct = sqrt(sum(x :* x)) * sqrt(sum(y :* y))
 
     dotProduct/normProduct
-
   }
 
 }

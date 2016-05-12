@@ -23,6 +23,7 @@ object TextPreprocessing {
     val sbcSpace = 12288.toChar
     val dbcSpace = 32.toChar
     val bufferString = new ArrayBuffer[Char]
+
     if(content == null) {
       content
     } else {
@@ -88,7 +89,6 @@ object TextPreprocessing {
       null
     else
       removeStopWords(resultWords, stopWords)
-
   }
 
   /**
@@ -111,6 +111,5 @@ object TextPreprocessing {
       null
     else
       removeStopWords(resultWords, stopWords)
-
   }
 }

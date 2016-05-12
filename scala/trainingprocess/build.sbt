@@ -34,7 +34,7 @@ libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.5.1"
 
 resolvers += "Kunyan Repo" at "http://222.73.34.92:8081/nexus/content/groups/public/"
 
-libraryDependencies += "com.kunyan" % "nlpsuit" % "0.2.2.alpha"
+libraryDependencies += "com.kunyan" % "nlpsuit-package" % "0.2.4"
 
 assemblyMergeStrategy in assembly := {
   case PathList("javax", "servlet", xs @ _*) => MergeStrategy.last
