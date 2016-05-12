@@ -3,6 +3,8 @@ package sentiment
 import java.io.{File, PrintWriter}
 
 import com.kunyan.nlpsuit.util.{AnsjAnalyzer, TextPreprocessing}
+import com.kunyandata.nlpsuit.util.TextPreprocessing
+
 //import com.kunyandata.nlpsuit.sentiment.Analyzer
 //import com.kunyandata.nlpsuit.sentiment.TextPre_ansj
 //import com.kunyandata.nlpsuit.sentiment.Util

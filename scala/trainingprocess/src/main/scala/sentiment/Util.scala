@@ -388,5 +388,24 @@ object Util {
     wr.close()
   }
 
+  //  /**
+  //    * 读取模型，从hdfs上读取
+  // *
+  //    * @param modelfileFromHdfs hdfs路径 如hdfs://222.73.57.12:9000/user/F_2_1500
+  //    * @return 模型Map[模型名称，模型]
+  //    */
+  //  def init(modelfileFromHdfs: String): Map[String, Any] = {
+  //    var modelMap:Map[String, Any] = Map()
+  //    //读取hdfs上保存的模型
+  //    val hdfsConf = new Configuration()
+  //    val fs = FileSystem.get(hdfsConf)
+  //    val fileList = fs.listStatus(new Path(modelfileFromHdfs)).map(_.getPath.toString)
+  //    fileList.foreach(file => {
+  //      val modelName = file.replaceAll(modelfileFromHdfs, "")
+  //      val tempModelInput = new ObjectInputStream(fs.open(new Path(file))).readObject()
+  //      modelMap +=(modelName -> tempModelInput)
+  //    })
+  //    modelMap
+  //  }
 
 }
