@@ -2,7 +2,7 @@ package sentiment
 
 import java.io.{PrintWriter, File}
 
-import com.kunyan.nlpsuit.sentiment.PredictWithNb
+import com.kunyandata.nlpsuit.sentiment.PredictWithNb
 import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.io.Source
@@ -54,14 +54,14 @@ object TestPredict {
     Source.fromFile(new File(files)).getLines().foreach(line=>{
       if(line.contains("===============================================") && count <=100){
         count +=1
-        val result = PredictWithNb.predict(temp, models, stopBr)
+        val result = PredictWithNb.predictWithSigle(temp, models, stopWords)
         result match {
-          case 1.0 => {
+          case "neg" => {
             val wr = new PrintWriter(out + "\\neg\\" + count+".txt", "utf-8")
             wr.write(temp)
             wr.close()
           }
-          case 4.0 => {
+          case "neu_pos" => {
             val wr = new PrintWriter(out + "\\neu\\" + count+".txt", "utf-8")
             wr.write(temp)
             wr.close()
@@ -79,18 +79,17 @@ object TestPredict {
     */
   def reLabelWithDZH2(sc: SparkContext, files: String, out: String, models: Map[String, Any]): Unit = {
     val stopWords = sc.textFile("D:\\111_DATA\\data\\stop_words_CN").collect()
-    val stopBr = sc.broadcast(stopWords)
     val fileList = new File(files).listFiles()
     fileList.foreach(file => {
       val content = Source.fromFile(file).getLines().map(line =>{line}).mkString
-      val result = PredictWithNb.predict(content, models, stopBr)
+      val result = PredictWithNb.predictWithSigle(content, models, stopWords)
       result match {
-        case 1.0 => {
+        case "neg" => {
           val wr = new PrintWriter(out + "\\neg\\" + file.getName, "utf-8")
           wr.write(content)
           wr.close()
         }
-        case 4.0 => {
+        case "neu_pos" => {
           val wr = new PrintWriter(out + "\\neu\\" + file.getName, "utf-8")
           wr.write(content)
           wr.close()
@@ -120,16 +119,16 @@ object TestPredict {
         case "neu" => 4.0
       }
       val content = filemap.get(file).toString
-      val result = PredictWithNb.predict(content, models, stopBr)
+      val result = PredictWithNb.predictWithSigle(content, models, stopWords)
       if (result == label) {
         count += 1
         count_r += 1
         result match {
-          case 1.0 => {
+          case "neg" => {
             count_neg += 1;
             count_neg_r += 1
           }
-          case 4.0 => {
+          case "neu_pos" => {
             count_neu += 1;
             count_neu_r += 1
           }
@@ -137,10 +136,10 @@ object TestPredict {
       } else {
         count += 1
         result match {
-          case 1.0 => {
+          case "neg" => {
             count_neg += 1
           }
-          case 4.0 => {
+          case "neu_pos" => {
             count_neu += 1
           }
         }
@@ -177,16 +176,16 @@ object TestPredict {
         case "neu" => 4.0
       }
       val content = filemap.get(file).toString
-      val result = PredictWithNb.predict(content, models, stopBr)
+      val result = PredictWithNb.predictWithSigle(content, models, stopWords)
       if (result == label) {
         count += 1
         count_r += 1
         result match {
-          case 1.0 => {
+          case "neg" => {
             count_neg += 1;
             count_neg_r += 1
           }
-          case 4.0 => {
+          case "neu_pos" => {
             count_neu += 1;
             count_neu_r += 1
           }
@@ -194,13 +193,13 @@ object TestPredict {
       } else {
         count += 1
         result match {
-          case 1.0 => {
+          case "neg" => {
             count_neg += 1
             val wr = new PrintWriter(outPath + "\\neg\\" + file.getName + ".txt", "utf-8")
             wr.write(content)
             wr.close()
           }
-          case 4.0 => {
+          case "neu_pos" => {
             count_neu += 1
             val wr = new PrintWriter(outPath + "\\neu\\" + file.getName + ".txt", "utf-8")
             wr.write(content)
@@ -218,9 +217,4 @@ object TestPredict {
     println("平均正确率为：" + right)
   }
 
-  def deal(): Unit ={
-    val file=""
-    val out=""
-
-  }
 }

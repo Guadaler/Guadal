@@ -1,8 +1,8 @@
-//mainClass in (Compile, packageBin) := Some("com.kunyandata.nlp.classification.TrainingProcess")
+//mainClass in (Compile, packageBin) := Some("com.kunyandata.nlpsuit.cluster.SpectralClustering")
 
 name := "nlpsuit"
 
-version := "0.2.3"
+version := "0.2.4"
 
 scalaVersion := "2.10.4"
 
@@ -16,7 +16,7 @@ libraryDependencies += "org.apache.spark" % "spark-core_2.10" % "1.5.2"
 
 libraryDependencies += "org.ansj" % "ansj_seg" % "0.9"
 
-libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.5.1"
+libraryDependencies += "org.json" % "json" % "20160212"
 
 assemblyMergeStrategy in assembly := {
   case PathList("javax", "servlet", xs @ _*) => MergeStrategy.last

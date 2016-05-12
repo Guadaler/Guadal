@@ -4,7 +4,8 @@ import java.io.{File, PrintWriter}
 import java.sql.{Connection, DriverManager}
 import java.util
 
-import com.kunyan.nlpsuit.util.{AnsjAnalyzer, TextPreprocessing}
+import com.kunyandata.nlpsuit.util.{AnsjAnalyzer, TextPreprocessing}
+import org.ansj.domain.Term
 import org.apache.spark.broadcast.Broadcast
 import redis.clients.jedis.{Jedis, JedisPool, JedisPoolConfig}
 
@@ -316,6 +317,7 @@ object Util {
 
   /**
     * 对每篇文章进行词频统计
+    *
     * @param file  文章内容分词结果数组（已分词、去停、数组）
     * @return 单词-词频
     */
@@ -408,4 +410,62 @@ object Util {
   //    modelMap
   //  }
 
+  //---------------【文本处理2】----------------------------------
+  /**
+    * 根据词性剔除无用词
+    *
+    * @param words 分词结果数组
+    * @return 处理结果Map[String,Int]  [关键词，词频]
+    * @author zhangxin
+    */
+  def removeUsenelss(words:Array[Term]):util.HashMap[String,Int]={
+    var words_fre_map=new util.HashMap[String,Int]()
+    if(words!=null){
+      for(word:Term<-words){
+        val wordstr=word.toString();
+        if(!wordstr.contains("##") && wordstr.contains("/")){
+          val item=wordstr.substring(0,wordstr.indexOf("/"))
+          val ext=wordstr.substring(wordstr.indexOf("/")+1,wordstr.length())
+          if(!ext.startsWith("uj")&& !ext.startsWith("ul")&& !ext.startsWith("w") && !ext.startsWith("m")){
+            //将符合条件的item添加到words_fre_map中
+            addMap(words_fre_map,item.trim)
+          }
+        }
+      }
+    }
+    words_fre_map
+  }
+
+  /**
+    * 词频统计
+    *
+    * @param map  存放结果
+    * @param item  关键词
+    * @author zhangxin
+    */
+  def addMap(map:util.HashMap[String,Int],item:String):Unit={
+    if(!map.containsKey(item)){
+      map.put(item,1)
+    }else{
+      map.put(item,map.get(item)+1)
+    }
+  }
+
+  /**
+    * 将词加入到“词典”[wordsDict]
+    *
+    * @param wordsDict  词典格式：  编号:关键词
+    * @param words_fre_map  一篇文章  关键词：tf-idf值
+    */
+  def add2wordsDict(wordsDict:util.HashMap[String,Int],words_fre_map:util.HashMap[String,Int]): Unit ={
+    var count=wordsDict.size();
+    val it=words_fre_map.keySet().iterator();
+    while(it.hasNext){
+      count +=1
+      var word=it.next();
+      if(!wordsDict.keySet().contains(word)){
+        wordsDict.put(word,count)
+      }
+    }
+  }
 }
