@@ -1,6 +1,6 @@
 package tdt
 
-import org.apache.spark.mllib.clustering.{LocalLDAModel, DistributedLDAModel, LDA}
+import org.apache.spark.mllib.clustering.{LDA, LocalLDAModel}
 import org.apache.spark.mllib.linalg.{Matrix, Vectors}
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -53,7 +53,7 @@ object TestLDAOnline {
       setK(k).
       setDocConcentration(5).
       setTopicConcentration(5).
-      setMaxIterations(500).
+      setMaxIterations(10).
       setSeed(0L).
       setCheckpointInterval(10).
       setOptimizer("online").

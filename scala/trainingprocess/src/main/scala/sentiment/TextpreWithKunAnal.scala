@@ -1,9 +1,11 @@
 package sentiment
 
 import java.io.{File, PrintWriter}
+import java.text.SimpleDateFormat
+import java.util.Date
 
+import com.kunyandata.nlpsuit.util.{KunyanConf, TextPreprocessing}
 import org.apache.spark.SparkContext
-import com.kunyan.nlpsuit.util._
 
 /**
   * Created by zx on 2016/3/25. 用坤雁分词器对文本进行预处理
@@ -11,89 +13,24 @@ import com.kunyan.nlpsuit.util._
 object TextpreWithKunAnal {
 
   /**
-    * 用于对本地文本数据进行预处理（只限短文本，文本长度不可超过6Kb）
-    * 处理后单篇文章占一行，并按照“labelNum title_seg content_seg”格式写入到本地文本保存
     *
-    * @param sc spark程序入口
-    * @param dataPath  数据本地路径，注意到父路径 如"E:\\data_test\\data"
-    * @param outPath 输出路径，完整路径 如"E:\\data_test\\textSeg.txt"
-    * @param stopWordsPath 停用词表  E:\data_test\stop_words_CN
-    * @return 无返回
-    * @author zhangxin
+    * @param sc
+    * @param dataPath
+    * @param outPath
+    * @param stopWordsPath
     */
-  def textPreOnlyShort(sc:SparkContext,dataPath:String,outPath:String,stopWordsPath:String): Unit ={
+  def textContentPre(sc:SparkContext,dataPath:String,outPath:String,stopWordsPath:String): Unit ={
+
+    // 获取配置文件信息
+    val configInfo = new SentimentConf()
+    configInfo.initConfig("D:\\111_DATA\\data\\config.json")
+
+    // 配置kunyan分词
+    val kunyanConfig = new KunyanConf
+    kunyanConfig.set(configInfo.getValue("kunyan", "host"), configInfo.getValue("kunyan", "port").toInt)
+
     val stopWords = sc.textFile(stopWordsPath).collect()
-    var writer=new PrintWriter(new File(outPath),"UTF-8")
-    //读取
-    val files =Util.readFile2HashMap(dataPath)
-    val it=files.keySet.iterator
-
-    //计数
-    var count=0
-    while(it.hasNext){
-
-      //取出单篇文章
-      val file=it.next()
-
-      //获取单篇文章title和content
-      val title=file.getName.substring(0,file.getName.indexOf(".txt"))
-      val content=files.get(file).toString
-
-      //分词，返回分词结果为Json格式
-      val title_segJson=WordSeg.splitWord(TextPreprocessing.formatText(title),1)
-      val content_segJson:String=WordSeg.splitWord(TextPreprocessing.formatText(content),1)
-
-      // Json格式 ->Array数组
-      var title_seg=WordSeg.getWords(title_segJson)
-      var content_seg=WordSeg.getWords(content_segJson)
-
-      //去停，返回结果为Array
-      title_seg=TextPreprocessing.removeStopWords(title_seg,stopWords)
-      content_seg=TextPreprocessing.removeStopWords(content_seg,stopWords)
-
-      //结果Array =>String
-      var titlestr=""
-      var contentstr=""
-      for(word <-title_seg){
-        titlestr +=" "+word.toString()
-      }
-      for(word <-content_seg){
-        contentstr +=" "+word.toString()
-      }
-
-      //获取类别编号
-      val label=file.getParentFile.getName
-      val labelNum=
-        label match {
-          case "neg" =>1
-          case "neu" =>2
-          case "pos" =>3
-        }
-
-      //按格式写入到本地文本进行保存
-      writer.append(labelNum+" "+titlestr+" "+contentstr+"\n")
-      writer.flush()
-
-      //计数
-      count +=1
-      println("还剩下："+(files.size()-count))
-    }
-    writer.close()
-  }
-
-  /**
-    * 用于对本地文本数据进行预处理(包括长文本)
-    * 处理后单篇文章占一行，并按照“labelNum title_seg content_seg”格式写入到本地文本保存
-    * @param sc spark程序入口
-    * @param dataPath  数据本地路径，注意到父路径 如"E:\\data_test\\data"
-    * @param outPath 输出路径，完整路径 如"E:\\data_test\\textSeg.txt"
-    * @param stopWordsPath 停用词表  E:\data_test\stop_words_CN
-    * @return 无返回
-    * @author zhangxin
-    */
-  def textPre(sc:SparkContext,dataPath:String,outPath:String,stopWordsPath:String): Unit ={
-    val stopWords = sc.textFile(stopWordsPath).collect()
-    var writer=new PrintWriter(new File(outPath),"UTF-8")
+    val writer=new PrintWriter(new File(outPath),"UTF-8")
     //读取所有文章
     val files = Util.readFile2HashMap(dataPath)
     val it=files.keySet.iterator
@@ -101,155 +38,65 @@ object TextpreWithKunAnal {
     //计数
     var count=0
     while(it.hasNext){
+      val begin = new Date().getTime
+      val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+
       //取出单篇文章
       val file=it.next()
 
       //获取单篇文章title和content
       val title=file.getName.substring(0,file.getName.indexOf(".txt"))
-      var content=files.get(file).toString
-
-      //非法字符替换，所有title已处理过，因此无需替换
-      content =Util.replaceIllegal(content)
+      val content=Util.replaceIllegal(files.get(file).toString)
 
       //计数，便于查问题
-      println("还剩下："+(files.size()-count)+"  ["+file.getParentFile.getName+"]  "+title)
+      print("还剩下："+(files.size()-count)+"  ["+file.getParentFile.getName+"]  "+title)
 
-      //处理title
-      //分词，返回分词结果为Json格式
-      val title_segJson=WordSeg.splitWord(TextPreprocessing.formatText(title),1)
-
-      // Json格式 ->Array数组
-      var title_seg=WordSeg.getWords(title_segJson)
-
-      //去停，返回结果为Array
-      title_seg=TextPreprocessing.removeStopWords(title_seg,stopWords)
-
-      //结果Array =>String
-      var titlestr=""
-      for(word <-title_seg){
-        titlestr +=" "+word.toString()
-      }
+      val content_seg=TextPreprocessing.process(content,stopWords,kunyanConfig)
+      val contentstr=content_seg.mkString(",")
 
       //处理content，注意对长文本要先分段再分词
-      var contentstr=""
-      if(content.size>1500){
-        contentstr=bigText(content,stopWords)
-      }else{
-        val content_segJson=WordSeg.splitWord(TextPreprocessing.formatText(content),1)
-        var content_seg=WordSeg.getWords(content_segJson)
-        content_seg=TextPreprocessing.removeStopWords(content_seg,stopWords)
-        for(word <-content_seg){
-          contentstr +=" "+word.toString()
-        }
-      }
+//      var contentstr=""
+//      if(content.size>1500){
+//        contentstr=bigText(content,stopWords,kunyanConfig)
+//      }else{
+//        val content_seg=TextPreprocessing.process(content,stopWords,kunyanConfig)
+//        contentstr=content_seg.mkString(",")
+//      }
 
       //获取文章类别编号
       val label=file.getParentFile.getName
-      val labelNum=
-        label match {
-          case "neg" =>1
-          case "neu" =>2
-          case "pos" =>3
-        }
-
-      //按格式写入到本地文本进行保存
-      writer.append(labelNum+" "+titlestr+" "+contentstr+"\n")
-      writer.flush()
-
-//      //计数
-      count +=1
-//      println("还剩下："+(files.size()-count)+"  ["+label+"]  "+title)
-    }
-    writer.close()
-  }
-
-  def textPre_all(sc:SparkContext,dataPath:String,outPath_title:String,outPath_content:String,stopWordsPath:String): Unit ={
-    val stopWords = sc.textFile(stopWordsPath).collect()
-    var writer1=new PrintWriter(new File(outPath_title),"UTF-8")
-    var writer2=new PrintWriter(new File(outPath_content),"UTF-8")
-    //读取所有文章
-    val files = Util.readFile2HashMap(dataPath)
-    val it=files.keySet.iterator
-
-    //计数
-    var count=0
-    while(it.hasNext){
-      //取出单篇文章
-      val file=it.next()
-
-      //获取单篇文章title和content
-      val title=file.getName.substring(0,file.getName.indexOf(".txt"))
-      var content=files.get(file).toString
-
-      //非法字符替换，所有title已处理过，因此无需替换
-      content =Util.replaceIllegal(content)
-
-      //计数，便于查问题
-      println("还剩下："+(files.size()-count)+"  ["+file.getParentFile.getName+"]  "+title)
-
-      //处理title
-      //分词，返回分词结果为Json格式
-      val title_segJson=WordSeg.splitWord(TextPreprocessing.formatText(title),1)
-
-      // Json格式 ->Array数组
-      var title_seg=WordSeg.getWords(title_segJson)
-
-      //去停，返回结果为Array
-      title_seg=TextPreprocessing.removeStopWords(title_seg,stopWords)
-
-      //结果Array =>String
-      var titlestr=""
-      for(word <-title_seg){
-        titlestr +=" "+word.toString()
+      label match {
+        case "neg" => writer.append("1#"+contentstr+"\n").flush()
+        case "neu" => writer.append("4#"+contentstr+"\n").flush()
+        case "pos" => writer.append("4#"+contentstr+"\n").flush()
       }
-
-      //处理content，注意对长文本要先分段再分词
-      var contentstr=""
-      if(content.size>1500){
-        contentstr=bigText(content,stopWords)
-      }else{
-        val content_segJson=WordSeg.splitWord(TextPreprocessing.formatText(content),1)
-        var content_seg=WordSeg.getWords(content_segJson)
-        content_seg=TextPreprocessing.removeStopWords(content_seg,stopWords)
-        for(word <-content_seg){
-          contentstr +=" "+word.toString()
-        }
-      }
-
-      //获取文章类别编号
-      val label=file.getParentFile.getName
-      val labelNum=
-        label match {
-          case "neg" =>1
-          case "neu" =>2
-          case "pos" =>3
-        }
-
-      //按格式写入到本地文本进行保存
-      writer1.append(labelNum+"#"+titlestr+"\n")
-      writer1.flush()
-      writer2.append(labelNum+"#"+contentstr+"\n")
-      writer2.flush()
 
       //计数
       count +=1
+      val end=new Date().getTime
+      println("    【耗时】 "+(end-begin))
     }
-    writer1.close()
-    writer2.close()
+    writer.close()
   }
-
+  
   def textPre(sc:SparkContext,content:String,stopWordsPath:String): String ={
+    // 获取配置文件信息
+    val configInfo = new SentimentConf()
+    configInfo.initConfig("D:\\111_DATA\\data\\config.json")
+
+    // 配置kunyan分词
+    val kunyanConfig = new KunyanConf
+    kunyanConfig.set(configInfo.getValue("kunyan", "host"), configInfo.getValue("kunyan", "port").toInt)
+
     val stopWords = sc.textFile(stopWordsPath).collect()
     //非法字符替换，所有title已处理过，因此无需替换
     val content2 =Util.replaceIllegal(content)
     //处理content，注意对长文本要先分段再分词
     var contentstr=""
     if(content2.size>1500){
-      contentstr=bigText(content2,stopWords)
+      contentstr=bigText(content2,stopWords,kunyanConfig)
     }else{
-      val content_segJson=WordSeg.splitWord(TextPreprocessing.formatText(content2),1)
-      var content_seg=WordSeg.getWords(content_segJson)
-      content_seg=TextPreprocessing.removeStopWords(content_seg,stopWords)
+      val content_seg=TextPreprocessing.process(content,stopWords,kunyanConfig)
       if(content_seg ==null){
         return null
       }else{
@@ -269,40 +116,29 @@ object TextpreWithKunAnal {
     * @return 连接后结果字符串
     * @author zhangxin
     */
-  def bigText(content:String,stopWords:Array[String]): String ={
+  def bigText(content:String,stopWords:Array[String],kunyanConfig:KunyanConf): String ={
 
     var contentstr=""
 
     //处理整数部分，即 0 ~ 1500*（n-1）部分
-    var n=content.size/1500+1
+    val n=content.size/1500+1
     for(i <- 1 until n){
       //截取
-      var content_i=content.substring(1500*(i-1),1500*i+1)
+      val content_i=content.substring(1500*(i-1),1500*i+1)
       //分词
-      var content_segJson =WordSeg.splitWord(TextPreprocessing.formatText(content_i),1)
-      // Json格式 ->Array数组
-      var content_seg=WordSeg.getWords(content_segJson)
-      //去停，返回结果为Array
-      content_seg=TextPreprocessing.removeStopWords(content_seg,stopWords)
-
+      val content_seg=TextPreprocessing.process(content,stopWords,kunyanConfig)
       if(content_seg ==null){
         return null
       }else{
         //结果Array =>String
-        for(word <-content_seg){
-          contentstr +=" "+word.toString()
-        }
+        contentstr=content_seg.mkString(",")
       }
     }
 
     //处理剩下的部分
-    var content_j=content.substring(1500*(n-1),content.size)
-    var content_segJson =WordSeg.splitWord(TextPreprocessing.formatText(content_j),1)
-    var content_seg=WordSeg.getWords(content_segJson)
-    content_seg=TextPreprocessing.removeStopWords(content_seg,stopWords)
-    for(word <-content_seg){
-      contentstr +=" "+word.toString()
-    }
+    val content_j=content.substring(1500*(n-1),content.size)
+    val content_seg=TextPreprocessing.process(content_j,stopWords,kunyanConfig)
+    contentstr +=","+content_seg.mkString(",")
     contentstr
   }
 

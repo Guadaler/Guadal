@@ -37,15 +37,16 @@ object TestTextPre {
 
     //数据集预处理成一个txt文件（分词，去停）
 //    TextpreWithAnsj.textPre(sc,negfile,posfile,outpath,stopWordsPath)
-    TextpreWithAnsj.textPre_content_F(sc,filepath_8,outpath_8,stopWordsPath)
-
-
-
+//    TextpreWithAnsj.textPre_content_F(sc,filepath_8,outpath_8,stopWordsPath)
 
     //negfile ->local
     val outp="D:\\111_DATA\\data\\【第六次标注】tagging（QQ_3900）\\neg_title"
 //    TextpreWithAnsj.write2local(sc,negfile,outp)
 
+
+    //用坤雁分词器进行预处理
+    val outPath_8_ky="D:\\000_DATA\\out\\8【第八次】\\QQ_zx_3400_ky.txt"
+    TextpreWithKunAnal.textContentPre(sc,filepath_8,outPath_8_ky,stopWordsPath)
 
     //
     var end=new Date().getTime
