@@ -28,8 +28,7 @@ object CosineComputing {
         //      .fromFile("/home/QQ/Documents/trainingWithIndus/仪电仪表")
         //      .fromFile("D:/QQ/Desktop/segTrainingSet")
         .fromFile(args(0))
-        .getLines().toSeq)
-      .repartition(8)
+        .getLines().toSeq, 16)
       .map(line => {
         val temp = line.split("\t")
         if (temp.length == 2) {

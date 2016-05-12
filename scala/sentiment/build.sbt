@@ -10,7 +10,7 @@ scalaVersion := "2.10.4"
 
 resolvers += "Kunyan Repo" at "http://222.73.34.92:8081/nexus/content/groups/public/"
 
-libraryDependencies += "com.kunyan" % "nlpsuit-package" % "0.2.4.beta"
+libraryDependencies += "com.kunyan" % "nlpsuit-package" % "0.2.4"
 
 libraryDependencies += "redis.clients" % "jedis" % "2.8.0"
 
