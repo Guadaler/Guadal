@@ -83,7 +83,8 @@ object MySQLUtil {
     * @param data 写入的信息
     * @author liumiao
     */
-  def writeToMyaql(sentimentConf: SentimentConf, sqlContent: SQLContext, dbName: String, data: RDD[Row]): Unit = {
+  def writeToMyaql(sentimentConf: SentimentConf, sqlContent: SQLContext,
+                   dbName: String, data: RDD[Row]): Unit = {
 
     val  MySql = sentimentConf.getValue("mysql", "info")
 
