@@ -3,6 +3,7 @@ package com.kunyandata.nlpsuit.cluster
 import breeze.linalg.{*, DenseMatrix, DenseVector, diag, eig, sum}
 import com.kunyandata.nlpsuit.Statistic.Similarity
 import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.mllib.stat.Statistics
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.mllib.linalg.{Vectors => MVectors, Vector => MVector}
@@ -24,25 +25,24 @@ object SpectralClustering {
     * @author QQ
     */
   def createDocTermRDD(dataRDD: RDD[(Int, Array[String])],
-                          wordListBr: Broadcast[Array[String]]): RDD[(Int, DenseVector[Double])] = {
+                          wordListBr: Broadcast[Array[String]]): RDD[(Int, Array[Int])] = {
 
-    // 创建值为0，行为文本数量，列为词汇表长度的空矩阵
-    val rowNum = dataRDD.count().toInt
+    // 获取词向量长度
     val colNum = wordListBr.value.length
 
     // 将语料库转为文档词条矩阵
     dataRDD.map(line => {
       val (docID, content) = (line._1, line._2)
-      val tempVector = DenseVector.zeros[Double](colNum)
+      val tempArray = Array[Int](colNum)
       wordListBr.value.foreach(word => {
 
         if (content.contains(word)) {
-          tempVector(wordListBr.value.indexOf(word)) = content.count(_ == word)
+          tempArray.update(wordListBr.value.indexOf(word), content.count(_ == word))
         }
 
       })
 
-      (docID, tempVector)
+      (docID, tempArray)
     })
 
   }
@@ -50,14 +50,18 @@ object SpectralClustering {
   /**
     * 计算相关矩阵
     *
-    * @param sc SparkContext
-    * @param docTermRDD 文档词条矩阵
+    * @param docTermRDD 文档词条矩阵 (id, wordFreq)
     * @param wordListBr 基于dataRDD的文档词表的广播变量
     * @return 返回一个矩阵，行和列均为词与词之间的相似性
     * @author QQ
     */
-  def createCorrRDD(sc: SparkContext, docTermRDD: RDD[DenseVector[Double]],
+  def createCorrRDD(docTermRDD: RDD[(Int, Array[Int])],
                        wordListBr: Broadcast[Array[String]]): RDD[String] = {
+
+    val k = docTermRDD.values.cartesian(docTermRDD.values).repartition(4)
+    k.map(line => {
+      Similarity.cosineDistance(line._1, line._2)
+    })
 
     val N = wordListBr.value.length
     val docTermArray = docTermRDD.collect()

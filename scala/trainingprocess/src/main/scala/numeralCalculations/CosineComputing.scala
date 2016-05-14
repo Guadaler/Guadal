@@ -2,6 +2,7 @@ package numeralCalculations
 
 import org.apache.spark.{SparkContext, SparkConf}
 import com.kunyandata.nlpsuit.cluster.SpectralClustering._
+import org.apache.spark.mllib.stat.Statistics
 import scala.io.Source
 
 /**
