@@ -8,6 +8,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.mllib.linalg.{Vectors => MVectors, Vector => MVector}
 import org.apache.spark.mllib.clustering.KMeans
+import scala.collection.Parallelizable
 import scala.io.Source
 
 /**
@@ -52,36 +53,23 @@ object SpectralClustering {
     *
     * @param docTermRDD 文档词条矩阵 (id, wordFreq)
     * @param wordListBr 基于dataRDD的文档词表的广播变量
-    * @return 返回一个矩阵，行和列均为词与词之间的相似性
+    * @return 返回一个RDD矩阵
     * @author QQ
-    */
-  def createCorrRDD(docTermRDD: RDD[(Int, Array[Int])],
-                       wordListBr: Broadcast[Array[String]]): RDD[String] = {
+//    */
+  def createCorrRDD(docTermRDD: RDD[(Int, Array[Int])],wordListBr: Broadcast[Array[String]],
+                    parallelizim: Int): RDD[(Long, Iterable[(Long, Long, Double)])] = {
 
-    val k = docTermRDD.values.cartesian(docTermRDD.values).repartition(4)
-    k.map(line => {
-      Similarity.cosineDistance(line._1, line._2)
-    })
-
-    val N = wordListBr.value.length
-    val docTermArray = docTermRDD.collect()
-    val corrRDD = sc.parallelize(wordListBr.value.indices).map(wordIndex => {
-
-      // 根据wordIndex获取列向量
-      val wordVector = DenseVector(docTermArray.map(vectors => vectors(wordIndex)))
-
-      // 分别计算该列向量和其他列向量之间的余弦距离，并得到一个值为余弦距离的向量
-      val consineDistanceArray = wordListBr.value.indices.map(otherWordIndex => {
-        val otherWordVector = DenseVector(docTermArray.map(vectors => vectors(wordIndex)))
-        Similarity.cosineDistance(wordVector, otherWordVector)
-      }).toArray
-      val consineDistanceVector = DenseVector(consineDistanceArray)
-
-      wordIndex + "\t" + consineDistanceVector.toArray.mkString(" ")
-
-    })
-
-    corrRDD
+    val selfWithID = docTermRDD.values.map(_.map(_.toDouble)).zipWithIndex()
+    val corrRowRDD = selfWithID.cartesian(selfWithID).repartition(parallelizim)
+    val result = corrRowRDD.map(line => {
+      val rowID = line._1._2
+      val colID = line._2._2
+      val x = line._1._1
+      val y = line._2._1
+      val cosDist = Similarity.cosineDistance(x, y)
+      (rowID, colID, cosDist)
+    }).groupBy(_._1)
+    result
   }
 
 

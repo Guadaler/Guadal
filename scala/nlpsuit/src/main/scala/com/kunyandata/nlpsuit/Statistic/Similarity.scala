@@ -44,7 +44,17 @@ object Similarity {
     val n = DenseVector(x)
     val m = DenseVector(y)
     val dotProduct = sum(n :* m)
-    val normProduct = sqrt(sum(n :* m)) * sqrt(sum(n :* m))
+    val normProduct = sqrt(sum(n :* n)) * sqrt(sum(m :* m))
+
+    dotProduct/normProduct
+  }
+
+  def cosineDistance(x: Seq[Double], y: Seq[Double]): Double ={
+
+    val n = DenseVector(x.toArray)
+    val m = DenseVector(y.toArray)
+    val dotProduct = sum(n :* m)
+    val normProduct = sqrt(sum(n :* n)) * sqrt(sum(m :* m))
 
     dotProduct/normProduct
   }

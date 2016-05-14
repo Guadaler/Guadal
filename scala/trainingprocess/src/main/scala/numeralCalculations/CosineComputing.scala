@@ -37,7 +37,7 @@ object CosineComputing {
     val wordList = data.map(line => line._2).flatMap(_.toSeq).distinct().collect().sorted
     val wordListBr = sc.broadcast(wordList)
     val aRDD = createDocTermRDD(data, wordListBr)
-    val bRDD = createCorrRDD(sc, aRDD.map(_._2), wordListBr)
+    val bRDD = createCorrRDD(aRDD, wordListBr, 16)
     bRDD.saveAsTextFile(args(2))
   }
 
