@@ -27,7 +27,7 @@ object CosineComputing {
       val temp = line.split("\t")
       if (temp.length == 2)
         temp(1).split(",")
-    }).filter(_ != ()).map(_.asInstanceOf[Array[String]]).zipWithIndex()
+    }).filter(_ != ()).map(_.asInstanceOf[Array[String]])
 
     //    val data = sc.parallelize(Seq((0, Array("a", "b", "c", "d")), (1, Array("a", "c", "d", "e")), (2, Array("b", "d", "f", "g", "k")))).cache()
 
