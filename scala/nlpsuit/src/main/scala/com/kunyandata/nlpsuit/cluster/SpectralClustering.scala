@@ -28,14 +28,17 @@ object SpectralClustering {
 
     //    ++++++++++++++++++++++++++++++++++++++ 计算 adjacency matrix ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     //获取数据
-    val data = sc.parallelize(Source.fromFile(args(1)).getLines().toSeq, args(0).toInt).map(line => {
-      val temp = line.split("\t")
-      if (temp.length == 2)
-        temp(1).split(",")
-    }).filter(_ != ()).map(_.asInstanceOf[Array[String]]).zipWithIndex()
-    val a = createTermDocMatrix(sc, data, 4)
-    val b = createCorrRDD(a, 4)
+//    val data = sc.parallelize(Source.fromFile(args(1)).getLines().toSeq, args(0).toInt).map(line => {
+//      val temp = line.split("\t")
+//      if (temp.length == 2)
+//        temp(1).split(",")
+//    }).filter(_ != ()).map(_.asInstanceOf[Array[String]])
+    val data = sc.parallelize(Seq(Array("a", "b", "c"), Array("b", "c", "d"), Array("d", "e", "f")))
+    val a = createTermDocMatrix(sc, data, 2)
+    a.foreach(line => println(line._1, line._2.toSeq))
+    val b = createCorrRDD(a, 2)
     b.foreach(println)
+    val k = data.flatMap(_.toSeq).distinct().collect().sorted
   }
 
   /**
@@ -46,13 +49,12 @@ object SpectralClustering {
     * @return 返回一个矩阵，行为文档向量，列为词向量
     * @author QQ
     */
-  def createDocTermRDD(sc: SparkContext, dataRDD: RDD[(Array[String], Long)],
+  def createDocTermRDD(sc: SparkContext, dataRDD: RDD[Array[String]],
                        parallelism: Int): RDD[(Long, Array[Int])] = {
 
     // 将语料库转为文档词条矩阵
-    val wordlistBr = sc.broadcast(dataRDD.map(_._1).flatMap(_.toSeq).distinct().collect().sorted)
-    dataRDD.map(line => {
-      val (docID, content) = (line._2, line._1)
+    val wordlistBr = sc.broadcast(dataRDD.flatMap(_.toSeq).distinct().collect().sorted)
+    dataRDD.map(content => {
       val colNum = wordlistBr.value.length
       val tempArray = new Array[Int](colNum)
       wordlistBr.value.foreach(word => {
@@ -72,19 +74,20 @@ object SpectralClustering {
 
       })
 
-      (docID, tempArray)
-    }).repartition(parallelism)
+      tempArray
+    }).zipWithIndex().map(line => (line._2, line._1)).repartition(parallelism)
 
   }
 
-  def createTermDocMatrix(sc: SparkContext, dataRDD: RDD[(Array[String], Long)],
+  def createTermDocMatrix(sc: SparkContext, dataRDD: RDD[Array[String]],
                           parallelism: Int): RDD[(Long, Array[Int])] = {
-    val data = dataRDD.collect()
-    val wordlist = dataRDD.map(_._1).flatMap(_.toSeq).distinct().collect().sorted
+
+    val dataBr = sc.broadcast(dataRDD.collect())
+    val wordlist = dataRDD.flatMap(_.toSeq).distinct().collect().sorted
     val wordlistBr = sc.broadcast(wordlist)
     sc.parallelize(wordlist.toSeq, parallelism).map(word => {
-      val index = wordlistBr.value.toSeq.indexOf(word).toLong
-      val tempArray = data.map(_._1.count(_ == word))
+      val index = wordlistBr.value.indexOf(word).toLong
+      val tempArray = dataBr.value.map(_.count(_ == word))
       (index, tempArray)
     })
   }
@@ -92,20 +95,19 @@ object SpectralClustering {
   /**
     * 计算相关矩阵
     *
-    * @param docTermRDD 文档词条矩阵 (id, wordFreq)
+    * @param dataRDD 文档词条矩阵 (id, wordFreq)
     * @return 返回一个RDD矩阵
     * @author QQ
     */
-  def createCorrRDD(docTermRDD: RDD[(Long, Array[Int])],
+  def createCorrRDD(dataRDD: RDD[(Long, Array[Int])],
                     parallelism: Int): RDD[(Long, Seq[(Long, Long, Double)])] = {
 
-    val selfWithID = docTermRDD.values.map(_.map(_.toDouble)).zipWithIndex()
-    val corrRowRDD = selfWithID.cartesian(selfWithID).repartition(parallelism)
+    val corrRowRDD = dataRDD.cartesian(dataRDD).repartition(parallelism)
     val result = corrRowRDD.map(line => {
-      val rowID = line._1._2
-      val colID = line._2._2
-      val x = line._1._1
-      val y = line._2._1
+      val rowID = line._1._1
+      val colID = line._2._1
+      val x = line._1._2.map(_.toDouble)
+      val y = line._2._2.map(_.toDouble)
       val cosDist = Similarity.cosineDistance(x, y)
       (rowID, colID, cosDist)
     }).groupBy(_._1).map(line => (line._1, line._2.toSeq.sortBy(_._2)))
