@@ -3,10 +3,12 @@ package com.kunyandata.nlpsuit.cluster
 import breeze.linalg.{*, DenseMatrix, DenseVector, diag, eig, sum}
 import com.kunyandata.nlpsuit.Statistic.Similarity
 import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.mllib.stat.Statistics
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.mllib.linalg.{Vectors => MVectors, Vector => MVector}
 import org.apache.spark.mllib.clustering.KMeans
+import scala.collection.Parallelizable
 import scala.io.Source
 
 /**
@@ -15,70 +17,101 @@ import scala.io.Source
   */
 object SpectralClustering {
 
+  def main(args: Array[String]) {
+    val conf = new SparkConf()
+      .setAppName("SClusterTest")
+      .setMaster("local")
+    //      .set("spark.local.ip", "192.168.2.90")
+    //      .set("spark.driver.host", "192.168.2.90")
+
+    val sc = new SparkContext(conf)
+
+    //    ++++++++++++++++++++++++++++++++++++++ 计算 adjacency matrix ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    //获取数据
+//    val data = sc.parallelize(Source.fromFile(args(1)).getLines().toSeq, args(0).toInt).map(line => {
+//      val temp = line.split("\t")
+//      if (temp.length == 2)
+//        temp(1).split(",")
+//    }).filter(_ != ()).map(_.asInstanceOf[Array[String]])
+    val data = sc.parallelize(Seq(Array("a", "b", "c"), Array("b", "c", "d"), Array("d", "e", "f")))
+    val a = createTermDocMatrix(sc, data, 2)
+    a.foreach(line => println(line._1, line._2.toSeq))
+    val b = createCorrRDD(a, 2)
+    b.foreach(println)
+    val k = data.flatMap(_.toSeq).distinct().collect().sorted
+  }
+
   /**
     * 创建文档词条矩阵
     *
     * @param dataRDD 数据RDD，带有新闻id，其中新闻id必须为从0开始，步长为1的等差数列
-    * @param wordListBr 基于dataRDD的文档词表的广播变量
+    * @param parallelism 并行程度
     * @return 返回一个矩阵，行为文档向量，列为词向量
     * @author QQ
     */
-  def createDocTermRDD(dataRDD: RDD[(Int, Array[String])],
-                          wordListBr: Broadcast[Array[String]]): RDD[(Int, DenseVector[Double])] = {
-
-    // 创建值为0，行为文本数量，列为词汇表长度的空矩阵
-    val rowNum = dataRDD.count().toInt
-    val colNum = wordListBr.value.length
-    val docTermMatrix = DenseMatrix.zeros[Double](rowNum, colNum)
+  def createDocTermRDD(sc: SparkContext, dataRDD: RDD[Array[String]],
+                       parallelism: Int): RDD[(Long, Array[Int])] = {
 
     // 将语料库转为文档词条矩阵
-    dataRDD.map(line => {
-      val (docID, content) = (line._1, line._2)
-      val tempVector = DenseVector.zeros[Double](colNum)
-      wordListBr.value.foreach(word => {
+    val wordlistBr = sc.broadcast(dataRDD.flatMap(_.toSeq).distinct().collect().sorted)
+    dataRDD.map(content => {
+      val colNum = wordlistBr.value.length
+      val tempArray = new Array[Int](colNum)
+      wordlistBr.value.foreach(word => {
 
         if (content.contains(word)) {
-          tempVector(wordListBr.value.indexOf(word)) = content.count(_ == word)
+
+          val index = wordlistBr.value.indexOf(word)
+          val replaceNum = content.count(_ == word)
+          tempArray.update(index, replaceNum)
+
+        } else {
+
+          val index = wordlistBr.value.indexOf(word)
+          tempArray.update(index, 0)
+
         }
 
       })
 
-      (docID, tempVector)
-    })
+      tempArray
+    }).zipWithIndex().map(line => (line._2, line._1)).repartition(parallelism)
 
+  }
+
+  def createTermDocMatrix(sc: SparkContext, dataRDD: RDD[Array[String]],
+                          parallelism: Int): RDD[(Long, Array[Int])] = {
+
+    val dataBr = sc.broadcast(dataRDD.collect())
+    val wordlist = dataRDD.flatMap(_.toSeq).distinct().collect().sorted
+    val wordlistBr = sc.broadcast(wordlist)
+    sc.parallelize(wordlist.toSeq, parallelism).map(word => {
+      val index = wordlistBr.value.indexOf(word).toLong
+      val tempArray = dataBr.value.map(_.count(_ == word))
+      (index, tempArray)
+    })
   }
 
   /**
     * 计算相关矩阵
     *
-    * @param sc SparkContext
-    * @param docTermRDD 文档词条矩阵
-    * @param wordListBr 基于dataRDD的文档词表的广播变量
-    * @return 返回一个矩阵，行和列均为词与词之间的相似性
+    * @param dataRDD 文档词条矩阵 (id, wordFreq)
+    * @return 返回一个RDD矩阵
     * @author QQ
     */
-  def createCorrRDD(sc: SparkContext, docTermRDD: RDD[DenseVector[Double]],
-                       wordListBr: Broadcast[Array[String]]): RDD[String] = {
+  def createCorrRDD(dataRDD: RDD[(Long, Array[Int])],
+                    parallelism: Int): RDD[(Long, Seq[(Long, Long, Double)])] = {
 
-    val N = wordListBr.value.length
-    val docTermArray = docTermRDD.collect()
-    val corrRDD = sc.parallelize(wordListBr.value.indices).map(wordIndex => {
-
-      // 根据wordIndex获取列向量
-      val wordVector = DenseVector(docTermArray.map(vectors => vectors(wordIndex)))
-
-      // 分别计算该列向量和其他列向量之间的余弦距离，并得到一个值为余弦距离的向量
-      val consineDistanceArray = wordListBr.value.indices.map(otherWordIndex => {
-        val otherWordVector = DenseVector(docTermArray.map(vectors => vectors(wordIndex)))
-        Similarity.cosineDistance(wordVector, otherWordVector)
-      }).toArray
-      val consineDistanceVector = DenseVector(consineDistanceArray)
-
-      wordIndex + "\t" + consineDistanceVector.toArray.mkString(" ")
-
-    })
-
-    corrRDD
+    val corrRowRDD = dataRDD.cartesian(dataRDD).repartition(parallelism)
+    val result = corrRowRDD.map(line => {
+      val rowID = line._1._1
+      val colID = line._2._1
+      val x = line._1._2.map(_.toDouble)
+      val y = line._2._2.map(_.toDouble)
+      val cosDist = Similarity.cosineDistance(x, y)
+      (rowID, colID, cosDist)
+    }).groupBy(_._1).map(line => (line._1, line._2.toSeq.sortBy(_._2)))
+    result
   }
 
 

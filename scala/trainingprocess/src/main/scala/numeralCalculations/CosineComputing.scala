@@ -2,6 +2,7 @@ package numeralCalculations
 
 import org.apache.spark.{SparkContext, SparkConf}
 import com.kunyandata.nlpsuit.cluster.SpectralClustering._
+import org.apache.spark.mllib.stat.Statistics
 import scala.io.Source
 
 /**
@@ -22,24 +23,16 @@ object CosineComputing {
 
     //    ++++++++++++++++++++++++++++++++++++++ 计算 adjacency matrix ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     //获取数据
-    var id = -1
-    val data = sc
-      .textFile(args(1), args(0).toInt)
-      .map(line => {
-        val temp = line.split("\t")
-        if (temp.length == 2) {
-          id += 1
-          val result = (id, temp(1).split(","))
-          result
-        }
-      }).filter(_ != ()).map(_.asInstanceOf[(Int, Array[String])])
+    val data = sc.parallelize(Source.fromFile(args(1)).getLines().toSeq, args(0).toInt).map(line => {
+      val temp = line.split("\t")
+      if (temp.length == 2)
+        temp(1).split(",")
+    }).filter(_ != ()).map(_.asInstanceOf[Array[String]])
 
     //    val data = sc.parallelize(Seq((0, Array("a", "b", "c", "d")), (1, Array("a", "c", "d", "e")), (2, Array("b", "d", "f", "g", "k")))).cache()
 
-    val wordList = data.map(line => line._2).flatMap(_.toSeq).distinct().collect().sorted
-    val wordListBr = sc.broadcast(wordList)
-    val aRDD = createDocTermRDD(data, wordListBr)
-    val bRDD = createCorrRDD(sc, aRDD.map(_._2), wordListBr)
+    val aRDD = createTermDocMatrix(sc, data, args(0).toInt)
+    val bRDD = createCorrRDD(aRDD, args(0).toInt)
     bRDD.saveAsTextFile(args(2))
   }
 
