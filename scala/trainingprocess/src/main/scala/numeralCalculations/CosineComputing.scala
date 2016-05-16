@@ -1,9 +1,7 @@
 package numeralCalculations
 
-import java.io.{File, PrintWriter}
-
+import com.kunyandata.nlpsuit.rddmatrix.RDDandMatrix._
 import org.apache.spark.{SparkConf, SparkContext}
-import com.kunyandata.nlpsuit.cluster.SpectralClustering._
 
 import scala.io.Source
 
@@ -16,8 +14,8 @@ object CosineComputing {
   def main(args: Array[String]) {
 
     val conf = new SparkConf()
-      .setAppName("SClusterTest")
-      .setMaster("local")
+      .setAppName("corrMatrix")
+//      .setMaster("local")
     //      .set("spark.local.ip", "192.168.2.90")
 //      .set("spark.driver.host", "192.168.2.90")
 
@@ -34,7 +32,7 @@ object CosineComputing {
       val temp = line.split("\t")
       if (temp.length == 2)
         temp(1).split(",")
-    }).filter(_ != ()).map(_.asInstanceOf[Array[String]])
+    }).filter(_ != ()).map(_.asInstanceOf[Array[String]]).zipWithIndex().map(line => (line._2, line._1))
 
 //    System.gc()
 //    val total2 = Runtime.getRuntime.totalMemory()
@@ -48,5 +46,4 @@ object CosineComputing {
     val aRDD = createTermDocMatrix(sc, data, args(0).toInt)
     createCorrRDD(aRDD, args(0).toInt).saveAsTextFile(args(2))
   }
-
 }

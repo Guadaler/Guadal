@@ -18,12 +18,12 @@ object RDDandMatrix {
     * @return 返回一个矩阵，行为文档向量，列为词向量
     * @author QQ
     */
-  def createDocTermRDD(sc: SparkContext, dataRDD: RDD[Array[String]],
+  def createDocTermRDD(sc: SparkContext, dataRDD: RDD[(Long, Array[String])],
                        parallelism: Int): RDD[(Long, Array[Int])] = {
 
     // 将语料库转为文档词条矩阵
-    val wordlistBr = sc.broadcast(dataRDD.flatMap(_.toSeq).distinct().collect().sorted)
-    dataRDD.map(content => {
+    val wordlistBr = sc.broadcast(dataRDD.values.flatMap(_.toSeq).distinct().collect().sorted)
+    dataRDD.values.map(content => {
       val colNum = wordlistBr.value.length
       val tempArray = new Array[Int](colNum)
       wordlistBr.value.foreach(word => {
@@ -56,17 +56,23 @@ object RDDandMatrix {
     * @param parallelism 并行化
     * @return
     */
-  def createTermDocMatrix(sc: SparkContext, dataRDD: RDD[Array[String]],
+  def createTermDocMatrix(sc: SparkContext, dataRDD: RDD[(Long, Array[String])],
                           parallelism: Int): RDD[(Long, Array[Int])] = {
 
-    val dataBr = sc.broadcast(dataRDD.collect())
-    val wordlist = dataRDD.flatMap(_.toSeq).distinct().collect().sorted
-    val wordlistBr = sc.broadcast(wordlist)
-    sc.parallelize(wordlist.toSeq, parallelism).map(word => {
-      val index = wordlistBr.value.indexOf(word).toLong
-      val tempArray = dataBr.value.map(_.count(_ == word))
-      (index, tempArray)
-    })
+
+    val wordlistRDD = sc.parallelize(dataRDD.values.flatMap(_.toSeq).distinct().collect().sorted, parallelism)
+      .zipWithIndex().map(line => (line._2, line._1))
+
+    val synRDD = wordlistRDD.cartesian(dataRDD).repartition(parallelism)
+    val wordCountRDD = synRDD.map(line => {
+      val wordID = line._1._1
+      val docID = line._2._1
+      val word = line._1._2
+      val content = line._2._2
+      val counts = content.count(_ == word)
+      (wordID, docID, counts)
+    }).groupBy(_._1).map(line => (line._1, line._2.toArray.sortBy(_._2).map(_._3)))
+    wordCountRDD
   }
 
   /**
@@ -77,7 +83,7 @@ object RDDandMatrix {
     * @author QQ
     */
   def createCorrRDD(dataRDD: RDD[(Long, Array[Int])],
-                    parallelism: Int): RDD[(Long, Seq[(Long, Long, Double)])] = {
+                    parallelism: Int): RDD[(Long, Array[Double])] = {
 
     val corrRowRDD = dataRDD.cartesian(dataRDD).repartition(parallelism)
     val result = corrRowRDD.map(line => {
@@ -87,7 +93,7 @@ object RDDandMatrix {
       val y = line._2._2.map(_.toDouble)
       val cosDist = Similarity.cosineDistance(x, y)
       (rowID, colID, cosDist)
-    }).groupBy(_._1).map(line => (line._1, line._2.toSeq.sortBy(_._2)))
+    }).groupBy(_._1).map(line => (line._1, line._2.toArray.sortBy(_._2).map(_._3)))
     result
   }
 
