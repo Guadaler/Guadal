@@ -195,6 +195,11 @@ object RDDandMatrix {
     result.filterNot(line => line._1 == line._2).toArray
   }
 
+  /**
+    * 计算一片文章中的所有词的笛卡尔积
+    * @param doc 文章词向量
+    * @return 返回((word A, word B), carProduct)
+    */
   def cartesianProductByWordsPairs(doc: Array[String]) = {
 
     val docWithTf = doc.map(word => {
@@ -210,6 +215,11 @@ object RDDandMatrix {
     pairWordsandProduct
   }
 
+  /**
+    * 计算每一个词在一篇文章中的词频的平方
+    * @param doc 文章词向量
+    * @return (word A, product)
+    */
   def productByWord(doc: Array[String]) = {
     val wordList = doc.distinct.sorted
     val countByWord = wordList.map(word => {
@@ -221,13 +231,33 @@ object RDDandMatrix {
     countByWord
   }
 
-  def computeCosineByRDD(sc: SparkContext, rdd: RDD[(Long, Array[String])]) = {
+  /**
+    * 过滤重复计算项
+    * @param data ((String, String), Double)
+    * @return 返回一个key的正序和逆序都唯一的RDD
+    */
+  def distinctBAtoAB(data: RDD[((String, String), Double)]) = {
+
+    data.map(line => {
+      if (line._1._1 < line._1._2)
+        line
+    }).filter(_ != ()).map(_.asInstanceOf[((String, String), Double)])
+  }
+
+  /**
+    * 基于RDD，计算余弦向量
+    * @param sc SparkContext
+    * @param rdd 新闻RDD
+    * @return 返回的RDD中包含词和词的唯一对应关系，以及他们之间的余弦距离
+    */
+  def computeCosineByRDD(sc: SparkContext, rdd: RDD[Array[String]]) = {
 
     // 计算余弦距离的分子
-    val numerator = rdd.values.map(cartesianProductByWordsPairs).flatMap(x => x).reduceByKey(_ + _).cache()
+    val numeratorTemp = rdd.map(cartesianProductByWordsPairs).flatMap(x => x)
+    val numerator = distinctBAtoAB(numeratorTemp).reduceByKey(_ + _).cache()
 
     // 计算余弦距离的分母
-    val productByWordMap = rdd.values.map(productByWord).flatMap(x => x).reduceByKey(_ + _).collect().toMap
+    val productByWordMap = rdd.map(productByWord).flatMap(x => x).reduceByKey(_ + _).collect().toMap
     val productByWordMapBr = sc.broadcast(productByWordMap)
     val denominator = numerator.keys.map(keysPair => {
       val n = productByWordMapBr.value(keysPair._1)
