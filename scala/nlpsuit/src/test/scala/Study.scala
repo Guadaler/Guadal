@@ -18,15 +18,13 @@ object Study {
     val conf = new SparkConf()
       .setAppName("study")
       .setMaster("local")
-      .set("spark.driver.host", "192.168.2.90")
+//      .set("spark.driver.host", "192.168.2.90")
 
 
     val sc = new SparkContext(conf)
 
     val rdd = sc.parallelize(Seq((1L, Array("a", "a", "a", "a", "a", "b", "c", "f")),
       (2L, Array("b", "c", "d", "e")), (3L, Array("c", "d", "e", "f"))), 2)
-    rdd.values.foreach(doc => {
-      println(cartesianProductByWordsPairs(doc).toSeq)
-    })
+    computeCosineByRDD(sc, rdd.values).foreach(println)
   }
 }

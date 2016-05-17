@@ -18,19 +18,9 @@ libraryDependencies += "redis.clients" % "jedis" % "2.8.0"
 
 libraryDependencies += "org.json" % "json" % "20160212"
 
-//libraryDependencies += "org.apache.hbase" % "hbase-client" % "1.1.2"
-//
-//libraryDependencies += "org.apache.hbase" % "hbase-common" % "1.1.2"
-//
-//libraryDependencies +="org.apache.hbase" % "hbase-server" % "1.1.2"
-
-//libraryDependencies += "com.ibm.icu" % "icu4j" % "56.1"
-
 libraryDependencies += "org.apache.spark" % "spark-core_2.10" % "1.5.2"
 
 libraryDependencies += "org.ansj" % "ansj_seg" % "0.9"
-
-//libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.5.1"
 
 resolvers += "Kunyan Repo" at "http://222.73.34.92:8081/nexus/content/groups/public/"
 

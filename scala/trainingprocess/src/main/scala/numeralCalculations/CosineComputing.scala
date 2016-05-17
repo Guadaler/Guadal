@@ -25,7 +25,8 @@ object CosineComputing {
     //获取数据
     val data = sc.parallelize(Source.fromFile(args(2)).getLines().toSeq, args(0).toInt)
       .map(_.split("\t")).filter(_.length == 2).map(line => {
-      TextPreprocessing.removeStopWords(line, stopWordsBr.value)
+      val content = line(1).split(",")
+      TextPreprocessing.removeStopWords(content, stopWordsBr.value)
     })
 
     computeCosineByRDD(sc, data).saveAsTextFile(args(3))
