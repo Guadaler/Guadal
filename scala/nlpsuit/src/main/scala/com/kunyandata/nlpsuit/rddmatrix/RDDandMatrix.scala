@@ -233,19 +233,6 @@ object RDDandMatrix {
     countByWord
   }
 
-//  /**
-//    * 过滤重复计算项
-//    * @param data ((String, String), Double)
-//    * @return 返回一个key的正序和逆序都唯一的RDD
-//    */
-//  def distinctBAtoAB(data: RDD[((String, String), Double)]) = {
-//
-//    data.map(line => {
-//      if (line._1._1 < line._1._2)
-//        line
-//    }).filter(_ != ()).map(_.asInstanceOf[((String, String), Double)])
-//  }
-
   /**
     * 基于RDD，计算余弦向量
     * @param sc SparkContext

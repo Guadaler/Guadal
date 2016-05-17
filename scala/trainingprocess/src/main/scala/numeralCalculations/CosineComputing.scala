@@ -15,7 +15,7 @@ object CosineComputing {
   def main(args: Array[String]) {
 
     val conf = new SparkConf()
-      .setAppName("corrMatrix")
+      .setAppName("cosineCorr")
 //      .setMaster("local")
     //      .set("spark.local.ip", "192.168.2.90")
 //      .set("spark.driver.host", "192.168.2.90")
@@ -23,13 +23,9 @@ object CosineComputing {
     val sc = new SparkContext(conf)
     val stopWordsBr = sc.broadcast(Source.fromFile(args(1)).getLines().toArray)
     //获取数据
-    val data = sc.parallelize(Source.fromFile(args(2)).getLines().toSeq, args(0).toInt).map(line => {
-      val temp = line.split("\t")
-      if (temp.length == 2)
-        temp(1).split(",")
-    }).filter(_ != ()).map(line => {
-      val temp = line.asInstanceOf[Array[String]]
-      TextPreprocessing.removeStopWords(temp, stopWordsBr.value)
+    val data = sc.parallelize(Source.fromFile(args(2)).getLines().toSeq, args(0).toInt)
+      .map(_.split("\t")).filter(_.length == 2).map(line => {
+      TextPreprocessing.removeStopWords(line, stopWordsBr.value)
     })
 
     computeCosineByRDD(sc, data).saveAsTextFile(args(3))

@@ -34,7 +34,7 @@ libraryDependencies += "org.ansj" % "ansj_seg" % "0.9"
 
 resolvers += "Kunyan Repo" at "http://222.73.34.92:8081/nexus/content/groups/public/"
 
-libraryDependencies += "com.kunyan" % "nlpsuit-package" % "0.2.5"
+libraryDependencies += "com.kunyan" % "nlpsuit-package" % "0.2.5.1"
 
 assemblyMergeStrategy in assembly := {
   case PathList("javax", "servlet", xs @ _*) => MergeStrategy.last
