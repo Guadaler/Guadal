@@ -5,11 +5,13 @@ import com.kunyandata.nlpsuit.Statistic.Similarity
 import org.apache.spark.SparkContext
 import org.apache.spark.mllib.linalg.{Vectors => MVectors, Vector => MVector}
 import org.apache.spark.rdd.RDD
+import scala.collection.mutable.ArrayBuffer
 
 /**
   * Created by QQ on 5/16/16.
   */
 object RDDandMatrix {
+
   /**
     * 创建文档词条矩阵
     *
@@ -172,5 +174,67 @@ object RDDandMatrix {
     })
 
     resultMatrix
+  }
+
+  /**
+    * 计算任意向量的笛卡尔展开
+    *
+    * @param array 任意向量的List
+    * @tparam T 向量中的元素的type
+    * @return 返回
+    */
+  def cartesian[T](array: Array[T]) = {
+
+    val result = new ArrayBuffer[(T, T)]
+    array.foreach(i => {
+      array.foreach(j => {
+        result.append((i, j))
+      })
+    })
+
+    result.filterNot(line => line._1 == line._2).toArray
+  }
+
+  def cartesianProductByWordsPairs(doc: Array[String]) = {
+
+    val docWithTf = doc.map(word => {
+      (word, doc.count(_ == word))
+    })
+    val pairWords = cartesian(docWithTf)
+    val pairWordsandProduct = pairWords.map(line => {
+      val wordsPair = (line._1._1, line._2._1)
+      (wordsPair, line._1._2 * line._2._2 * 1.0)
+    })
+
+    // (wordsPair, product = wordsPair._1 * wordsPair._2)
+    pairWordsandProduct
+  }
+
+  def productByWord(doc: Array[String]) = {
+    val wordList = doc.distinct.sorted
+    val countByWord = wordList.map(word => {
+      val count = doc.count(_ == word)
+      (word, count * count)
+    })
+
+    // (word, product = word * word)
+    countByWord
+  }
+
+  def computeCosineByRDD(sc: SparkContext, rdd: RDD[(Long, Array[String])]) = {
+
+    // 计算余弦距离的分子
+    val numerator = rdd.values.map(cartesianProductByWordsPairs).flatMap(x => x).reduceByKey(_ + _).cache()
+
+    // 计算余弦距离的分母
+    val productByWordMap = rdd.values.map(productByWord).flatMap(x => x).reduceByKey(_ + _).collect().toMap
+    val productByWordMapBr = sc.broadcast(productByWordMap)
+    val denominator = numerator.keys.map(keysPair => {
+      val n = productByWordMapBr.value(keysPair._1)
+      val m = productByWordMapBr.value(keysPair._2)
+      (keysPair, Math.sqrt(1.0 * n * m))
+    })
+
+    numerator.union(denominator).reduceByKey(_ / _)
   }
 }

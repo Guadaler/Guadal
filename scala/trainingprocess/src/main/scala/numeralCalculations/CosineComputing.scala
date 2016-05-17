@@ -15,7 +15,7 @@ object CosineComputing {
 
     val conf = new SparkConf()
       .setAppName("corrMatrix")
-//      .setMaster("local")
+      .setMaster("local")
     //      .set("spark.local.ip", "192.168.2.90")
 //      .set("spark.driver.host", "192.168.2.90")
 
@@ -44,6 +44,6 @@ object CosineComputing {
     //    val data = sc.parallelize(Seq((0, Array("a", "b", "c", "d")), (1, Array("a", "c", "d", "e")), (2, Array("b", "d", "f", "g", "k")))).cache()
 //
     val aRDD = createTermDocMatrix(sc, data, args(0).toInt)
-    createCorrRDD(aRDD, args(0).toInt).saveAsTextFile(args(2))
+//    createCorrRDD(aRDD, args(0).toInt).saveAsTextFile(args(2))
   }
 }
