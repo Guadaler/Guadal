@@ -204,12 +204,14 @@ object RDDandMatrix {
 
     val docWithTf = doc.map(word => {
       (word, doc.count(_ == word))
-    })
+    }).distinct
+
     val pairWords = cartesian(docWithTf)
     val pairWordsandProduct = pairWords.map(line => {
       val wordsPair = (line._1._1, line._2._1)
       (wordsPair, line._1._2 * line._2._2 * 1.0)
-    })
+    }).filter(line => line._1._1 < line._1._2)
+
 
     // (wordsPair, product = wordsPair._1 * wordsPair._2)
     pairWordsandProduct
@@ -231,18 +233,18 @@ object RDDandMatrix {
     countByWord
   }
 
-  /**
-    * 过滤重复计算项
-    * @param data ((String, String), Double)
-    * @return 返回一个key的正序和逆序都唯一的RDD
-    */
-  def distinctBAtoAB(data: RDD[((String, String), Double)]) = {
-
-    data.map(line => {
-      if (line._1._1 < line._1._2)
-        line
-    }).filter(_ != ()).map(_.asInstanceOf[((String, String), Double)])
-  }
+//  /**
+//    * 过滤重复计算项
+//    * @param data ((String, String), Double)
+//    * @return 返回一个key的正序和逆序都唯一的RDD
+//    */
+//  def distinctBAtoAB(data: RDD[((String, String), Double)]) = {
+//
+//    data.map(line => {
+//      if (line._1._1 < line._1._2)
+//        line
+//    }).filter(_ != ()).map(_.asInstanceOf[((String, String), Double)])
+//  }
 
   /**
     * 基于RDD，计算余弦向量
@@ -253,8 +255,7 @@ object RDDandMatrix {
   def computeCosineByRDD(sc: SparkContext, rdd: RDD[Array[String]]) = {
 
     // 计算余弦距离的分子
-    val numeratorTemp = rdd.map(cartesianProductByWordsPairs).flatMap(x => x)
-    val numerator = distinctBAtoAB(numeratorTemp).reduceByKey(_ + _).cache()
+    val numerator = rdd.map(cartesianProductByWordsPairs).flatMap(x => x).reduceByKey(_ + _).cache()
 
     // 计算余弦距离的分母
     val productByWordMap = rdd.map(productByWord).flatMap(x => x).reduceByKey(_ + _).collect().toMap
@@ -263,7 +264,7 @@ object RDDandMatrix {
       val n = productByWordMapBr.value(keysPair._1)
       val m = productByWordMapBr.value(keysPair._2)
       (keysPair, Math.sqrt(1.0 * n * m))
-    })
+    }).cache()
 
     numerator.union(denominator).reduceByKey(_ / _)
   }

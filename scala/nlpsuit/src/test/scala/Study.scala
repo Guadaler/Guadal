@@ -23,14 +23,10 @@ object Study {
 
     val sc = new SparkContext(conf)
 
-    val rdd = sc.parallelize(Seq((1L, Array("a", "b", "c", "f")),
-      (2L, Array("b", "c", "d", "e")), (3L, Array("c", "d", "e", "f"))))
-
-    computeCosineByRDD(sc, rdd.values).foreach(println)
-
-    val kkk = createTermDocMatrix(sc, rdd, 2)
-    val zzz = createCorrRDD(kkk, 2)
-    zzz.filter(_._1 == 2L).foreach(line => println(line._1, line._2.toSeq))
-
+    val rdd = sc.parallelize(Seq((1L, Array("a", "a", "a", "a", "a", "b", "c", "f")),
+      (2L, Array("b", "c", "d", "e")), (3L, Array("c", "d", "e", "f"))), 2)
+    rdd.values.foreach(doc => {
+      println(cartesianProductByWordsPairs(doc).toSeq)
+    })
   }
 }
