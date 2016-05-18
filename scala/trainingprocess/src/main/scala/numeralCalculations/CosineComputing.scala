@@ -16,7 +16,7 @@ object CosineComputing {
 
     val conf = new SparkConf()
       .setAppName("cosineCorr")
-      .setMaster("local")
+//      .setMaster("local")
     //      .set("spark.local.ip", "192.168.2.90")
 //      .set("spark.driver.host", "192.168.2.90")
 
@@ -29,7 +29,7 @@ object CosineComputing {
       TextPreprocessing.removeStopWords(content, stopWordsBr.value)
     })
 
-    computeCosineByRDD(sc, data).foreach(println)
+    computeCosineByRDD(sc, data).saveAsTextFile(args(3))
     sc.stop()
   }
 }
