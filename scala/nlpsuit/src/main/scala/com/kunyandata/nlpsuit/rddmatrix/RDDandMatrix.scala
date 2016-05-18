@@ -242,7 +242,9 @@ object RDDandMatrix {
   def computeCosineByRDD(sc: SparkContext, rdd: RDD[Array[String]]) = {
 
     // 计算余弦距离的分子
-    val numerator = rdd.map(cartesianProductByWordsPairs).flatMap(x => x).reduceByKey(_ + _).cache()
+    val numerator = rdd.map(cartesianProductByWordsPairs).flatMap(x => x).reduceByKey(_ + _).map(line => {
+      (line._1, ("0", line._2))
+    }).cache()
 
     // 计算余弦距离的分母
     val productByWordMap = rdd.map(productByWord).flatMap(x => x).reduceByKey(_ + _).collect().toMap
@@ -250,9 +252,16 @@ object RDDandMatrix {
     val denominator = numerator.keys.map(keysPair => {
       val n = productByWordMapBr.value(keysPair._1)
       val m = productByWordMapBr.value(keysPair._2)
-      (keysPair, Math.sqrt(1.0 * n * m))
+      (keysPair, ("1", Math.sqrt(1.0 * n * m)))
     }).cache()
 
-    numerator.union(denominator).reduceByKey(_ / _)
+    val result = numerator.union(denominator).groupByKey.map(line => {
+      val computeTemp = line._2.toMap
+      val cosineDis = computeTemp("0") / computeTemp("1")
+      (line._1, cosineDis)
+    })
+
+    result
   }
+
 }
