@@ -73,7 +73,7 @@ object TextPreprocessing {
     * @param kunyanConf 坤雁分词模式的设置
     * @return 返回分词去停后的结果
     */
-  def process(content: String, stopWords: Array[String], kunyanConf: KunyanConf): Array[String] = {
+  def process(content: String, stopWords: Array[String], ifRemove: Boolean, kunyanConf: KunyanConf): Array[String] = {
 
     // 格式化文本
     val formatedContent = formatText(content)
@@ -84,11 +84,15 @@ object TextPreprocessing {
     // 读取分词内容并转化成Array格式
     val resultWords = splitWords.map(_._1).toArray
 
-    // 实现去停用词
-    if (resultWords == null)
-      null
-    else
-      removeStopWords(resultWords, stopWords)
+    if (ifRemove) {
+      // 实现去停用词
+      if (resultWords == null)
+        null
+      else
+        removeStopWords(resultWords, stopWords)
+    } else {
+      resultWords
+    }
   }
 
   /**
@@ -98,7 +102,7 @@ object TextPreprocessing {
     * @return 返回分词去停后的结果
     * @author zhangxin
     */
-  def process(content: String, stopWords:Array[String]): Array[String] = {
+  def process(content: String, stopWords:Array[String], ifRemove: Boolean): Array[String] = {
 
     // 格式化文本
     val formatedContent =TextPreprocessing.formatText(content)
@@ -106,10 +110,14 @@ object TextPreprocessing {
     // 实现分词
     val resultWords=AnsjAnalyzer.cut(content)
 
-    // 实现去停用词
-    if (resultWords == null)
-      null
-    else
-      removeStopWords(resultWords, stopWords)
+    ifRemove match {
+      case true => { // 实现去停用词
+        if (resultWords == null)
+          null
+        else
+          removeStopWords(resultWords, stopWords)}
+      case false => resultWords
+    }
+
   }
 }

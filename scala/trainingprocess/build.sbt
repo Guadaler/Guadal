@@ -1,4 +1,4 @@
-mainClass in (Compile, packageBin) := Some("numeralCalculations.CosineComputing")
+mainClass in (Compile, packageBin) := Some("classification.TextProcess")
 
 name := "trainingProcess"
 
