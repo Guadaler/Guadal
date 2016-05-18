@@ -21,6 +21,7 @@ object NewsTrendPre {
   def main(args: Array[String]) {
 
     val conf = new SparkConf().setAppName("NewsTrendPre")
+//      .setMaster("local")
     val sc = new SparkContext(conf)
     LoggerUtil.warn("sc init successfully")
 
@@ -41,9 +42,6 @@ object NewsTrendPre {
     kunyanConfig.set(configInfo.getValue("kunyan", "host"),
       configInfo.getValue("kunyan", "port").toInt)
 
-    // 添加自定义词典到ansj分词器中
-    SentiRelyDic.addUserDic(dictBr.value("userDict"))
-
     // 初始化分类模型
     val models = PredictWithNb.init(configInfo.getValue("models", "sentModelsPath"))
     val modelsBr = sc.broadcast(models)
@@ -57,42 +55,50 @@ object NewsTrendPre {
 
     // 读取redis中所有的新闻，存储为Array[(url, title)]
     val redisAllNews = getAllNews(redisInput, newsTable)
-    LoggerUtil.warn("redisAllNews = " + redisAllNews.length.toString)
+    LoggerUtil.warn("redisAllNews = " + redisAllNews.length.toString + " >>>>>>>>>>>>")
 
     // 获得redis中所有类别的新闻，存储为Map[类别名称，Array[（url, title),(url, title),…]}
     val allIndustryNews = getAllCateNews(redisInput, industryTable, newsTable)
     val allStockNews = getAllCateNews(redisInput, stockTable, newsTable)
     val allSectionNews = getAllCateNews(redisInput, sectionTable, newsTable)
     redisInput.close()
-    LoggerUtil.warn("close redisInput successfully >>>>>>>>>>>>>>>>>")
+    LoggerUtil.warn("close redisInput successfully >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
     // 获得hbase中所有的新闻，存储为RDD[String]
     val hbaseAllNews = HBaseUtil.getRDD(sc, hbaseConf).cache()
+    LoggerUtil.warn("hbaseAllNews = " + hbaseAllNews.count().toString + " >>>>>>>>>>>>>")
+
     val hNewsSenti = hBaseNewsTrend(hbaseAllNews, dictBr, modelsBr, kunyanConfig)
-    LoggerUtil.warn("hbaseAllNews = " + hbaseAllNews.count().toString  + ">>>>>>>>>>>>>>>>")
+    LoggerUtil.warn("predict hbase news trend successfully >>>>>>>>>>>>>>>>>>>>>>>>")
 
     // 计算每篇新闻的情感倾向，并写入MySQL
     val everyNewsSentiment = predictNewsTrend(sc, redisAllNews, hNewsSenti, dictBr, kunyanConfig)
-    val dateNow = TimeUtil.get_date("yyyy-MM-dd HH:mm:ss")
-    val data = sc.parallelize(everyNewsSentiment.toSeq).map(x =>  Row(x._1, dateNow, x._2))
-    MySQLUtil.writeToMyaql(configInfo, sqlContent, "every_news_trend", data)
-    LoggerUtil.warn("predict news trend and write to mysql successfully >>>>>>>>>>>>>>>")
+    LoggerUtil.warn("predict redis news trend successfully >>>>>>>>>>>>>>>>>>>>>>>>>")
 
     // 计算新闻的倾向比例，并写入redis
-    val list1 = countCatePercents(sc, allIndustryNews, everyNewsSentiment)
-    val list2 = countCatePercents(sc, allStockNews, everyNewsSentiment)
-    val list3 = countCatePercents(sc, allSectionNews, everyNewsSentiment)
+    val rowIndustry = countCatePercents(sc, allIndustryNews, everyNewsSentiment)
+    val rowStock = countCatePercents(sc, allStockNews, everyNewsSentiment)
+    val rowSection = countCatePercents(sc, allSectionNews, everyNewsSentiment)
+    LoggerUtil.warn("predict all categories news trend percent successfully >>>>>>>>>>>")
 
-    val redisOutput = RedisUtil.getRedis(configInfo)
-    RedisUtil.writeToRedis(redisOutput, "industry_sentiment", list1)
-    RedisUtil.writeToRedis(redisOutput, "stock_sentiment", list2)
-    RedisUtil.writeToRedis(redisOutput, "section_sentiment", list3)
-    LoggerUtil.warn("computer category percent and write to redis successfully >>>>>>>>>>")
+    val data = toRow(sc, everyNewsSentiment.toSeq)
+    MySQLUtil.writeToMysql(configInfo, sqlContent, "url", "all_news_trend", data)
+    MySQLUtil.writeToMysql(configInfo, sqlContent, "industry", "Industry_sentiment", rowIndustry)
+    MySQLUtil.writeToMysql(configInfo, sqlContent, "stock", "Stock_sentiment", rowStock)
+    MySQLUtil.writeToMysql(configInfo, sqlContent, "section", "Section_sentiment", rowSection)
 
-    redisOutput.close()
-    LoggerUtil.warn("close redisOutput connection >>>>>>>>>>>>>>>>>>")
+    LoggerUtil.warn("write to mysql successfully >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+
+//    val redisOutput = RedisUtil.getRedis(configInfo)
+//    RedisUtil.writeToRedis(redisOutput, "industry_sentiment", list1)
+//    RedisUtil.writeToRedis(redisOutput, "stock_sentiment", list2)
+//    RedisUtil.writeToRedis(redisOutput, "section_sentiment", list3)
+//    LoggerUtil.warn("computer category percent and write to redis successfully >>>>>>>")
+//    redisOutput.close()
+//    LoggerUtil.warn("close redisOutput connection >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+
     sc.stop()
-    LoggerUtil.warn("sc stop >>>>>>>>>>>>")
+    LoggerUtil.warn("sc stop >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
   }
 
@@ -112,7 +118,6 @@ object NewsTrendPre {
 
     // 对于redis中url与hBase不交叉的新闻，根据标题预测情感倾向
     val confBr = sc.broadcast(kunyanConf)
-
     val redisNewsSentiment = sc.parallelize(redisAllNews.toSeq).map(news => {
 
       if (!hNewsSentiment.map(_._1).contains(news._1)) {
@@ -183,18 +188,18 @@ object NewsTrendPre {
     * @author liumiao
     */
   def countCatePercents(sc: SparkContext, allCateNews: Map[String, Array[(String, String)]],
-                        everyNewsSentiment: Map[String, String]): Map[String, String] = {
+                        everyNewsSentiment: Map[String, String]): RDD[Row] = {
 
-    val urls = everyNewsSentiment.keys.toSeq
-    // 对于redis中与hbase不交叉的新闻，利用标题计算其情感倾向
+    val urls = everyNewsSentiment.keys.toSeq          // Map[url, sentiment]
+
     val result = sc.parallelize(allCateNews.toSeq).map(oneCateNews => {
 
       // oneCateNew (类别, Array[(url, title),(url, title),……])
       val resultCate = oneCateNews._2.map(tuple => {
 
-        // tuple (url, title)，everyNewsSentiment Map[url, sentiment]
-        if (urls.contains(tuple._1))
+        if (urls.contains(tuple._1)) {          // 通常数据正常时，没有取不到的新闻
           everyNewsSentiment(tuple._1)
+        }
 
       }).filter(_ !=()).map(_.asInstanceOf[String])
 
@@ -204,7 +209,8 @@ object NewsTrendPre {
 
     }).collect()
 
-    result.toMap
+//    result.toMap
+    toRow(sc, result.toSeq)
   }
 
   /**
@@ -284,6 +290,21 @@ object NewsTrendPre {
     }).toMap
 
     cateMap
+  }
+
+  /**
+    * 将列表转换为数据库存储格式
+    * @param sc spark程序入口
+    * @param seq 待转换的序列
+    * @return 数据库存储格式数据
+    * @author liumiao
+    */
+  private def toRow(sc: SparkContext, seq: Seq[(String, String)]): RDD[Row] = {
+
+    val dateNow = TimeUtil.get_date("yyyy-MM-dd HH:mm:ss")
+    val map = sc.parallelize(seq).map(s => Row(s._1, dateNow, s._2))
+
+    map
   }
 
 }

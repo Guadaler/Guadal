@@ -6,7 +6,7 @@ import org.ansj.splitWord.analysis.ToAnalysis
 
 /**
   * Created by liumiao on 2016/4/21.
-  * 基于词典的情感分析
+  * 基于词典的情感分析类
   */
 object SentiRelyDic {
 
@@ -21,21 +21,6 @@ object SentiRelyDic {
       UserDefineLibrary.insertWord(x, "userDefine", 100)
     })
 
-  }
-
-  /**
-    * 分词
-    * @param sentence 输入的待分词的句子
-    * @return 分词结果，存储在字符串数组中
-    * @author liumiao
-    */
-  private def cut(sentence: String): Array[String] = {
-
-    // 利用ansj分词并过滤词性标注
-    val sentenceCut = ToAnalysis.parse(sentence)
-    val words = for (i <- Range(0,sentenceCut.size())) yield sentenceCut.get(i).getName
-
-    words.toArray
   }
 
   /**
