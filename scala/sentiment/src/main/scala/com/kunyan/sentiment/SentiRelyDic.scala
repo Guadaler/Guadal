@@ -24,21 +24,6 @@ object SentiRelyDic {
   }
 
   /**
-    * 分词
-    * @param sentence 输入的待分词的句子
-    * @return 分词结果，存储在字符串数组中
-    * @author liumiao
-    */
-  private def cut(sentence: String): Array[String] = {
-
-    // 利用ansj分词并过滤词性标注
-    val sentenceCut = ToAnalysis.parse(sentence)
-    val words = for (i <- Range(0,sentenceCut.size())) yield sentenceCut.get(i).getName
-
-    words.toArray
-  }
-
-  /**
     * 寻找否定词
     * @param i 当前情感词在句子中的位置
     * @param sentence 当前待分析的句子
