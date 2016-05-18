@@ -14,14 +14,21 @@ object TextProcess {
     val conf = new SparkConf().setAppName("wordSegmentation")
     val sc = new SparkContext(conf)
 
-    val programConfig = new SentimentConf
-    programConfig.initConfig(args(0))
+    val config = new SentimentConf
+    config.initConfig(args(0))
     val kunyanConfig = new KunyanConf
-    val kunyanHost = programConfig.getValue("kunyanWordSeg", "host")
-    val kunyanPort = programConfig.getValue("kunyanWordSeg", "port").toInt
+    val kunyanHost = config.getValue("kunyanWordSeg", "host")
+    val kunyanPort = config.getValue("kunyanWordSeg", "port").toInt
     kunyanConfig.set(kunyanHost, kunyanPort)
 
-    
+    val hbaseConf = HBaseUtil.getHbaseConf(config)
+    val hbaseAllNews = HBaseUtil.getRDD(sc, hbaseConf)
+      .repartition(config.getValue("RDD", "partition").toInt).cache()
+
+
+
+
+
 
     //    val stopWords = sc.textFile("hdfs://222.73.34.92:9000/mlearning/dicts/stop_words_CN").collect()
     //    val stopWords = Source.fromFile("/home/mlearning/dicts/stop_words_CN").getLines().toArray

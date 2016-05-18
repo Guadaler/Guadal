@@ -22,6 +22,12 @@ libraryDependencies += "org.apache.spark" % "spark-core_2.10" % "1.5.2"
 
 libraryDependencies += "org.ansj" % "ansj_seg" % "0.9"
 
+libraryDependencies += "org.apache.hbase" % "hbase-client" % "1.1.2"
+
+libraryDependencies += "org.apache.hbase" % "hbase-common" % "1.1.2"
+
+libraryDependencies +="org.apache.hbase" % "hbase-server" % "1.1.2" excludeAll ExclusionRule(organization = "org.mortbay.jetty")
+
 resolvers += "Kunyan Repo" at "http://222.73.34.92:8081/nexus/content/groups/public/"
 
 libraryDependencies += "com.kunyan" % "nlpsuit-package" % "0.2.5.2"
