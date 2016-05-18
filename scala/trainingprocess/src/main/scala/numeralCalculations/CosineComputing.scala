@@ -16,7 +16,7 @@ object CosineComputing {
 
     val conf = new SparkConf()
       .setAppName("cosineCorr")
-//      .setMaster("local")
+      .setMaster("local")
     //      .set("spark.local.ip", "192.168.2.90")
 //      .set("spark.driver.host", "192.168.2.90")
 
@@ -25,11 +25,11 @@ object CosineComputing {
     //获取数据
     val data = sc.parallelize(Source.fromFile(args(2)).getLines().toSeq, args(0).toInt)
       .map(_.split("\t")).filter(_.length == 2).map(line => {
-      val content = line(1).split(",")
+      val content = line(1).split(",").filter(_.length > 1)
       TextPreprocessing.removeStopWords(content, stopWordsBr.value)
     })
 
-    computeCosineByRDD(sc, data).saveAsTextFile(args(3))
+    computeCosineByRDD(sc, data).foreach(println)
     sc.stop()
   }
 }
