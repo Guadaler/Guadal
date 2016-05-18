@@ -66,7 +66,7 @@ object HBaseUtil {
 
     val tableName = "wk_detail"
     hbaseConf.set(TableInputFormat.INPUT_TABLE, tableName)
-    hbaseConf.set(TableInputFormat.SCAN, setTimeRange())
+//    hbaseConf.set(TableInputFormat.SCAN, setTimeRange())
 
     val hbaseRdd = sc.newAPIHadoopRDD(hbaseConf, classOf[TableInputFormat]
       , classOf[ImmutableBytesWritable], classOf[Result])

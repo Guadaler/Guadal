@@ -5,13 +5,16 @@ import com.kunyandata.nlpsuit.util.{KunyanConf, TextPreprocessing}
 import sentiment.SentimentConf
 
 /**
-  * Created by root on 4/19/16.
+  * Created by QQ on 4/19/16.
   */
 object TextProcess {
 
   def main(args: Array[String]): Unit = {
 
     val conf = new SparkConf().setAppName("wordSegmentation")
+//      .setMaster("local")
+//      .set("spark.driver.host", "192.168.2.90")
+
     val sc = new SparkContext(conf)
 
     val config = new SentimentConf
@@ -29,7 +32,7 @@ object TextProcess {
 
     val output = config.getValue("output", "resultPath")
     val kunyanConfigBr = sc.broadcast(kunyanConfig)
-    hbaseAllNews.map(TextPreprocessing.process(_, Array(""), kunyanConfigBr.value)).saveAsTextFile(output)
+    hbaseAllNews.map(TextPreprocessing.process(_, Array(""), kunyanConfigBr.value).mkString(",")).saveAsTextFile(output)
     sc.stop()
   }
 }
