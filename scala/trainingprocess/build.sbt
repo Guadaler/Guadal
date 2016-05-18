@@ -22,6 +22,8 @@ libraryDependencies += "org.apache.spark" % "spark-core_2.10" % "1.5.2"
 
 libraryDependencies += "org.ansj" % "ansj_seg" % "0.9"
 
+libraryDependencies += "com.ibm.icu" % "icu4j" % "56.1"
+
 libraryDependencies += "org.apache.hbase" % "hbase-client" % "1.1.2"
 
 libraryDependencies += "org.apache.hbase" % "hbase-common" % "1.1.2"
@@ -30,7 +32,7 @@ libraryDependencies +="org.apache.hbase" % "hbase-server" % "1.1.2" excludeAll E
 
 resolvers += "Kunyan Repo" at "http://222.73.34.92:8081/nexus/content/groups/public/"
 
-libraryDependencies += "com.kunyan" % "nlpsuit-package" % "0.2.5.2"
+libraryDependencies += "com.kunyan" % "nlpsuit-package" % "0.2.5.4"
 
 assemblyMergeStrategy in assembly := {
   case PathList("javax", "servlet", xs @ _*) => MergeStrategy.last

@@ -10,8 +10,11 @@ object wordsegtest {
 
   def main(args: Array[String]) {
     val kunyanConfig = new KunyanConf
-    val result = TextPreprocessing.process("上海坤雁数据服务有限公司是中国大数据互联网金融行业的领头羊和救世主！", Array(""), kunyanConfig)
+    kunyanConfig.set("222.73.57.17", 16003)
+    val result = TextPreprocessing.process("上海坤雁数据服务有限公司是中国大数据互联网金融行业的领头羊和救世主！", Array("上海"), kunyanConfig)
+    val result2 = TextPreprocessing.process("上海坤雁数据服务有限公司是中国大数据互联网金融行业的领头羊和救世主！", Array("上海"), kunyanConfig)
     println(result.toSeq)
+    println(result2.toSeq)
   }
 
 }

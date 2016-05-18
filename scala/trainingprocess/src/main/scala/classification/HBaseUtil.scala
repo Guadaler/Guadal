@@ -3,7 +3,15 @@ package classification
 import java.text.SimpleDateFormat
 import java.util.Date
 
+import com.ibm.icu.text.CharsetDetector
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.hbase.HBaseConfiguration
+import org.apache.hadoop.hbase.client.{Scan, Result}
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable
+import org.apache.hadoop.hbase.mapreduce.TableInputFormat
+import org.apache.hadoop.hbase.protobuf.ProtobufUtil
+import org.apache.hadoop.hbase.protobuf.generated.ClientProtos
+import org.apache.hadoop.hbase.util.{Base64, Bytes}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import sentiment.SentimentConf
@@ -16,7 +24,7 @@ object HBaseUtil {
 
   /**
     * 连接 hbase
- *
+    *
     * @param sentimentConf 配置文件
     * @return hbase信息
     * @author liumaio
@@ -32,7 +40,7 @@ object HBaseUtil {
 
   /**
     * 识别字符编码
- *
+    *
     * @param html 地址编码
     * @return 字符编码
     * @author wc
@@ -48,7 +56,7 @@ object HBaseUtil {
 
   /**
     * 读取内容信息
- *
+    *
     * @param sc Spark程序入口
     * @param hbaseConf hBase信息
     * @return RDD[url，标题，正文]
@@ -80,7 +88,7 @@ object HBaseUtil {
 
   /**
     * 设置时间范围
- *
+    *
     * @return 时间范围
     * @author yangshuai
     */
