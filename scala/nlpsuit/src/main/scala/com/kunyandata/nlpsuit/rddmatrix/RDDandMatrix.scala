@@ -258,7 +258,7 @@ object RDDandMatrix {
     val result = numerator.union(denominator).groupByKey.map(line => {
       val computeTemp = line._2.toMap
       val cosineDis = computeTemp("0") / computeTemp("1")
-      (line._1, cosineDis)
+      (line._1, computeTemp("0"), computeTemp("1"), cosineDis)
     })
 
     result
