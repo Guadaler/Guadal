@@ -6,7 +6,7 @@ import scala.io.Source
 /**
   * Created by QQ on 4/26/16.
   */
-class SentimentConf{
+class JsonConfig{
 
   private var config = new JSONObject()
 

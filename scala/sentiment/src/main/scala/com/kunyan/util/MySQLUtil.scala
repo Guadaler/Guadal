@@ -84,7 +84,7 @@ object MySQLUtil {
     * @param data 写入的信息
     * @author liumiao
     */
-  def writeToMysql(sentimentConf: SentimentConf, sqlContent: SQLContext, columnName: String,
+  def writeToMysql(sentimentConf: JsonConfig, sqlContent: SQLContext, columnName: String,
                    dbName: String, data: RDD[Row]): Unit = {
 
     val  MySql = sentimentConf.getValue("mysql", "info")
