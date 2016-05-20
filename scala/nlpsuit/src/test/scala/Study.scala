@@ -18,13 +18,16 @@ object Study {
     val conf = new SparkConf()
       .setAppName("study")
       .setMaster("local")
-//      .set("spark.driver.host", "192.168.2.90")
+      .set("spark.driver.host", "192.168.2.90")
 
 
     val sc = new SparkContext(conf)
 
-    val rdd = sc.parallelize(Seq((1L, Array("a", "a", "a", "a", "a", "b", "c", "f")),
-      (2L, Array("b", "c", "d", "e")), (3L, Array("c", "d", "e", "f"))), 2)
-    computeCosineByRDD(sc, rdd.values).foreach(println)
+    val k = 0.005
+    val cosineDis = Math.round(Math.abs(Math.log(k)))
+    val tanCosDis = Math.round(Math.tan(Math.abs(Math.log(k)) * Math.PI / 2))
+    println(cosineDis)
+    println(Math.log(k))
+    println(tanCosDis)
   }
 }

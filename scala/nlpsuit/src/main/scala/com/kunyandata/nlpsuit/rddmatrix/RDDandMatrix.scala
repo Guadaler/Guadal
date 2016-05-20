@@ -257,8 +257,11 @@ object RDDandMatrix {
 
     val result = numerator.union(denominator).groupByKey.map(line => {
       val computeTemp = line._2.toMap
-      val cosineDis = computeTemp("0") / computeTemp("1")
-      (line._1, computeTemp("0"), computeTemp("1"), cosineDis)
+      val cosineSim = computeTemp("0") / computeTemp("1")
+      val cosineDis1 = Math.round(Math.abs(Math.log(cosineSim)))
+      val tanCosDis1 = Math.round(Math.tan((1 - cosineSim) * Math.PI / 2))
+      val cosineDis2 = Math.round(Math.abs(Math.log(cosineSim)))
+      (line._1, computeTemp("0"), computeTemp("1"), cosineSim, cosineDis1, tanCosDis1)
     })
 
     result
