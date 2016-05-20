@@ -1,7 +1,8 @@
-package classification
+package sentiment
 
 import java.io.{FileOutputStream, ObjectOutputStream}
 
+import classification.TrainingProcess
 import org.apache.spark.SparkContext
 import org.apache.spark.mllib.classification.NaiveBayes
 import org.apache.spark.mllib.evaluation.MulticlassMetrics
@@ -17,7 +18,8 @@ object TrainWithNb {
 
   /**
     * 基于RDD的贝叶斯训练，仅训练测试，模型不保存
-    * @param sc
+ *
+    * @param sc spark
     * @param filepath 训练集路径
     * @param vsmLength vsm维度
     */
@@ -44,6 +46,7 @@ object TrainWithNb {
 
   /**
     * 基于RDD的贝叶斯训练,并保存模型到默认的hdfs "hdfs://222.73.57.12:9000"
+ *
     * @param sc SparkContext
     * @param filepath 数据集路径
     * @param indus  模型名称（行业名称）
@@ -73,7 +76,7 @@ object TrainWithNb {
     * 基于RDD的贝叶斯训练，并保存模型到本地路径
     * 备注：数据不划分，全部用于train
  *
-    * @param sc
+    * @param sc spark
     * @param filepath 数据集路径
     * @param outPath 模型输出路径 如E:/svmmodels/
     * @param indus  模型名称（行业名称）
@@ -161,7 +164,8 @@ object TrainWithNb {
 
   /**
     * 基于网格参数寻优的训练
-    * @param sc
+ *
+    * @param sc spark
     * @param filepath  训练集路径
     */
   def tuneParasTrain(sc: SparkContext, filepath: String): Unit ={
