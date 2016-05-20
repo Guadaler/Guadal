@@ -79,18 +79,19 @@ object MySQLUtil {
     * 写数据库
     * @param sentimentConf 配置文件
     * @param sqlContent 数据库连接
+    * @param columnName 列名
     * @param dbName 数据表名
     * @param data 写入的信息
     * @author liumiao
     */
-  def writeToMyaql(sentimentConf: SentimentConf, sqlContent: SQLContext,
+  def writeToMysql(sentimentConf: SentimentConf, sqlContent: SQLContext, columnName: String,
                    dbName: String, data: RDD[Row]): Unit = {
 
     val  MySql = sentimentConf.getValue("mysql", "info")
 
     val scheam =
       StructType(
-        StructField("url", StringType, nullable = false) ::
+        StructField(columnName, StringType, nullable = false) ::
         StructField("time", StringType, nullable = true) ::
         StructField("sentiment", StringType, nullable = true) :: Nil)
 
