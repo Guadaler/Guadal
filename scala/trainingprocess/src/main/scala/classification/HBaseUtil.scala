@@ -14,7 +14,7 @@ import org.apache.hadoop.hbase.protobuf.generated.ClientProtos
 import org.apache.hadoop.hbase.util.{Base64, Bytes}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import sentiment.SentimentConf
+import sentiment.JsonConfig
 
 /**
   * Created by liumiao on 2016/4/28.
@@ -29,7 +29,7 @@ object HBaseUtil {
     * @return hbase信息
     * @author liumaio
     */
-  def getHbaseConf(sentimentConf: SentimentConf): Configuration = {
+  def getHbaseConf(sentimentConf: JsonConfig): Configuration = {
 
     val hbaseConf = HBaseConfiguration.create()
     hbaseConf.set("hbase.rootdir", sentimentConf.getValue("hbase", "rootDir"))

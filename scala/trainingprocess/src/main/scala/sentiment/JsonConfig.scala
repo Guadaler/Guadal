@@ -8,7 +8,7 @@ import scala.io.Source
   * Created by QQ on 4/26/16.
   * 读取配置文件信息的类
   */
-class SentimentConf {
+class JsonConfig {
 
   private var config = new JSONObject()
 

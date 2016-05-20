@@ -239,12 +239,12 @@ object RDDandMatrix {
     * @param rdd 新闻RDD
     * @return 返回的RDD中包含词和词的唯一对应关系，以及他们之间的余弦距离
     */
-  def computeCosineByRDD(sc: SparkContext, rdd: RDD[Array[String]]) = {
+  def computeCosineByRDD(sc: SparkContext, rdd: RDD[Array[String]], support: Int) = {
 
     // 计算余弦距离的分子
     val numerator = rdd.map(cartesianProductByWordsPairs).flatMap(x => x).reduceByKey(_ + _).map(line => {
       (line._1, ("0", line._2))
-    }).cache()
+    }).filter(_._2._2 >= support.toDouble).cache()
 
     // 计算余弦距离的分母
     val productByWordMap = rdd.map(productByWord).flatMap(x => x).reduceByKey(_ + _).collect().toMap

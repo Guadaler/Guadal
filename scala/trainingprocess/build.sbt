@@ -1,4 +1,6 @@
 mainClass in (Compile, packageBin) := Some("numeralCalculations.CosineComputing")
+//mainClass in (Compile, packageBin) := Some("classification.TextProcess")
+
 
 name := "trainingProcess"
 
@@ -32,7 +34,7 @@ libraryDependencies +="org.apache.hbase" % "hbase-server" % "1.1.2" excludeAll E
 
 resolvers += "Kunyan Repo" at "http://222.73.34.92:8081/nexus/content/groups/public/"
 
-libraryDependencies += "com.kunyan" % "nlpsuit-package" % "0.2.5.5"
+libraryDependencies += "com.kunyan" % "nlpsuit-package" % "0.2.5.6"
 
 assemblyMergeStrategy in assembly := {
   case PathList("javax", "servlet", xs @ _*) => MergeStrategy.last

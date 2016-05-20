@@ -3,7 +3,7 @@ package classification
 import com.kunyandata.nlpsuit.util.{KunyanConf, TextPreprocessing}
 import com.kunyandata.nlpsuit.classification.Bayes
 import org.apache.spark.{SparkConf, SparkContext}
-import sentiment.SentimentConf
+import sentiment.JsonConfig
 
 
 /**
@@ -25,7 +25,7 @@ object BayesPredict {
     val sc = new SparkContext(conf)
     //    val modelMap = initModel("/home/mlearning/Models/", hdfs = false)
     //    val stopWords = getStopWords("/home/mlearning/dicts/stop_words_CN", hdfs = false)
-    val configInfo = new SentimentConf
+    val configInfo = new JsonConfig
     configInfo.initConfig("/home/mlearning/conf/config.json")
     val kunyanConfig = new KunyanConf
     kunyanConfig.set(configInfo.getValue("kunyan", "host"),
