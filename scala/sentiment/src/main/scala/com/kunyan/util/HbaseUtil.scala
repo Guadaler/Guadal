@@ -27,7 +27,7 @@ object HBaseUtil {
     * @return hbase信息
     * @author liumaio
     */
-  def getHbaseConf(sentimentConf: SentimentConf): Configuration = {
+  def getHbaseConf(sentimentConf: JsonConfig): Configuration = {
 
     val hbaseConf = HBaseConfiguration.create()
     hbaseConf.set("hbase.rootdir", sentimentConf.getValue("hbase", "rootDir"))
