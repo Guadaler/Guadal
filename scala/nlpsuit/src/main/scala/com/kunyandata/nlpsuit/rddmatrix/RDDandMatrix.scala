@@ -259,13 +259,18 @@ object RDDandMatrix {
       val computeTemp = line._2.toMap
       val cosineSim = computeTemp("0") / computeTemp("1")
 
-      val cosineDis1 = Math.round(Math.abs(Math.log(1 - cosineSim)))
-      val tanCosDis1 = Math.round(Math.tan((1 - cosineSim) * Math.PI / 2))
-      val cosineDis2 = Math.round(Math.abs(Math.log(cosineSim)))
-      val tanCosDis2 = Math.round(Math.abs(Math.log(1 - cosineSim)))
+      val cosineDis1 = Math.round(Math.abs(Math.log(1 - cosineSim))) + 1
+      val tanCosDis1 = Math.round(Math.tan((1 - cosineSim) * Math.PI / 2)) + 1
+      val dis1 = Math.round((1 - cosineSim) * 100000) + 1
+
+      val cosineDis2 = Math.round(Math.abs(Math.log(cosineSim))) + 1
+      val tanCosDis2 = Math.round(Math.tan(cosineSim * Math.PI / 2)) + 1
+      val dis2 = Math.round(cosineSim * 100000) + 1
+
       
 
-      (line._1, computeTemp("0"), computeTemp("1"), (cosineSim, cosineDis1, tanCosDis1))
+      (line._1, (computeTemp("0"), computeTemp("1"), cosineSim), ((cosineDis1, tanCosDis1, dis1),
+        (cosineDis2, tanCosDis2, dis2)))
     })
 
     result

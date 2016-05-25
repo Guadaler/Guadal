@@ -2,7 +2,7 @@
 
 name := "nlpsuit"
 
-version := "0.2.5.9"
+version := "0.2.6.1"
 
 scalaVersion := "2.10.4"
 
