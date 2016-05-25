@@ -78,7 +78,6 @@ object SentiRelyDic {
         if (dictionary.contains(sentence(i+2))){
 
           return -1
-          
         }
 
       }
