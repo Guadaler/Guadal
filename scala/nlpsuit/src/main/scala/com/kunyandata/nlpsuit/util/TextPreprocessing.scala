@@ -1,5 +1,7 @@
 package com.kunyandata.nlpsuit.util
 
+import com.kunyandata.nlpsuit.sentiment.PredictWithNb
+
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -15,7 +17,6 @@ object TextPreprocessing {
     * @return 返回格式化之后的字符串
     */
   def formatText(content: String): String = {
-
 
     val step = 65248
     val sbcStart = 65281.toChar
@@ -48,6 +49,7 @@ object TextPreprocessing {
 
   /**
     * 去除分词结果中的标点符号和停用词
+ *
     * @param content 分词结果
     * @param stopWords 停用词
     * @return 返回一个元素为String的Array
@@ -68,6 +70,7 @@ object TextPreprocessing {
 
   /**
     * 调用WordSeq里面的函数实现字符串的分词和去停,并封装成方法
+ *
     * @param content 需要处理的字符串
     * @param stopWords 停用词
     * @param kunyanConf 坤雁分词模式的设置
@@ -91,7 +94,8 @@ object TextPreprocessing {
   }
 
   /**
-    * 实现字符串的分词和去停,并分装成方法  ，与上面的process()方法相同，只是分词采用ansj
+    * 实现字符串的分词和去停,并分装成方法 ，与上面的process()流程相同，只是分词采用ansj
+ *
     * @param content 需要处理的字符串
     * @param stopWords  停用词
     * @return 返回分词去停后的结果
@@ -100,10 +104,10 @@ object TextPreprocessing {
   def process(content: String, stopWords:Array[String]): Array[String] = {
 
     // 格式化文本
-    val formatedContent =TextPreprocessing.formatText(content)
+    val formatedContent = TextPreprocessing.formatText(content)
 
     // 实现分词
-    val resultWords=AnsjAnalyzer.cut(content)
+    val resultWords = AnsjAnalyzer.cutNoTag(formatedContent)
 
     // 去通用词
     if (resultWords == null)
@@ -111,4 +115,6 @@ object TextPreprocessing {
     else
       removeStopWords(resultWords, stopWords)
   }
+
+  PredictWithNb.
 }

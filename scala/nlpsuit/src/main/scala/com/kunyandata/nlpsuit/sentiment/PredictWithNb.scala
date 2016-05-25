@@ -1,190 +1,208 @@
 package com.kunyandata.nlpsuit.sentiment
 
 import java.io._
+import java.math.{BigDecimal, RoundingMode}
+import java.text.DecimalFormat
 
 import com.kunyandata.nlpsuit.util.{KunyanConf, TextPreprocessing}
 import org.apache.spark.mllib.classification.NaiveBayesModel
 import org.apache.spark.mllib.feature.{ChiSqSelectorModel, HashingTF, IDFModel}
-import scala.io.Source
-
 /**
-  * Created by zx on 2016/3/28.
-  * 基于机器学习的情感分析
+  * Created by zhangxin on 2016/3/28.
+  * 基于情感分析模型的预测方法类
   */
-object PredictWithNb extends App{
-
-
-  /**
-    * 初始化读取模型，给出模型路径，用从本地某路径读
-    * @param path 模型路径
-    * @param methodNum 为了与从hdfs读取区分，加入方法编号作标记
-    * @return  模型Map[模型名称，模型]
-    */
-  def init(path: String,methodNum:Int): Map[String, Any] = {
-    val fileList = new File(path)
-    val modelList = fileList.listFiles()
-    var modelMap:Map[String, Any] = Map()
-    modelList.foreach(cate => {
-      val modelName=cate.getName
-      val tempModelInput = new ObjectInputStream(new FileInputStream(cate)).readObject()
-      modelMap += (modelName -> tempModelInput)
-    })
-
-    modelMap
-  }
+object PredictWithNb{
 
   /**
-    * 初始化模型
-    * @param path 模型本地保存路径
-    * @return 模型map
-    */
-  def init(path: String): Map[String, Any] = {
-
-    val fileList = new File(path)
-    val modelList = fileList.listFiles()
-    var modelMap:Map[String, Any] = Map()
-    modelList.foreach(cate => {
-      val modelName=cate.getName
-      val tempModelInput = new ObjectInputStream(new FileInputStream(cate))
-      modelMap += (modelName -> tempModelInput.readObject())
-    })
-
-    modelMap
-  }
-
-  /**
-    * 情感预测，坤雁分词
-    * @param content  待预测文章
-    * @param models  模型Map[模型名称，模型]，由init初始化得到
-    * @param stopWordsArr 停用词
-    * @param kunyanConf 设置坤雁分词器
-    * @return  返回情感label编号
-    */
-  def predict(content: String, models: Map[String, Any], stopWordsArr: Array[String],
-              kunyanConf: KunyanConf): Double = {
-    val wordSegNoStop = TextPreprocessing.process(content, stopWordsArr, kunyanConf)
-    val prediction = models("nbModel").asInstanceOf[NaiveBayesModel]
-      .predict(models("chiSqSelectorModel").asInstanceOf[ChiSqSelectorModel]
-        .transform(models("idfModel").asInstanceOf[IDFModel]
-          .transform(models("tfModel").asInstanceOf[HashingTF]
-            .transform(wordSegNoStop))))
-
-    prediction
-  }
-
-  /**
-    * 情感预测，ansj分词器
-    * @param content  待预测文章
-    * @param models  模型Map[模型名称，模型]，由init初始化得到
-    * @param stopWordsArr 停用词
-    * @return  返回情感label编号
-    */
-  def predict(content: String, models: Map[String, Any], stopWordsArr:Array[String]): Double = {
-
-    val wordSegNoStop = TextPreprocessing.process(content, stopWordsArr)
-    val prediction = models("nbModel").asInstanceOf[NaiveBayesModel]
-      .predict(models("chiSqSelectorModel").asInstanceOf[ChiSqSelectorModel]
-        .transform(models("idfModel").asInstanceOf[IDFModel]
-          .transform(models("tfModel").asInstanceOf[HashingTF]
-            .transform(wordSegNoStop))))
-
-    prediction
-  }
-
-  /**
-    * 单模型+单篇文章 +坤雁分词
-    * @param content 文章内容
-    * @param model 模型
-    * @param stopWordsArr 停用词
-    * @return  情感label
+    * 模型初始化
+    * @param modelPath 模型路径，此路径下包含四个模型
+    * @return 模型Map[模型名称，模型]
     * @author zhangxin
     */
-  def predictWithSigle(content: String, model: Map[String, Any],
-                       stopWordsArr: Array[String], kunyanConf: KunyanConf): String ={
+  def init(modelPath: String): Map[String, Any] = {
 
-    val temp = predict(content,model, stopWordsArr,kunyanConf)
-    val result=replaceLabel(temp)
+    //获取模型路径列表
+    val fileList = new File(modelPath)
+    val modelList = fileList.listFiles()
 
-    result
+    //读取模型
+    val modelMap = modelList.map(model => {
+
+      //模型名称
+      val modelName = model.getName
+
+      //模型
+      val tempModelInput = new ObjectInputStream(new FileInputStream(model))
+
+      (modelName, tempModelInput.readObject())
+    }).toMap[String, Any]
+
+    modelMap
   }
+
   /**
-    * 用ansj分词
+    *情感预测   +坤雁分词器
+    * @param content 待预测文本
+    * @param models  模型Map，由init初始化得到
+    * @param stopWords 停用词
+    * @param kunConf 坤雁分词器配置
+    * @return 返回情感label编号
+    * @author zhangxin
     */
-  def predictWithSigle(content:String,model:Map[String, Any],stopWordsArr:Array[String]): String ={
+  private def predictWithKun(content: String, models: Map[String, Any],
+                      stopWords: Array[String], kunConf: KunyanConf): Double = {
 
-    val temp = predict(content,model, stopWordsArr)
-    val result=replaceLabel(temp)
+    //对文本[分词+去停]处理
+    val wordSegNoStop = TextPreprocessing.process(content, stopWords, kunConf)
+
+    //用模型对处理后的文本进行预测
+    val prediction = models("nbModel").asInstanceOf[NaiveBayesModel]
+      .predict(models("chiSqSelectorModel").asInstanceOf[ChiSqSelectorModel]
+        .transform(models("idfModel").asInstanceOf[IDFModel]
+          .transform(models("tfModel").asInstanceOf[HashingTF]
+            .transform(wordSegNoStop))))
+
+    prediction
+  }
+
+  /**
+    * 情感预测  +ansj分词器
+    * @param content  待预测文章
+    * @param models  模型Map[模型名称，模型]，由init初始化得到
+    * @param stopWords 停用词
+    * @return  返回情感label编号
+    * @author zhangxin
+    */
+  private def predictWithAnsj(content: String, models: Map[String, Any],
+                      stopWords: Array[String]): Double = {
+
+    //对文本[分词+去停]处理
+    val wordSegNoStop = TextPreprocessing.process(content, stopWords)
+
+    //用模型对处理后的文本进行预测
+    val prediction = models("nbModel").asInstanceOf[NaiveBayesModel]
+      .predict(models("chiSqSelectorModel").asInstanceOf[ChiSqSelectorModel]
+        .transform(models("idfModel").asInstanceOf[IDFModel]
+          .transform(models("tfModel").asInstanceOf[HashingTF]
+            .transform(wordSegNoStop))))
+
+    prediction
+  }
+
+  /**
+    * 情感预测   +坤雁分词器
+    * @param content 文本内容
+    * @param model 模型
+    * @param stopWords 停用词表
+    * @return 预测结果label: neg/neu/pos/neu_pos
+    * @author zhangxin
+    */
+  def predict(content: String, model: Map[String, Any],
+                       stopWords: Array[String], kunConf: KunyanConf): String = {
+
+    //获取预测结果编号
+    val temp = predictWithKun(content, model, stopWords, kunConf)
+
+    //将编号转成label，作为结果
+    val result = temp match {
+      case 1.0 => "neg"
+      case 2.0 => "neu"
+      case 3.0 => "pos"
+      case 4.0 => "neu_pos"
+    }
 
     result
   }
 
   /**
-    * 二级模型 +单篇文章
+    * 情感预测   +ansj分词
+    * @param content 文本内容
+    * @param model 模型
+    * @param stopWords 停用词表
+    * @return 预测结果label: neg/neu/pos/neu_pos
+    * @author zhangxin
+    */
+  def predict(content: String, model: Map[String, Any],
+                       stopWords: Array[String]): String = {
+
+    //获取预测结果编号
+    val temp = predictWithAnsj(content, model, stopWords)
+
+    //将编号转成label，作为结果
+    val result = temp match {
+      case 1.0 => "neg"
+      case 2.0 => "neu"
+      case 3.0 => "pos"
+      case 4.0 => "neu_pos"
+    }
+
+    result
+  }
+
+  /**
+    * 二级模型预测  +坤雁分词器
     * @param content  文章内容
     * @param arr  二级模型数组
-    * @param stopWordsArr  停用词表
+    * @param stopWords  停用词表
     * @return 情感label
     * @author zhangxin
     */
-  def predictWithFS(content:String,arr:Array[Map[String, Any]],stopWordsArr:Array[String],kunyanConf: KunyanConf): String ={
+  def predictFS(content: String, arr: Array[Map[String, Any]],
+                    stopWords: Array[String], kunConf: KunyanConf): String = {
 
-    var temp = predict(content,arr(0), stopWordsArr,kunyanConf: KunyanConf)
+    //先用第一层模型进行第一次预测：neg 或者 其他
+    var temp = predictWithKun(content, arr(0), stopWords, kunConf)
 
-    if (temp == 4.0)
-      temp = predict(content,arr(1), stopWordsArr,kunyanConf: KunyanConf)
-
-    replaceLabel(temp)
-  }
-
-  /**
-    * 二级模型，批量预测
- *
-    * @param filepath  批量预测文章路径
-    * @param outpath  输出预测结果
-    * @param arr  二级模型数组
-    * @param stopWordsArr  停用词表
-    * @author zhangxin
-    */
-  def predictManyWithFS(filepath:String, outpath: String, arr: Array[Map[String, Any]],
-                        stopWordsArr: Array[String], kunyanConf: KunyanConf): Unit ={
-
-    val wr = new PrintWriter(outpath,"utf-8")
-    val files = new File(filepath).listFiles()
-    for(file <- files) {
-
-      val title = file.getName.substring(0, file.getName.indexOf(".txt"))
-      var contentstr = ""
-
-      for (line <- Source.fromFile(file).getLines()) {
-        contentstr += line
-      }
-
-      var temp = predict(contentstr,arr(0), stopWordsArr,kunyanConf: KunyanConf)
-
-      if (temp == 4.0)
-        temp = predict(contentstr,arr(1), stopWordsArr,kunyanConf: KunyanConf)
-
-      val result=replaceLabel(temp)
-      wr.write("【" + result + "】" + title + "\n")
-      wr.flush()
+    //若判断为其他，则用第二层进行二次预测：neu 或者 pos
+    if (temp == 4.0) {
+      temp = predictWithKun(content, arr(1), stopWords, kunConf)
     }
+
+    val result = temp match {
+      case 1.0 => "neg"
+      case 2.0 => "neu"
+      case 3.0 => "pos"
+      case 4.0 => "neu_pos"
+    }
+
+    result
   }
 
   /**
-    * 编号替换成标签  如 1.0 =》 neg
- *
-    * @param tempresult 替换前类别编号
-    * @return 替换后的类别标签
+    *情感预测  返回预测概率
+    * @param content 文本内容
+    * @param model 模型
+    * @param stopWords 停用词表
+    * @return Array[(label，预测概率值)]
     * @author zhangxin
     */
-  def replaceLabel(tempresult:Double): String ={
-    val result=
-      tempresult match {
-        case 1.0 => "neg"
-        case 2.0 => "neu"
-        case 3.0 => "pos"
-        case 4.0 => "neu_pos"  //综合类分为pos
-      }
+  def predictProbabilities(content: String, model: Map[String, Any],
+                           stopWords: Array[String]): Array[(String, String)]= {
+
+    //预处理：分词+去停+格式化
+    val wordSegNoStop = TextPreprocessing.process(content, stopWords)
+
+    //用模型对处理后的文本进行预测，得到预测概率
+    val prediction = model("nbModel").asInstanceOf[NaiveBayesModel]
+      .predictProbabilities(model("chiSqSelectorModel").asInstanceOf[ChiSqSelectorModel]
+        .transform(model("idfModel").asInstanceOf[IDFModel]
+          .transform(model("tfModel").asInstanceOf[HashingTF]
+            .transform(wordSegNoStop)))).toArray
+
+    //取数据的小数点后四位
+    val temp = prediction.map(e => {
+      val temp = new BigDecimal(e)
+      temp.setScale(4, RoundingMode.FLOOR).toString.toDouble
+    })
+
+    //取消科学计数法
+    val df = new DecimalFormat("0.0000")
+
+    val result = if(temp(0) >= temp(1)) {
+      Array(("neg", df.format(temp(0))), ("neu_pos",  df.format(1 - temp(0))))
+    } else{
+      Array(("neg", df.format(1 - temp(1))), ("neu_pos",  df.format(temp(1))))
+    }
 
     result
   }
