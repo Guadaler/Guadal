@@ -21,14 +21,13 @@ object WordSegment {
 
   /**
     * 分词
- *
+    *
     * @param content 需要分词的文本内容
     * @param host 分词服务 host
     * @param port 分词服务端口
     * @return 分词结果集合 List[(词, 此类型)]
     */
   def split(content: String, host: String, port: Int): List[(String, Int)] = {
-
 
     val socket = new Socket(host, port)
     val input = new DataInputStream(socket.getInputStream)
@@ -77,7 +76,7 @@ object WordSegment {
 
   /**
     * 从包中提取出分词结果
- *
+    *
     * @param bytes 包对应的 byte 数组
     * @return 分词结果Array[(词, 词类型)]
     */
@@ -99,50 +98,6 @@ object WordSegment {
     arr
   }
 
-  def splitArticle(article: String): ListBuffer[String] = {
-
-    val list = ListBuffer[String]()
-    val articleLength = article.length
-    var beginIndex = 0
-    var endIndex = 2999
-
-    while (beginIndex < articleLength) {
-
-      endIndex = beginIndex + 2999
-
-      if (endIndex + 1 > articleLength) {
-        list += article.substring(beginIndex)
-        return list
-      }
-
-      var content = article.substring(beginIndex, endIndex + 1)
-      val commaZhIndex = content.lastIndexOf('，')
-      val commaEnIndex = content.lastIndexOf(',')
-      val periodZhIndex = content.lastIndexOf('。')
-      val periodEnIndex = content.lastIndexOf('.')
-
-      endIndex = max(commaEnIndex, commaZhIndex, periodEnIndex, periodZhIndex) + beginIndex
-      content = article.substring(beginIndex, endIndex + 1)
-      list += content
-      beginIndex = endIndex + 1
-
-    }
-
-    list
-  }
-
-  def max(indexes: Int*): Int = {
-
-    var max = 0
-    indexes.foreach(index => {
-      if (index >  max && index > 0) {
-        max = index
-      }
-    })
-
-    max
-  }
-
   def getPackets(content: String): ListBuffer[Array[Byte]] = {
 
     val list = ListBuffer[Array[Byte]]()
@@ -150,7 +105,7 @@ object WordSegment {
     if (content.getBytes.size < 9000) {
       list += getPacket(content)
     } else {
-      splitArticle(content).foreach(x => {
+      TextUtil.splitArticle(content).foreach(x => {
         list += getPacket(x)
       })
     }
@@ -184,8 +139,7 @@ object WordSegment {
 
   /**
     * 获取标志结束的包
- *
-    * @return
+    *
     */
   def getEndPacket: Array[Byte] = {
 
