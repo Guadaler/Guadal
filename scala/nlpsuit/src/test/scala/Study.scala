@@ -1,6 +1,7 @@
 import breeze.linalg.DenseVector
 import com.kunyandata.nlpsuit.Statistic.Similarity
 import com.kunyandata.nlpsuit.rddmatrix.RDDandMatrix._
+import com.kunyandata.nlpsuit.util._
 import org.apache.spark.{SparkContext, SparkConf}
 
 import scala.io.Source
@@ -18,16 +19,9 @@ object Study {
     val conf = new SparkConf()
       .setAppName("study")
       .setMaster("local")
-      .set("spark.driver.host", "192.168.2.90")
-
-
-    val sc = new SparkContext(conf)
-
-    val k = 0.005
-    val cosineDis = Math.round(Math.abs(Math.log(k)))
-    val tanCosDis = Math.round(Math.tan(Math.abs(Math.log(k)) * Math.PI / 2))
-    println(cosineDis)
-    println(Math.log(k))
-    println(tanCosDis)
+//      .set("spark.driver.host", "192.168.2.90")
+    val config = new KunyanConf()
+    config.set("222.73.57.17", 16003)
+    println(TextPreprocessing.process("123", Array(""), config).toSeq)
   }
 }
