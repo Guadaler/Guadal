@@ -36,9 +36,6 @@ resolvers += "Kunyan Repo" at "http://222.73.34.92:8081/nexus/content/groups/pub
 
 libraryDependencies += "com.kunyan" % "nlpsuit-package" % "0.2.6.1"
 
-//libraryDependencies += "com.kunyan" % "nlpsuit-package" % "0.2.4.beta"
-
-// http://mvnrepository.com/artifact/org.apache.spark/spark-sql_2.10
 libraryDependencies += "org.apache.spark" % "spark-sql_2.10" % "1.5.2"
 
 

@@ -1,7 +1,5 @@
 package com.kunyandata.nlpsuit.util
 
-import com.kunyandata.nlpsuit.sentiment.PredictWithNb
-
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -116,5 +114,4 @@ object TextPreprocessing {
       removeStopWords(resultWords, stopWords)
   }
 
-  PredictWithNb.
 }
