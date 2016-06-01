@@ -30,7 +30,6 @@ object SummaryExtractor {
     packets.foreach(bytes => {
       output.write(bytes)
       output.flush()
-      println("send packet")
     })
 
     val headBytes = new Array[Byte](PACKET_HEAD_LENGTH)
