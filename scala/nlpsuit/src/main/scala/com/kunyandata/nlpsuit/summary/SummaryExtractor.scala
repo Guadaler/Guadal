@@ -36,16 +36,23 @@ object SummaryExtractor {
     val headBytes = new Array[Byte](PACKET_HEAD_LENGTH)
     var summary = ""
 
-    input.readFully(headBytes)
-    val operationCode = Packet.copyShortFromByte(headBytes, 6)
+    try {
 
-    if (operationCode == ARTICLE_RESULT_DIGEST) {
+      input.readFully(headBytes)
+      val operationCode = Packet.copyShortFromByte(headBytes, 6)
 
-      val length = Packet.copyShortFromByte(headBytes, 0)
-      val bodyBytes = new Array[Byte](length - PACKET_HEAD_LENGTH)
-      input.readFully(bodyBytes)
+      if (operationCode == ARTICLE_RESULT_DIGEST) {
 
-      summary = Packet.copyUTFFromByte(bodyBytes, 4, bodyBytes.length - 4)
+        val length = Packet.copyShortFromByte(headBytes, 0)
+        val bodyBytes = new Array[Byte](length - PACKET_HEAD_LENGTH)
+        input.readFully(bodyBytes)
+
+        summary = Packet.copyUTFFromByte(bodyBytes, 4, bodyBytes.length - 4)
+      }
+
+    } catch {
+      case e: Exception =>
+        throw e
     }
 
     input.close()
