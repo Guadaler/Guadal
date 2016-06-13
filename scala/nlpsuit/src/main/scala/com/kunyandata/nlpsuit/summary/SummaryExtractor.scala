@@ -66,7 +66,14 @@ object SummaryExtractor {
   def getPackets(content: String): ListBuffer[Array[Byte]] = {
 
     val byteSize = content.getBytes.size
-    val id = SparkEnv.get.executorId.toInt * 1000 + (new Date().getTime % 1000).toInt
+    val executorId = SparkEnv.get.executorId
+    var prefix = 99
+
+    if (executorId forall Character.isDigit) {
+      prefix = executorId.toInt
+    }
+
+    val id = prefix * 100000 + (new Date().getTime % 100000).toInt
 
     val list = ListBuffer[Array[Byte]]()
 
