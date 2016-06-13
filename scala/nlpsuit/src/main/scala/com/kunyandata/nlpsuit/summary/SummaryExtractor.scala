@@ -57,11 +57,12 @@ object SummaryExtractor {
 
   def getPackets(content: String): ListBuffer[Array[Byte]] = {
 
-    val timeStamp = (new Date().getTime % 100000).toInt
+    val byteSize = content.getBytes.size
+    val timeStamp = (new Date().getTime % 1000).toInt * 1000 + byteSize % 1000
 
     val list = ListBuffer[Array[Byte]]()
 
-    if (content.getBytes.size < 9000) {
+    if (byteSize < 9000) {
       list += getPacket(timeStamp, content)
     } else {
       TextUtil.splitArticle(content).foreach(x => {
