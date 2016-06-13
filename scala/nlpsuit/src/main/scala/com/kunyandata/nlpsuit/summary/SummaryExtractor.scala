@@ -22,6 +22,9 @@ object SummaryExtractor {
 
   def extractSummary(content: String, host: String, port: Int): String = {
 
+    if (content.size <= 30)
+      return content
+
     val socket = new Socket(host, port)
     socket.setSoTimeout(10000)
     val input = new DataInputStream(socket.getInputStream)
