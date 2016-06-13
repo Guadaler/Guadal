@@ -6,6 +6,7 @@ import java.util.Date
 
 import com.kunyandata.nlpsuit.net.Packet
 import com.kunyandata.nlpsuit.util.TextUtil
+import org.apache.spark.SparkEnv
 
 import scala.collection.mutable.ListBuffer
 
@@ -65,19 +66,19 @@ object SummaryExtractor {
   def getPackets(content: String): ListBuffer[Array[Byte]] = {
 
     val byteSize = content.getBytes.size
-    val timeStamp = (new Date().getTime % 1000).toInt * 1000 + byteSize % 1000
+    val id = SparkEnv.get.executorId.toInt * 1000 + (new Date().getTime % 1000).toInt
 
     val list = ListBuffer[Array[Byte]]()
 
     if (byteSize < 9000) {
-      list += getPacket(timeStamp, content)
+      list += getPacket(id, content)
     } else {
       TextUtil.splitArticle(content).foreach(x => {
-        list += getPacket(timeStamp, x)
+        list += getPacket(id, x)
       })
     }
 
-    list += getEndPacket(timeStamp)
+    list += getEndPacket(id)
 
     list
   }
