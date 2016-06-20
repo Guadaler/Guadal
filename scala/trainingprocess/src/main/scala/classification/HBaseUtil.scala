@@ -1,4 +1,4 @@
-package com.kunyan.util
+package classification
 
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -14,6 +14,7 @@ import org.apache.hadoop.hbase.protobuf.generated.ClientProtos
 import org.apache.hadoop.hbase.util.{Base64, Bytes}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import sentiment.JsonConfig
 
 /**
   * Created by liumiao on 2016/4/28.
@@ -23,6 +24,7 @@ object HBaseUtil {
 
   /**
     * 连接 hbase
+    *
     * @param sentimentConf 配置文件
     * @return hbase信息
     * @author liumaio
@@ -38,6 +40,7 @@ object HBaseUtil {
 
   /**
     * 识别字符编码
+    *
     * @param html 地址编码
     * @return 字符编码
     * @author wc
@@ -53,6 +56,7 @@ object HBaseUtil {
 
   /**
     * 读取内容信息
+    *
     * @param sc Spark程序入口
     * @param hbaseConf hBase信息
     * @return RDD[url，标题，正文]
@@ -62,7 +66,7 @@ object HBaseUtil {
 
     val tableName = "wk_detail"
     hbaseConf.set(TableInputFormat.INPUT_TABLE, tableName)
-    hbaseConf.set(TableInputFormat.SCAN, setTimeRange())
+//    hbaseConf.set(TableInputFormat.SCAN, setTimeRange())
 
     val hbaseRdd = sc.newAPIHadoopRDD(hbaseConf, classOf[TableInputFormat]
       , classOf[ImmutableBytesWritable], classOf[Result])
@@ -84,6 +88,7 @@ object HBaseUtil {
 
   /**
     * 设置时间范围
+    *
     * @return 时间范围
     * @author yangshuai
     */

@@ -1,7 +1,5 @@
 package com.kunyandata.nlpsuit.util
 
-import com.kunyandata.nlpsuit.sentiment.PredictWithNb
-
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -55,7 +53,7 @@ object TextPreprocessing {
     * @return 返回一个元素为String的Array
     */
   def removeStopWords(content: Array[String], stopWords:Array[String]): Array[String] = {
-    if (content !=null) {
+    if (content != null) {
       var result = content.toBuffer
       stopWords.foreach(stopWord => {
         if (result.contains(stopWord)){
@@ -87,7 +85,6 @@ object TextPreprocessing {
     // 读取分词内容并转化成Array格式
     val resultWords = splitWords.map(_._1).toArray
 
-    // 实现去停用词
     if (resultWords == null)
       null
     else
@@ -110,12 +107,11 @@ object TextPreprocessing {
     // 实现分词
     val resultWords = AnsjAnalyzer.cutNoTag(formatedContent)
 
-    // 实现去停用词
+    // 去通用词
     if (resultWords == null)
       null
     else
       removeStopWords(resultWords, stopWords)
   }
 
-  PredictWithNb.
 }

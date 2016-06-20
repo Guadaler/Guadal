@@ -15,7 +15,7 @@ object RedisUtil {
     * @return  redis连接
     * @author  liumiao
     */
-  def getRedis(sentimentConf: SentimentConf): Jedis = {
+  def getRedis(sentimentConf: JsonConfig): Jedis = {
 
     // 设置参数
     val config: JedisPoolConfig = new JedisPoolConfig

@@ -1,7 +1,12 @@
 package numeralCalculations
 
-import org.apache.spark.{SparkContext, SparkConf}
-import com.kunyandata.nlpsuit.cluster.SpectralClustering._
+import java.io.{File, PrintWriter}
+
+import com.kunyandata.nlpsuit.rddmatrix.RDDandMatrix._
+import com.kunyandata.nlpsuit.util.{KunyanConf, TextPreprocessing}
+import org.apache.spark.{SparkConf, SparkContext}
+import sentiment.JsonConfig
+
 import scala.io.Source
 
 /**
@@ -13,39 +18,36 @@ object CosineComputing {
   def main(args: Array[String]) {
 
     val conf = new SparkConf()
-      .setAppName("SClusterTest")
+      .setAppName("cosineCorr")
 //      .setMaster("local")
     //      .set("spark.local.ip", "192.168.2.90")
-    //      .set("spark.driver.host", "192.168.2.90")
+//      .set("spark.driver.host", "192.168.2.90")
 
     val sc = new SparkContext(conf)
+    val config = new JsonConfig
+    config.initConfig(args(2))
 
-    //    ++++++++++++++++++++++++++++++++++++++ 计算 adjacency matrix ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    // init paras
+    val stopPuncPath = config.getValue("dicts", "stopPuncPath")
+    val partition = args(1).toInt
+    val cosineTextDataPath = config.getValue("cosineTextData", "cosineTextDataPath")
+    val stopWordsBr = sc.broadcast(Source.fromFile(stopPuncPath).getLines().toArray)
+    val support = args(0).toInt
+    val outputCosine = config.getValue("output", "outputCosine")
+    val outputCosineSorted = config.getValue("output", "outputCosineSorted")
+
     //获取数据
-    var id = -1
-    val data = sc
-      .parallelize(Source
-        //      .fromFile("/home/QQ/Documents/trainingWithIndus/仪电仪表")
-        //      .fromFile("D:/QQ/Desktop/segTrainingSet")
-        .fromFile(args(0))
-        .getLines().toSeq)
-      .repartition(8)
-      .map(line => {
-        val temp = line.split("\t")
-        if (temp.length == 2) {
-          id += 1
-          val result = (id, temp(1).split(","))
-          result
-        }
-      }).filter(_ != ()).map(_.asInstanceOf[(Int, Array[String])]).cache()
-
-    //    val data = sc.parallelize(Seq((0, Array("a", "b", "c", "d")), (1, Array("a", "c", "d", "e")), (2, Array("b", "d", "f", "g", "k")))).cache()
-
-    val wordList = data.map(line => line._2).flatMap(_.toSeq).distinct().collect().sorted
-    val wordListBr = sc.broadcast(wordList)
-    val aRDD = createDocTermRDD(data, wordListBr)
-    val bRDD = createCorrRDD(sc, aRDD.map(_._2), wordListBr)
-    bRDD.saveAsTextFile(args(1))
+    val data = sc.parallelize(Source.fromFile(cosineTextDataPath).getLines().toSeq, partition)
+      .map(_.split("\t")).filter(_.length == 2)
+      .map(line => TextPreprocessing.removeStopWords(line(1).split(","), stopWordsBr.value))
+    val result = computeCosineByRDD(sc, data, support).cache()
+    result.saveAsTextFile(outputCosine + "_" + support)
+    val max = result.map(_._2._3).max()
+    val min = result.map(_._2._3).min()
+    val writer = new PrintWriter(new File("/home/mlearning/min_max"))
+    writer.write(min + ", " + max)
+    writer.flush()
+    writer.close()
+    sc.stop()
   }
-
 }

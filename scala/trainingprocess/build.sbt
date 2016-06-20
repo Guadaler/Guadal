@@ -1,6 +1,6 @@
-mainClass in (Compile, packageBin) := Some("wordExtraction.TestLDAEM_Spark")
+mainClass in (Compile, packageBin) := Some("numeralCalculations.CosineComputing")
+//mainClass in (Compile, packageBin) := Some("classification.TextProcess")
 
-//mainClass in (Compile, packageBin) := Some("com.kunyandata.nlp.classification.TrainingProcess")
 
 name := "trainingProcess"
 
@@ -16,31 +16,26 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.5" % "test"
 
 libraryDependencies += "mysql" % "mysql-connector-java" % "3.1.14"
 
-//libraryDependencies += "redis.clients" % "jedis" % "2.8.0"
+libraryDependencies += "redis.clients" % "jedis" % "2.8.0"
 
 libraryDependencies += "org.json" % "json" % "20160212"
-
-//libraryDependencies += "org.apache.hbase" % "hbase-client" % "1.1.2"
-
-//libraryDependencies += "org.apache.hbase" % "hbase-common" % "1.1.2"
-
-//libraryDependencies +="org.apache.hbase" % "hbase-server" % "1.1.2"
-
-libraryDependencies += "com.ibm.icu" % "icu4j" % "56.1"
 
 libraryDependencies += "org.apache.spark" % "spark-core_2.10" % "1.5.2"
 
 libraryDependencies += "org.ansj" % "ansj_seg" % "0.9"
 
-libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.5.1"
+libraryDependencies += "com.ibm.icu" % "icu4j" % "56.1"
+
+libraryDependencies += "org.apache.hbase" % "hbase-client" % "1.1.2"
+
+libraryDependencies += "org.apache.hbase" % "hbase-common" % "1.1.2"
+
+libraryDependencies +="org.apache.hbase" % "hbase-server" % "1.1.2" excludeAll ExclusionRule(organization = "org.mortbay.jetty")
 
 resolvers += "Kunyan Repo" at "http://222.73.34.92:8081/nexus/content/groups/public/"
 
-libraryDependencies += "com.kunyan" % "nlpsuit-package" % "0.2.4"
+libraryDependencies += "com.kunyan" % "nlpsuit-package" % "0.2.6.1"
 
-//libraryDependencies += "com.kunyan" % "nlpsuit-package" % "0.2.4.beta"
-
-// http://mvnrepository.com/artifact/org.apache.spark/spark-sql_2.10
 libraryDependencies += "org.apache.spark" % "spark-sql_2.10" % "1.5.2"
 
 

@@ -21,12 +21,11 @@ object NewsTrendPre {
   def main(args: Array[String]) {
 
     val conf = new SparkConf().setAppName("NewsTrendPre")
-//      .setMaster("local")
     val sc = new SparkContext(conf)
     LoggerUtil.warn("sc init successfully")
 
     // 获取配置文件信息
-    val configInfo = new SentimentConf()
+    val configInfo = new JsonConfig()
     configInfo.initConfig(args(0))
 
     // 连接redis、hBase、MySql
@@ -41,6 +40,7 @@ object NewsTrendPre {
     val kunyanConfig = new KunyanConf
     kunyanConfig.set(configInfo.getValue("kunyan", "host"),
       configInfo.getValue("kunyan", "port").toInt)
+    val confBr = sc.broadcast(kunyanConfig)
 
     // 初始化分类模型
     val models = PredictWithNb.init(configInfo.getValue("models", "sentModelsPath"))
@@ -64,15 +64,14 @@ object NewsTrendPre {
     redisInput.close()
     LoggerUtil.warn("close redisInput successfully >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
-    // 获得hbase中所有的新闻，存储为RDD[String]
+    // 获得hbase中所有的新闻，并预测新闻情感倾向
     val hbaseAllNews = HBaseUtil.getRDD(sc, hbaseConf).cache()
     LoggerUtil.warn("hbaseAllNews = " + hbaseAllNews.count().toString + " >>>>>>>>>>>>>")
-
-    val hNewsSenti = hBaseNewsTrend(hbaseAllNews, dictBr, modelsBr, kunyanConfig)
+    val hNewsSenti = hBaseNewsTrend(hbaseAllNews, dictBr, modelsBr, confBr)
     LoggerUtil.warn("predict hbase news trend successfully >>>>>>>>>>>>>>>>>>>>>>>>")
 
-    // 计算每篇新闻的情感倾向，并写入MySQL
-    val everyNewsSentiment = predictNewsTrend(sc, redisAllNews, hNewsSenti, dictBr, kunyanConfig)
+    // 计算redis中与hbase不交叉的所有新闻的情感倾向，并写入MySQL
+    val everyNewsSentiment = predictNewsTrend(sc, redisAllNews, hNewsSenti, dictBr, confBr)
     LoggerUtil.warn("predict redis news trend successfully >>>>>>>>>>>>>>>>>>>>>>>>>")
 
     // 计算新闻的倾向比例，并写入redis
@@ -86,16 +85,7 @@ object NewsTrendPre {
     MySQLUtil.writeToMysql(configInfo, sqlContent, "industry", "Industry_sentiment", rowIndustry)
     MySQLUtil.writeToMysql(configInfo, sqlContent, "stock", "Stock_sentiment", rowStock)
     MySQLUtil.writeToMysql(configInfo, sqlContent, "section", "Section_sentiment", rowSection)
-
     LoggerUtil.warn("write to mysql successfully >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-
-//    val redisOutput = RedisUtil.getRedis(configInfo)
-//    RedisUtil.writeToRedis(redisOutput, "industry_sentiment", list1)
-//    RedisUtil.writeToRedis(redisOutput, "stock_sentiment", list2)
-//    RedisUtil.writeToRedis(redisOutput, "section_sentiment", list3)
-//    LoggerUtil.warn("computer category percent and write to redis successfully >>>>>>>")
-//    redisOutput.close()
-//    LoggerUtil.warn("close redisOutput connection >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
     sc.stop()
     LoggerUtil.warn("sc stop >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
@@ -108,21 +98,21 @@ object NewsTrendPre {
     * @param redisAllNews redis中所有的新闻
     * @param hNewsSentiment hBase中所有的新闻情感倾向
     * @param dictBr 词典
+    * @param kunyanConfBr kunyan分词配置文件
     * @return 每条新闻的（url，time, sentiment）
     * @author liumiao
     */
   def predictNewsTrend(sc: SparkContext, redisAllNews: Array[(String, String)],
                        hNewsSentiment: Array[(String, String)],
                        dictBr: Broadcast[Map[String, Array[String]]],
-                       kunyanConf: KunyanConf): Map[String, String] = {
+                       kunyanConfBr: Broadcast[KunyanConf]): Map[String, String] = {
 
     // 对于redis中url与hBase不交叉的新闻，根据标题预测情感倾向
-    val confBr = sc.broadcast(kunyanConf)
     val redisNewsSentiment = sc.parallelize(redisAllNews.toSeq).map(news => {
 
       if (!hNewsSentiment.map(_._1).contains(news._1)) {
 
-        val resultTitle = SentiRelyDic.predictSenti(news._2, dictBr.value, confBr.value)
+        val resultTitle = SentiRelyDic.predictSenti(news._2, dictBr.value, kunyanConfBr.value)
 
         if (resultTitle == "neg") {
           (news._1, "0")
@@ -150,13 +140,14 @@ object NewsTrendPre {
     * @param hBaseAllNews hBase中取出的所有新闻
     * @param dictBr 词典
     * @param modelsBr 分类器模型
+    * @param kunyanConfBr kunyan分词配置文件
     * @return 新闻情感倾向
     * @author liumiao
     */
   private def hBaseNewsTrend(hBaseAllNews: RDD[String],
                              dictBr: Broadcast[Map[String, Array[String]]],
                              modelsBr: Broadcast[Map[String, Any]],
-                             kunyanConfig: KunyanConf): Array[(String, String)] ={
+                             kunyanConfBr: Broadcast[KunyanConf]): Array[(String, String)] ={
 
     val hBaseNewsSenti = hBaseAllNews.map(everyNews => {
 
@@ -164,7 +155,7 @@ object NewsTrendPre {
 
         val arr = everyNews.split("\n\t")
         val resultContent = PredictWithNb.predictWithSigle(arr(2), modelsBr.value,
-          dictBr.value("stopWordsCN"), kunyanConfig)
+          dictBr.value("stopWordsCN"), kunyanConfBr.value)
 
         if (resultContent == "neg") {
           (arr(0), "0")
@@ -187,11 +178,11 @@ object NewsTrendPre {
     * @return 存有类别-比值信息的Map
     * @author liumiao
     */
-  def countCatePercents(sc: SparkContext, allCateNews: Map[String, Array[(String, String)]],
+  def countCatePercents(sc: SparkContext,
+                        allCateNews: Map[String, Array[(String, String)]],
                         everyNewsSentiment: Map[String, String]): RDD[Row] = {
 
     val urls = everyNewsSentiment.keys.toSeq          // Map[url, sentiment]
-
     val result = sc.parallelize(allCateNews.toSeq).map(oneCateNews => {
 
       // oneCateNew (类别, Array[(url, title),(url, title),……])
@@ -219,7 +210,7 @@ object NewsTrendPre {
     * @return 词典
     * @author QQ
     */
-  private def getDicts(sentimentConf: SentimentConf): Map[String, Array[String]] = {
+  private def getDicts(sentimentConf: JsonConfig): Map[String, Array[String]] = {
 
     // 初始化词典，存入dicBuffer
     val stopWords = Source.fromFile(sentimentConf.getValue("dicts", "stopWordsPath"))
@@ -272,7 +263,6 @@ object NewsTrendPre {
 
     // 获得所有类别的名称
     val categoryKeys = redis.hkeys(categoryTable).toArray.map(_.asInstanceOf[String])
-
     // 获取每个类别中的所有新闻ID，并根据ID读取每条新闻的 title 和 url
     val cateMap = categoryKeys.map(key => {
 

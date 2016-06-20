@@ -1,5 +1,7 @@
 package com.kunyandata.nlpsuit.net;
 
+import java.io.UnsupportedEncodingException;
+
 public class Packet {
 	
 	//header
@@ -393,6 +395,27 @@ public class Packet {
 		System.arraycopy(temp, 0, dst, dstBegin, temp.length);
 
         return true;
+	}
+
+	public static String copyUTFFromByte(byte[] src, int dstBegin, int nMaxStrLen) {
+
+		if (dstBegin + nMaxStrLen > src.length) {
+			return "";
+		}
+
+		byte[] dst = new byte[nMaxStrLen];
+
+		System.arraycopy(src, dstBegin, dst, 0, nMaxStrLen);
+
+		String result = "";
+
+		try {
+			result = new String(dst, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
+
+		return result;
 	}
 
 	static boolean CopyByte(byte[] src, byte[] dst, int dstBegin) {
