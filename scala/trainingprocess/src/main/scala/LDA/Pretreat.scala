@@ -36,13 +36,13 @@ object Pretreat {
     val sqlContext = new org.apache.spark.sql.SQLContext(sc)
     import sqlContext.implicits._
 
-    val stopwords= sc.textFile("stopWordsPath").collect()
+    val stopwords= sc.textFile(stopWordsPath).collect()
     val textRDD = sc.parallelize(docArray)
 
     //坤雁处理流程包含了分词和去停
     val segTextRDD = textRDD.map(line => {
-      val seg = TextPreprocessing.process(line, stopwords, kunyanConfig)
-      seg.map(line =>line.toString().replaceAll("[^(a-zA-Z\\u4e00-\\u9fa5)]", "")) //过滤数字等无用字符
+      val segTemp = TextPreprocessing.process(line, stopwords, kunyanConfig)
+      val seg=segTemp.map(line =>line.toString().replaceAll("[^(a-zA-Z\\u4e00-\\u9fa5)]", "")) //过滤数字等无用字符
       seg
     })
 
@@ -81,15 +81,15 @@ object Pretreat {
       .select("docId", "features")
       .map (line =>{
 
-        //预测的新文档需要根据旧词典来转
+        //预测的新文档需要根据“旧词典”来转
         val docIndex = line.getAs[Long](0)
         val content = line.getAs[SparseVector](1)
 
         val wordIDs = content.indices  //关键词编号数组，也相当于该文章的词表
         val wordFrequences = content.values     //关键词对应的词频数组，下标对应编号
 
-        val newWordIDs = Array(vocab.size)
-        val newWordFrequences = Array[Double](vocab.size)
+        val newWordIDs =new Array[Int](vocab.size)
+        val newWordFrequences =new Array[Double](vocab.size)
 
         for(n <- Range(0, vocab.size)){
 

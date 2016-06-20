@@ -1,6 +1,6 @@
 package LDA
 
-import java.io.PrintWriter
+import java.io.{File, PrintWriter}
 
 import com.kunyandata.nlpsuit.util.KunyanConf
 import org.apache.spark.mllib.clustering.DistributedLDAModel
@@ -22,30 +22,40 @@ object Run {
 
     val conf = new SparkConf().setAppName("LDA").setMaster("local")
     val sc = new SparkContext(conf)
+    LoggerUtil.warn("SC初始化结束》》》》》》》》》》》》》》")
 
-    val modelPath = "D:\\222_TDT\\Run\\Model"
-    val wordDictPath = "D:\\222_TDT\\Run\\Dict\\vocab.txt"
-    val stopWordsPath = "D:\\111_DATA\\data\\stop_words_CN"
+    val modelPath = args(0) //"/home/zhangxin/LDARun/Model"
+    val wordDictPath = args(1) // "/home/zhangxin/LDARun/Dict/vocab.txt"
+    val stopWordsPath = args(2)  //"/home/zhangxin/LDA/Run/stop_words_CN"
+    LoggerUtil.warn(modelPath)
+    LoggerUtil.warn(wordDictPath)
+    LoggerUtil.warn(stopWordsPath)
 
     //加载模型
     val models1 = DistributedLDAModel.load(sc,modelPath).toLocal
 
     //加载新数据
-    val newDataRDD = sc.wholeTextFiles("D:\\222_LDA\\Run\\TestData\\neg")
-    val newDataArray = newDataRDD.map(_._2).collect()
+//    val newDataRDD = sc.wholeTextFiles(args(3))  //"/home/zhangxin/LDA/Run/Run/TestData/neg")
+//    val newDataArray2 = newDataRDD.map(_._2).collect()
+    val files=new File(args(3)).listFiles()
+    LoggerUtil.warn(args(3)+" : "+files.size)
+    val newDataArray=files.map(file =>sc.textFile(file.getAbsolutePath).toString())
+    LoggerUtil.warn("新数据读取结束》》》》》》》》》》》》》》")
 
     //坤雁分词器配置项
-    val configInfo = new ParseJson("D:\\111_DATA\\data\\config.json")
+    val configInfo = new ParseJson(args(4))  // "/home/zhangxin/LDA/Run/config.json")
     val kunyanConfig = new KunyanConf
     kunyanConfig.set(configInfo.getValue("kunyan", "host"), configInfo.getValue("kunyan", "port").toInt)
 
     //新数据预处理
     val vocab = sc.textFile(wordDictPath).collect  //原始词表
     val (old_cvModel, newDataVetors) = Pretreat.doc2VectorsPredict(sc, newDataArray, stopWordsPath, kunyanConfig, vocab)
+    LoggerUtil.warn("新数据预处理结束》》》》》》》》》》》》》》")
 
     //预测并结果输出
     val result = models1.topicDistributions(newDataVetors)
-    result.collect().foreach(line => println(line._1 + " :  " + line._2))
+    LoggerUtil.warn("预测结束》》》》》》》》》》》》》》")
+    result.collect().foreach(line => LoggerUtil.info(line._1 + " :  " + line._2))
 
     //重新训练 并更新模型
     val modelArgs=Array(
@@ -65,18 +75,21 @@ object Run {
 
     //重新训练
     val newLDAModel = Train.trainWithEM(sc, modelArgs, trainDataVetors)
+    LoggerUtil.warn("重新训练结束》》》》》》》》》》》》》》")
 
     //更新模型
     UtilLDA.deleteModel(modelPath)
     newLDAModel.save(sc, modelPath)
+    LoggerUtil.warn("模型更新结束》》》》》》》》》》》》》》")
 
     //更新词表
     val newVocab = cvModel.vocabulary
     val wr = new PrintWriter(wordDictPath, "utf-8")
     newVocab.foreach(word => wr.append(word).flush())
+    LoggerUtil.warn("词表更新结束》》》》》》》》》》》》》》")
 
     //计算模型的平均相似度作为模型的好坏的评价指标
-    println("模型的平均相似度为： "+UtilLDA.calculateAverageSimilar(newLDAModel,modelArgs(0)))
+    LoggerUtil.warn("模型的平均相似度为： "+UtilLDA.calculateAverageSimilar(newLDAModel,modelArgs(0)))
 
   }
 }

@@ -1,14 +1,14 @@
-package sentiment
+package RunReport
 
-import java.io.{ObjectInputStream, File, PrintWriter}
+import java.io.{File, ObjectInputStream, PrintWriter}
 import java.sql.{Connection, DriverManager}
 import java.util
 
 import com.kunyandata.nlpsuit.util.{KunyanConf, TextPreprocessing}
 //import org.ansj.domain.Term
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{Path, FileSystem}
-import org.apache.spark.mllib.feature.{IDF, HashingTF}
+import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.spark.mllib.feature.{HashingTF, IDF}
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.linalg.distributed.RowMatrix
 import org.apache.spark.{SparkConf, SparkContext}
@@ -25,7 +25,7 @@ import scala.io.Source
   *
   * 20160616 ①增加第一条测试备注 ;②类名Util更改为UtilZX
   */
-object Util {
+object UtilZX {
 
   /**
     * 根据完整文件名提取文件类别
@@ -405,7 +405,7 @@ object Util {
       val title = line.substring(0, line.indexOf("\t"))
       val content = line.substring(line.indexOf("\t")+1, line.length)
       count += 1
-      val writer2 = new PrintWriter(outPath+"\\"+Util.replace(title)+".txt","utf-8")
+      val writer2 = new PrintWriter(outPath+"\\"+UtilZX.replace(title)+".txt","utf-8")
       println("路径为： "+outPath+"\\"+title+".txt")
       writer2.write(TextPreprocessing.formatText(content))
       writer2.close()
@@ -505,7 +505,6 @@ object Util {
 
   /**
     * 删除指定路径下的模型，删除模型的所有文件
- *
     * @param path  模型路径
     * @author zhangxin
     */

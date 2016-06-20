@@ -1,3 +1,4 @@
+/*
 package sentiment
 
 import java.io.{File, PrintWriter}
@@ -138,3 +139,4 @@ object TextPretreat {
   }
 
 }
+*/

@@ -15,13 +15,14 @@ object TestLDA {
 
     val conf = new SparkConf().setAppName("LDA").setMaster("local")
     val sc = new SparkContext(conf)
-
+//    LoggerUtil.warn("SC初始化结束》》》》》》》》》》")
     val vocabSize = 40000
 
     val sqlContext = new org.apache.spark.sql.SQLContext(sc)
     import sqlContext.implicits._
 
-    val RDD = sc.textFile("D:\\222_LDA\\kunyanData\\1.segTrainingSet")
+//    val RDD = sc.textFile("D:\\222_LDA\\kunyanData\\1.segTrainingSet")
+    val RDD = sc.textFile(args(0))
 
     val docDF = RDD.map(line => {
       val temp = line.split(".shtml")
@@ -34,6 +35,7 @@ object TestLDA {
       }
       contentArr
     }).zipWithIndex.toDF("text", "docId")
+    LoggerUtil.warn("数据预处理结束》》》》》》》》》》")
 
     val cvModel = new CountVectorizer()
       .setInputCol("text")
@@ -45,6 +47,7 @@ object TestLDA {
       .select("docId", "features")
       .map { case Row(docId: Long, countVector: Vector) => (docId, countVector) }
       .cache()
+    LoggerUtil.warn("模型训练开始》》》》》》》》》》")
 
 
     //模型训练
@@ -61,16 +64,17 @@ object TestLDA {
       run(countVectors)
       .asInstanceOf[DistributedLDAModel]
 
+    LoggerUtil.warn("模型训练结束》》》》》》》》》》")
 
     //结果输出
     val elapsed = (System.nanoTime() - startTime) / 1e9
-    println("[模型训练时间] "+elapsed+"\n===========")
+    LoggerUtil.info("[模型训练时间] "+elapsed+"\n===========")
     UtilLDA.printTopWordsPerTopics(ldaModel, cvModel.vocabulary, k)
 
 
     //计算任意两个主题之间的相似度
     val averageSim = UtilLDA.calculateAverageSimilar(ldaModel, k)
-    println("模型的平均相似度为： "+averageSim)
+    LoggerUtil.info("模型的平均相似度为： "+averageSim)
 
     //测试最佳K
     val modelArgs = Array(

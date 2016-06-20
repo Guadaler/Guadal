@@ -1,3 +1,4 @@
+/*
 package sentiment
 
 import java.io.{FileOutputStream, ObjectOutputStream}
@@ -193,3 +194,4 @@ object TrainWithNb {
     TrainingProcess.tuneParas(dataSet,Array(1),Array(500),"Testzx")
   }
 }
+*/
