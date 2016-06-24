@@ -1,6 +1,6 @@
 package wordExtraction
 
-import com.kunyandata.nlpsuit.util.{AnsjAnalyzer, KunyanConf, WordSegment}
+import com.kunyandata.nlpsuit.util.AnsjAnalyzer
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -68,34 +68,6 @@ object TextPreprocessing {
     }
   }
 
-  /**
-    * 调用WordSeq里面的函数实现字符串的分词和去停,并封装成方法
- *
-    * @param content 需要处理的字符串
-    * @param stopWords 停用词
-    * @param kunyanConf 坤雁分词模式的设置
-    * @return 返回分词去停后的结果
-    */
-  def process(content: String, stopWords: Array[String], kunyanConf: KunyanConf): Array[String] = {
-
-    // 格式化文本
-    val formatedContent = formatText(content)
-
-    // 实现分词
-    val splitWords = WordSegment.split(formatedContent, kunyanConf.host, kunyanConf.port)
-
-    splitWords.map(line=>println(line._1+"   :  "+line._2))
-
-    // 读取分词内容并转化成Array格式
-    val resultWords = splitWords.map(_._1).toArray
-
-
-    // 实现去停用词
-    if (resultWords == null)
-      null
-    else
-      removeStopWords(resultWords, stopWords)
-  }
 
   /**
     * 实现字符串的分词和去停,并分装成方法 ，与上面的process()流程相同，只是分词采用ansj

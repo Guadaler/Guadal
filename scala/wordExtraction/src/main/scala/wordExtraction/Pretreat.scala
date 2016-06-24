@@ -11,7 +11,7 @@ import org.apache.spark.sql.{DataFrame, Row}
   *
   * 文档预处理
   */
-object Pretreat {
+object  Pretreat {
 
   /**
     * 批量新文档预处理 输出DataFrame
@@ -37,10 +37,10 @@ object Pretreat {
     val segTextRDD = textRDD.map(line => {
 
       //坤雁分词
-      val segTemp = TextPreprocessing.process(line, stopwords, kunyanConfig)
+//      val segTemp = TextPreprocessing.process(line, stopwords, kunyanConfig)
 
       //ansj分词（利用词性过滤无意义词）
-      //val segTemp = TextPreprocessing.process(line, stopwords)
+      val segTemp = TextPreprocessing.process(line, stopwords)
 
       //hancks文本
       //val segTemp = line.split(" ")

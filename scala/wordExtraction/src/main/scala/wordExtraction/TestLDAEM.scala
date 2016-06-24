@@ -77,48 +77,48 @@ object TestLDAEM {
 //      .asInstanceOf[DistributedLDAModel]
 
     //模型保存
-//    println("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<[模型保存ing]")
-//    val modelPath="D:\\333_WordExtraction\\Run_hancks\\Model"
-//    UtilLDA.deleteModel(modelPath)
-//    ldaModel.save(sc,modelPath)
-//    println("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<[模型保存结束]")
+    println("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<[模型保存ing]")
+    val modelPath="D:\\333_WordExtraction\\Run_hancks\\Model"
+    UtilLDA.deleteModel(modelPath)
+    ldaModel.save(sc,modelPath)
+    println("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<[模型保存结束]")
 
 
-    //加载词表
-    val vocab=sc.textFile("D:\\333_WordExtraction\\Run_hancks\\Dict\\vocab.txt").collect()
-
-    //3 模型输出，模型参数输出，结果输出
-    // Output topics. Each is a distribution over words (matching word count vectors)
-    println("Learned topics (as distributions over vocab of " + ldaModel.vocabSize + " words):")
-    val topics = ldaModel.topicsMatrix
-    for (topic <- Range(0, 1)) {
-      print("Topic " + topic + ":")
-      var sum=0.0
-      for (word <- Range(0, ldaModel.vocabSize)) { println(" " + topics(word, topic)); }
-      for (word <- Range(0, ldaModel.vocabSize)) {
-        sum =sum+topics(word, topic)
-      }
-      println("#####sum : "+sum)
-      println()
-    }
-
-
-    //主题——词分布
-    println("<<<<<<<<<<<<<<<主题-词分布>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-    println("model.vocabSize:"+ldaModel.vocabSize)
-    val phi=ldaModel.topicsMatrix
-    for (topic <- Range(0, ldaModel.k)) {
-      println("Topic " + topic + "  概率:")
-      var sum=0.0
-      for (word <- Range(0, 20)) {
-        println("    " +vocab(word)+" : "+ phi(word, topic))
-      }
-
-      for (word <- Range(0, vocab.size)) {
-        sum =sum+phi(word, topic)
-      }
-      println(sum)
-    }
+//    //加载词表
+//    val vocab=sc.textFile("D:\\333_WordExtraction\\Run_hancks\\Dict\\vocab.txt").collect()
+//
+//    //3 模型输出，模型参数输出，结果输出
+//    // Output topics. Each is a distribution over words (matching word count vectors)
+//    println("Learned topics (as distributions over vocab of " + ldaModel.vocabSize + " words):")
+//    val topics = ldaModel.topicsMatrix
+//    for (topic <- Range(0, 1)) {
+//      print("Topic " + topic + ":")
+//      var sum=0.0
+//      for (word <- Range(0, ldaModel.vocabSize)) { println(" " + topics(word, topic)); }
+//      for (word <- Range(0, ldaModel.vocabSize)) {
+//        sum =sum+topics(word, topic)
+//      }
+//      println("#####sum : "+sum)
+//      println()
+//    }
+//
+//
+//    //主题——词分布
+//    println("<<<<<<<<<<<<<<<主题-词分布>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+//    println("model.vocabSize:"+ldaModel.vocabSize)
+//    val phi=ldaModel.topicsMatrix
+//    for (topic <- Range(0, ldaModel.k)) {
+//      println("Topic " + topic + "  概率:")
+//      var sum=0.0
+//      for (word <- Range(0, 20)) {
+//        println("    " +vocab(word)+" : "+ phi(word, topic))
+//      }
+//
+//      for (word <- Range(0, vocab.size)) {
+//        sum =sum+phi(word, topic)
+//      }
+//      println(sum)
+//    }
 
     //结果输出
     val elapsed = (System.nanoTime() - startTime) / 1e9

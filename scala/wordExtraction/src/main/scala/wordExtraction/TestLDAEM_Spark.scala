@@ -43,7 +43,8 @@ object TestLDAEM_Spark {
     val cvModel = new CountVectorizer()
       .setInputCol("text")
       .setOutputCol("features")
-      .setVocabSize(25000)
+      .setVocabSize(args(1).toInt)
+//      .setVocabSize(50000)
       .fit(docDF)
 
     val countVectors = cvModel.transform(docDF)
@@ -63,12 +64,13 @@ object TestLDAEM_Spark {
     )
 
     //获取最佳K
-    val bestK=UtilLDA.findBestK(sc,countVectors,modelArgs,4,12,1)
+    val bestK=UtilLDA.findBestK(sc,countVectors,modelArgs,5,80,5)
     LoggerUtil.warn("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<最佳K： "+bestK._1+ "  : " +bestK._2)
 
     //模型训练
     val startTime = System.nanoTime()
-    val k=args(1).toInt
+    val k=bestK._1
+//    val k=args(1).toInt
     val maxIter=args(2).toInt
     val ldaModel=new LDA().
       setK(k).
